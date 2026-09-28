@@ -427,3 +427,9 @@ FodyWeavers.xsd
 *.msix
 *.msm
 *.msp
+
+# ── Workspace layout ────────────────────────────────────────────────────────
+# Local-only directories (never commit; also excluded from repo-wide ripgrep
+# search — search them by passing the path explicitly):
+/dev-pki/
+/rvl-sbqr-keys/

@@ -1,0 +1,28 @@
+[submodule "rvl-bb-trust-store"]
+	path = rvl-bb-trust-store
+	url = https://github.com/arif-ahmed/rvl-bb-trust-store.git
+	branch = main
+[submodule "rvl-sbqr-admin-portal"]
+	path = rvl-sbqr-admin-portal
+	url = https://github.com/arif-ahmed/rvl-sbqr-admin-portal.git
+	branch = main
+[submodule "rvl-sbqr-api"]
+	path = rvl-sbqr-api
+	url = https://github.com/arif-ahmed/rvl-sbqr-api.git
+	branch = main
+[submodule "rvl-sbqr-app-emulator"]
+	path = rvl-sbqr-app-emulator
+	url = https://github.com/arif-ahmed/rvl-sbqr-app-emulator.git
+	branch = main
+[submodule "rvl-sbqr-fi-gateway"]
+	path = rvl-sbqr-fi-gateway
+	url = https://github.com/arif-ahmed/rvl-sbqr-fi-gateway.git
+	branch = main
+[submodule "rvl-sbqr-mocks"]
+	path = rvl-sbqr-mocks
+	url = https://github.com/arif-ahmed/rvl-sbqr-mocks.git
+	branch = main
+[submodule "rvl-secure-bqr-manager"]
+	path = rvl-secure-bqr-manager
+	url = https://github.com/Relief-Validation/rvl-secure-bqr-manager.git
+	branch = feature/mtls-server

@@ -1,0 +1,859 @@
+<!doctype html>
+<title>BanglaQR Onboarding Guide</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap');
+
+  :root{
+    --bg:#F6F8F4;
+    --surface:#FFFFFF;
+    --surface-alt:#EDF3EA;
+    --surface-sunken:#E4ECE0;
+    --border:#D9E3D5;
+    --border-strong:#C3D2BD;
+    --text:#152016;
+    --text-muted:#57685C;
+    --text-faint:#84927E;
+    --accent:#00693E;
+    --accent-strong:#004E2D;
+    --accent-soft:#DCEEE2;
+    --accent-contrast:#FFFFFF;
+    --red:#B7202B;
+    --red-soft:#F8DEDD;
+    --amber:#8A5A00;
+    --amber-soft:#F5E9D3;
+    --code-bg:#0F241A;
+    --code-text:#D9F2E3;
+    --code-border:#1D3A2A;
+    --shadow: 0 1px 2px rgba(15,36,26,.06), 0 8px 24px rgba(15,36,26,.05);
+    color-scheme: light;
+  }
+
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#0A140F;
+      --surface:#0F1D15;
+      --surface-alt:#132419;
+      --surface-sunken:#0B1A12;
+      --border:#1E3327;
+      --border-strong:#2A4635;
+      --text:#E7F1E9;
+      --text-muted:#9BB2A2;
+      --text-faint:#6C8377;
+      --accent:#3CD98C;
+      --accent-strong:#6FE8AB;
+      --accent-soft:#163627;
+      --accent-contrast:#04140C;
+      --red:#F0797F;
+      --red-soft:#3A171A;
+      --amber:#E8B85C;
+      --amber-soft:#33270F;
+      --code-bg:#081A12;
+      --code-text:#B9E9CC;
+      --code-border:#1B3325;
+      --shadow: 0 1px 2px rgba(0,0,0,.35), 0 12px 28px rgba(0,0,0,.35);
+      color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#0A140F;
+    --surface:#0F1D15;
+    --surface-alt:#132419;
+    --surface-sunken:#0B1A12;
+    --border:#1E3327;
+    --border-strong:#2A4635;
+    --text:#E7F1E9;
+    --text-muted:#9BB2A2;
+    --text-faint:#6C8377;
+    --accent:#3CD98C;
+    --accent-strong:#6FE8AB;
+    --accent-soft:#163627;
+    --accent-contrast:#04140C;
+    --red:#F0797F;
+    --red-soft:#3A171A;
+    --amber:#E8B85C;
+    --amber-soft:#33270F;
+    --code-bg:#081A12;
+    --code-text:#B9E9CC;
+    --code-border:#1B3325;
+    --shadow: 0 1px 2px rgba(0,0,0,.35), 0 12px 28px rgba(0,0,0,.35);
+    color-scheme: dark;
+  }
+
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:"IBM Plex Sans", ui-sans-serif, system-ui, sans-serif;
+    font-size:15px;
+    line-height:1.6;
+    padding-inline:20px;
+  }
+  h1,h2,h3{ font-family:"Manrope","IBM Plex Sans",sans-serif; text-wrap:balance; letter-spacing:-0.01em; }
+  code, .mono, .k, .type, td.field, .badge-mono{ font-family:"IBM Plex Mono", ui-monospace, monospace; }
+  a{ color:var(--accent-strong); }
+  :root[data-theme="dark"] a, :root:not([data-theme="light"]) a{ color:var(--accent-strong); }
+
+  ::selection{ background:var(--accent-soft); }
+
+  .shell{
+    max-width:1180px;
+    margin:0 auto;
+    display:grid;
+    grid-template-columns: 232px minmax(0,1fr);
+    gap:36px;
+    padding-block:28px 64px;
+  }
+  @media (max-width:860px){
+    .shell{ grid-template-columns: 1fr; }
+  }
+
+  /* ---------- Top strip ---------- */
+  .masthead{
+    grid-column:1/-1;
+    display:flex;
+    align-items:flex-start;
+    justify-content:space-between;
+    gap:24px;
+    padding-bottom:22px;
+    border-bottom:1px solid var(--border);
+    flex-wrap:wrap;
+  }
+  .masthead-id{ display:flex; gap:14px; align-items:center; }
+  .mark{
+    width:48px; height:48px; border-radius:11px;
+    background:var(--surface);
+    border:1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    flex:none;
+    box-shadow:var(--shadow);
+    padding:6px;
+  }
+  .mark img{ width:100%; height:100%; object-fit:contain; }
+  @media (prefers-color-scheme: dark){ :root:not([data-theme="light"]) .mark{ background:#FFFFFF; } }
+  :root[data-theme="dark"] .mark{ background:#FFFFFF; }
+  .masthead h1{ font-size:22px; margin:0 0 2px; font-weight:800; }
+  .masthead .sub{ margin:0; color:var(--text-muted); font-size:13.5px; }
+  .masthead-meta{ display:flex; gap:10px; align-items:center; flex-wrap:wrap; }
+  .pill{
+    font-size:11.5px; font-weight:600; padding:5px 10px; border-radius:99px;
+    border:1px solid var(--border-strong); color:var(--text-muted); white-space:nowrap;
+    background:var(--surface);
+  }
+  #theme-toggle{
+    font:inherit; font-size:12.5px; font-weight:600; cursor:pointer;
+    border:1px solid var(--border-strong); background:var(--surface); color:var(--text);
+    border-radius:99px; padding:7px 13px; display:flex; align-items:center; gap:6px;
+  }
+  #theme-toggle:hover{ border-color:var(--accent); color:var(--accent-strong); }
+  #theme-toggle:focus-visible, a:focus-visible, .step:focus-visible{ outline:2px solid var(--accent); outline-offset:2px; }
+
+  /* ---------- Sidebar ---------- */
+  nav.rail{ position:sticky; top:24px; align-self:start; max-height:calc(100vh - 48px); overflow:auto; }
+  nav.rail .rail-title{ font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-faint); font-weight:600; margin:0 0 10px; }
+  nav.rail ol{ list-style:none; margin:0 0 22px; padding:0; display:flex; flex-direction:column; gap:2px; counter-reset:rail; }
+  nav.rail ol.flow-list{ counter-reset:railflow; }
+  nav.rail a{
+    display:flex; gap:9px; align-items:baseline; text-decoration:none; color:var(--text-muted);
+    font-size:13.5px; padding:6px 8px; border-radius:7px;
+  }
+  nav.rail a:hover{ background:var(--surface-alt); color:var(--text); }
+  nav.rail ol.flow-list a::before{
+    counter-increment:railflow; content:counter(railflow);
+    font-family:"IBM Plex Mono",monospace; font-size:10.5px; color:var(--accent-strong);
+    background:var(--accent-soft); width:17px; height:17px; border-radius:5px;
+    display:flex; align-items:center; justify-content:center; flex:none; margin-top:1px;
+  }
+  @media (max-width:860px){
+    nav.rail{ position:static; max-height:none; }
+    nav.rail ol{ display:flex; flex-direction:row; flex-wrap:wrap; gap:6px; }
+    nav.rail a{ background:var(--surface-alt); }
+  }
+
+  main{ min-width:0; }
+  section{ margin-bottom:46px; scroll-margin-top:20px; }
+  section > h2{ font-size:19px; margin:0 0 6px; display:flex; align-items:center; gap:10px; }
+  .kicker{ font-size:11px; text-transform:uppercase; letter-spacing:.09em; color:var(--accent-strong); font-weight:700; margin:0 0 6px; }
+  p.lede{ color:var(--text-muted); margin:0 0 18px; }
+  .card{ background:var(--surface); border:1px solid var(--border); border-radius:14px; box-shadow:var(--shadow); }
+
+  /* ---------- Overview cards ---------- */
+  .overview-grid{ display:grid; grid-template-columns:repeat(3,1fr); gap:14px; margin-top:18px; }
+  @media (max-width:700px){ .overview-grid{ grid-template-columns:1fr; } }
+  .stat-card{ padding:16px 18px; }
+  .stat-card .label{ font-size:11px; text-transform:uppercase; letter-spacing:.07em; color:var(--text-faint); font-weight:600; }
+  .stat-card .value{ font-family:"Manrope",sans-serif; font-weight:800; font-size:21px; margin-top:6px; }
+  .stat-card .hint{ color:var(--text-muted); font-size:12.5px; margin-top:5px; }
+
+  /* ---------- Roles ---------- */
+  .role-grid{ display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  @media (max-width:700px){ .role-grid{ grid-template-columns:1fr; } }
+  .role-card{ padding:20px 22px; display:flex; flex-direction:column; gap:10px; }
+  .role-card h3{ margin:0; font-size:16px; display:flex; align-items:center; gap:9px; }
+  .role-dot{ width:9px; height:9px; border-radius:50%; background:var(--accent); flex:none; }
+  .role-card.institution .role-dot{ background:var(--amber); }
+  .role-card ul{ margin:2px 0 0; padding-left:18px; color:var(--text-muted); font-size:13.5px; display:flex; flex-direction:column; gap:5px; }
+  .role-card ul.role-ul-grid{ display:grid; grid-template-columns:repeat(2,1fr); gap:8px 28px; }
+  @media (max-width:640px){ .role-card ul.role-ul-grid{ grid-template-columns:1fr; } }
+  .role-card .also{ font-size:12px; color:var(--text-faint); border-top:1px solid var(--border); padding-top:9px; margin-top:2px; }
+  .role-card .also b{ color:var(--text-muted); }
+
+  /* ---------- Flow strip ---------- */
+  .flow-strip{ display:flex; align-items:stretch; gap:0; overflow-x:auto; padding-bottom:6px; margin-top:20px; }
+  .flow-node{
+    flex:1 0 150px; background:var(--surface); border:1px solid var(--border); border-radius:12px;
+    padding:14px 14px 15px; display:flex; flex-direction:column; gap:6px; position:relative; box-shadow:var(--shadow);
+  }
+  .flow-arrow{ flex:0 0 26px; display:flex; align-items:center; justify-content:center; color:var(--text-faint); }
+  .flow-node .n{
+    font-family:"IBM Plex Mono",monospace; font-size:11px; font-weight:600; color:var(--accent-strong);
+    background:var(--accent-soft); width:20px; height:20px; border-radius:6px; display:flex; align-items:center; justify-content:center;
+  }
+  .flow-node .t{ font-weight:600; font-size:13px; margin-top:2px; }
+  .flow-node .p{ font-family:"IBM Plex Mono",monospace; font-size:11px; color:var(--text-muted); word-break:break-word; }
+  .flow-node .a{ font-size:10.5px; color:var(--text-faint); margin-top:auto; padding-top:6px; border-top:1px dashed var(--border-strong); }
+
+  /* ---------- Endpoint card ---------- */
+  .endpoint{ padding:22px 24px 24px; }
+  .endpoint-head{ display:flex; align-items:flex-start; justify-content:space-between; gap:16px; flex-wrap:wrap; margin-bottom:6px; }
+  .verb-path{ display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+  .verb{ font-family:"IBM Plex Mono",monospace; font-weight:600; font-size:11.5px; padding:4px 8px; border-radius:6px; background:var(--accent); color:var(--accent-contrast); letter-spacing:.03em; }
+  .path{ font-family:"IBM Plex Mono",monospace; font-size:13.5px; color:var(--text); }
+  .auth-badges{ display:flex; gap:6px; flex-wrap:wrap; }
+  .badge{ font-size:11px; font-weight:600; padding:4px 9px; border-radius:99px; border:1px solid var(--border-strong); color:var(--text-muted); white-space:nowrap; }
+  .badge.locked{ border-color:transparent; background:var(--accent-soft); color:var(--accent-strong); }
+  .badge.open{ border-color:transparent; background:var(--surface-alt); color:var(--text-muted); }
+
+  .endpoint p.purpose{ color:var(--text-muted); margin:10px 0 18px; max-width:70ch; }
+
+  .subhead{ font-size:11px; text-transform:uppercase; letter-spacing:.08em; color:var(--text-faint); font-weight:700; margin:0 0 8px; }
+
+  table.spec{ width:100%; border-collapse:collapse; margin-bottom:18px; font-size:13px; }
+  table.spec caption{ display:none; }
+  table.spec th{ text-align:left; font-size:11px; text-transform:uppercase; letter-spacing:.06em; color:var(--text-faint); font-weight:600; padding:0 10px 7px; border-bottom:1px solid var(--border-strong); }
+  table.spec td{ padding:9px 10px; border-bottom:1px solid var(--border); vertical-align:top; }
+  table.spec tr:last-child td{ border-bottom:none; }
+  table.spec td.field{ color:var(--text); font-weight:500; white-space:nowrap; }
+  table.spec td.type{ color:var(--accent-strong); white-space:nowrap; }
+  table.spec td.note{ color:var(--text-muted); }
+  .req-tag{ font-size:10px; font-weight:700; letter-spacing:.03em; padding:1px 6px; border-radius:5px; margin-left:6px; }
+  .req-tag.opt{ background:var(--surface-alt); color:var(--text-faint); }
+  .req-tag.cond{ background:var(--amber-soft); color:var(--amber); }
+  .req-tag.once{ background:var(--red-soft); color:var(--red); }
+
+  .table-wrap{ overflow-x:auto; }
+
+  .carry{
+    display:flex; gap:10px; align-items:flex-start; background:var(--surface-alt);
+    border:1px solid var(--border); border-radius:10px; padding:12px 14px; font-size:13px; color:var(--text-muted);
+    margin-top:4px;
+  }
+  .carry svg{ flex:none; margin-top:2px; color:var(--accent-strong); }
+  .carry b{ color:var(--text); }
+  .carry code{ background:var(--code-bg); color:var(--code-text); padding:1px 6px; border-radius:5px; font-size:12px; }
+
+  .fail-row{ display:flex; flex-wrap:wrap; gap:8px; margin-top:14px; }
+  .fail{ font-family:"IBM Plex Mono",monospace; font-size:11.5px; padding:4px 8px; border-radius:6px; background:var(--surface-sunken); color:var(--text-muted); border:1px solid var(--border); }
+  .fail.warn{ color:var(--red); border-color:var(--red-soft); background:var(--red-soft); }
+
+  .constraint-note{ font-size:12px; color:var(--text-faint); margin-top:14px; padding-top:12px; border-top:1px solid var(--border); }
+  .constraint-note code{ color:var(--accent-strong); }
+
+  footer{ margin-top:8px; padding-top:18px; border-top:1px solid var(--border); color:var(--text-faint); font-size:12px; display:flex; justify-content:space-between; flex-wrap:wrap; gap:8px; }
+
+  @media (prefers-reduced-motion:no-preference){
+    .endpoint, .flow-node, .role-card, .stat-card{ transition: border-color .15s ease, box-shadow .15s ease; }
+  }
+
+  /* ---------- Environment bar ---------- */
+  .envbar{
+    grid-column:1/-1;
+    display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+    background:var(--surface-alt); border:1px solid var(--border); border-radius:10px;
+    padding:10px 14px; margin:18px 0 6px;
+    font-size:12.5px; color:var(--text-muted);
+  }
+  .envbar label{ font-weight:600; color:var(--text); white-space:nowrap; }
+  .envbar input{
+    font-family:"IBM Plex Mono", ui-monospace, monospace; font-size:12.5px;
+    color:var(--accent-strong); background:var(--surface); border:1px solid var(--border-strong);
+    border-radius:7px; padding:5px 9px; min-width:0; flex:1 1 260px;
+  }
+  .envbar input:focus-visible{ outline:2px solid var(--accent); outline-offset:1px; }
+  .envbar .hint{ color:var(--text-faint); flex:1 1 220px; }
+  .base-url-out{ color:var(--text-faint); }
+</style>
+
+<div class="shell">
+
+  <header class="masthead">
+    <div class="masthead-id">
+      <div class="mark"><img src="bqr-logo.png" alt="Bangla QR logo"></div>
+      <div>
+        <h1>Secure BanglaQR Service — Institution Onboarding Guide</h1>
+        <p class="sub">How a Financial Institution goes from unregistered to a live, QR-issuing tenant.</p>
+      </div>
+    </div>
+    <div class="masthead-meta">
+      <span class="pill">API v1</span>
+      <span class="pill">Reference doc</span>
+      <button id="theme-toggle" type="button" aria-label="Toggle color theme">
+        <span aria-hidden="true">◐</span><span class="label">Theme: System</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="envbar">
+    <label for="base-url-input">Base URL</label>
+    <input id="base-url-input" type="text" value="https://api.bqr.example.com" spellcheck="false" autocomplete="off" inputmode="url">
+    <span class="hint">Every path below is relative to this — point it at your dev, stage or production host.</span>
+  </div>
+
+  <nav class="rail" aria-label="Section index">
+    <p class="rail-title">On this page</p>
+    <ol>
+      <li><a href="#overview">Overview</a></li>
+      <li><a href="#roles">Roles &amp; responsibility</a></li>
+      <li><a href="#flow">Onboarding flow</a></li>
+    </ol>
+    <p class="rail-title">The 6 calls, in order</p>
+    <ol class="flow-list">
+      <li><a href="#ep-token">Obtain admin token</a></li>
+      <li><a href="#ep-register">Register the institution</a></li>
+      <li><a href="#ep-config">Provision client credentials</a></li>
+      <li><a href="#ep-keys">Mint the signing key</a></li>
+      <li><a href="#ep-apps">Register mobile app(s)</a></li>
+      <li><a href="#ep-activate">Activate the tenant</a></li>
+    </ol>
+    <p class="rail-title">Reference</p>
+    <ol>
+      <li><a href="#notes">Notes for QA</a></li>
+    </ol>
+  </nav>
+
+  <main>
+
+    <section id="overview">
+      <p class="kicker">Overview</p>
+      <h2>What this document is for</h2>
+
+      <p class="lede">
+        We are a QR Issuance and Verification Service Provider: Financial Institutions (FIs) — banks, mobile financial
+        services, payment companies — register with our platform so we can generate and check BanglaQR codes on their
+        behalf, within the rules Bangladesh Bank sets for the network. Registration is not mandatory and is not
+        automatic; only an FI that has registered with us can use the service. <b>Institution Onboarding</b> is the
+        process by which our Platform-Admin team registers one: creating its tenant record, provisioning the API
+        credentials it authenticates with, minting its Ed25519 signing key, and activating the tenant. This guide
+        documents that process call by call — the payload each step needs, the response it returns, and exactly which
+        field from that response feeds the next call — for QA exercising the flow in Postman and for operations staff
+        who need to get the right value into the right field, in the right order, the first time.
+      </p>
+      <div class="overview-grid">
+        <div class="card stat-card">
+          <div class="label">Role that runs this flow</div>
+          <div class="value">Platform-Admin</div>
+          <div class="hint">The only role any call in this document requires</div>
+        </div>
+        <div class="card stat-card">
+          <div class="label">Calls to go live</div>
+          <div class="value">6</div>
+          <div class="hint">One token exchange, five admin-scoped writes</div>
+        </div>
+        <div class="card stat-card">
+          <div class="label">One-time secret</div>
+          <div class="value">1</div>
+          <div class="hint"><code class="mono" style="font-size:11.5px">clientSecret</code> is shown exactly once — see step 3</div>
+        </div>
+      </div>
+    </section>
+
+    <section id="roles">
+      <p class="kicker">Role</p>
+      <h2>Who runs this flow</h2>
+      <p class="lede">
+        One role performs every call in this document: the <b style="color:var(--text)">Platform-Admin</b>. It holds
+        the platform's highest privilege — the only credential that can create, configure, and activate a tenant — and
+        it authenticates with a bootstrap client credential held in configuration, not tied to any single institution.
+        Every endpoint below except the token exchange itself requires this role's bearer token.
+      </p>
+      <div class="card role-card">
+        <h3><span class="role-dot"></span>Platform-Admin</h3>
+        <ul class="role-ul-grid">
+          <li>Registers each participating Financial Institution as a tenant on our platform.</li>
+          <li>Provisions the tenant's <code class="mono">client_id</code> / <code class="mono">client_secret</code> pair.</li>
+          <li>Mints or rotates the tenant's Ed25519 signing key in KeyCustody.</li>
+          <li>Moves the tenant through its lifecycle: Pending → Active → Suspended / Terminated.</li>
+        </ul>
+        <div class="also">
+          Once this flow hands off the <code class="mono">client_id</code> / <code class="mono">client_secret</code>
+          from step 3, the institution operates under its own tenant-scoped credential to request and verify QR codes —
+          a separate role, separate flow, outside the scope of this document.
+        </div>
+      </div>
+    </section>
+
+    <section id="flow">
+      <p class="kicker">Onboarding flow</p>
+      <h2>The full sequence, at a glance</h2>
+      <p class="lede">
+        The task brief names four calls — token, tenant-configuration, crypto-keys, activate — which assumes a tenant
+        <code class="mono">:id</code> already exists. It doesn't yet at that point, so the actual chain has one call
+        in front of it: registering the institution. That's what produces the <code class="mono">:id</code> every
+        later call needs. A sixth call — registering the tenant's mobile-app allow-list — sits between the signing-key
+        mint and the activate: a tenant whose mobile apps are not on this allow-list fails closed at the OAuth token
+        endpoint with <code>invalid_client / package_mismatch</code>. All six are shown below in the order they must run.
+      </p>
+      <div class="flow-strip">
+        <div class="flow-node">
+          <span class="n">1</span>
+          <span class="t">Admin token</span>
+          <span class="p">POST /oauth/token</span>
+          <span class="a">→ access_token</span>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">
+          <span class="n">2</span>
+          <span class="t">Register institution</span>
+          <span class="p">POST /admin/tenants</span>
+          <span class="a">→ tenantId</span>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">
+          <span class="n">3</span>
+          <span class="t">Provision credentials</span>
+          <span class="p">POST …/tenant-configuration</span>
+          <span class="a">→ clientId + clientSecret</span>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">
+          <span class="n">4</span>
+          <span class="t">Mint signing key</span>
+          <span class="p">POST /crypto-keys</span>
+          <span class="a">→ key status: Active</span>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">
+          <span class="n">5</span>
+          <span class="t">Register mobile app(s)</span>
+          <span class="p">POST …/applications</span>
+          <span class="a">→ appId (×N)</span>
+        </div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-node">
+          <span class="n">6</span>
+          <span class="t">Activate tenant</span>
+          <span class="p">POST …/activate</span>
+          <span class="a">→ status: Active</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= STEP 1 ================= -->
+    <section id="ep-token">
+      <div class="card endpoint">
+        <div class="endpoint-head">
+          <div class="verb-path">
+            <span class="verb">POST</span>
+            <span class="path"><span class="base-url-out"></span>/v1/oauth/token</span>
+          </div>
+          <div class="auth-badges"><span class="badge open">No auth required</span></div>
+        </div>
+        <p class="purpose">
+          Step 1 of 6. Exchanges the platform bootstrap <code class="mono">client_id</code> / <code class="mono">client_secret</code>
+          (held in configuration, not tenant data) for a bearer token scoped <code class="mono">admin</code>. There is
+          no separate login for a Platform-Admin — the client credential <i>is</i> the authentication, so this route
+          is anonymous by design and is instead protected by a per-IP rate limiter. This same endpoint is reused later
+          by the Institution-Admin, with the FI's own credentials, once step 3 has issued them.
+        </p>
+
+        <p class="subhead">Request body <span style="font-weight:400;color:var(--text-faint)">— form-urlencoded (spec) or JSON</span></p>
+        <div class="table-wrap">
+        <table class="spec">
+          <tr><th>Field</th><th>Type</th><th>Purpose</th></tr>
+          <tr><td class="field">grant_type</td><td class="type">string</td><td class="note">Must be the literal <code>client_credentials</code>.</td></tr>
+          <tr><td class="field">client_id</td><td class="type">string</td><td class="note">The platform bootstrap client identifier (config-held).</td></tr>
+          <tr><td class="field">client_secret</td><td class="type">string</td><td class="note">The bootstrap secret. Never logged, never echoed back.</td></tr>
+        </table>
+        </div>
+
+        <p class="subhead">Response <span style="font-weight:400;color:var(--text-faint)">— 200 OK</span></p>
+        <div class="table-wrap">
+        <table class="spec">
+          <tr><th>Field</th><th>Type</th><th>Purpose</th></tr>
+          <tr><td class="field">access_token</td><td class="type">string</td><td class="note">Bearer token, scope <code>admin</code>.</td></tr>
+          <tr><td class="field">token_type</td><td class="type">string</td><td class="note">Always <code>Bearer</code>.</td></tr>
+          <tr><td class="field">expires_in</td><td class="type">integer (seconds)</td><td class="note">Token lifetime — re-request once expired.</td></tr>
+        </table>
+        </div>
+
+        <div class="carry">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Carry <b>access_token</b> forward as the <code>Authorization: Bearer &lt;access_token&gt;</code> header on every one of steps 2–6.</span>
+        </div>
+
+        <div class="fail-row">
+          <span class="fail">400 invalid_request</span>
+          <span class="fail">401 invalid_client</span>
+          <span class="fail">400 unsupported_grant_type</span>
+          <span class="fail">429 too many requests</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= STEP 2 ================= -->
+    <section id="ep-register">
+      <div class="card endpoint">
+        <div class="endpoint-head">
+          <div class="verb-path">
+            <span class="verb">POST</span>
+            <span class="path"><span class="base-url-out"></span>/v1/admin/tenants</span>
+          </div>
+          <div class="auth-badges"><span class="badge locked">Platform-Admin bearer token</span></div>
+        </div>
+        <p class="purpose">
+          Step 2 of 6 — the prerequisite the task brief takes for granted: creates the tenant row itself, in status
+          <code class="mono">Pending</code>. No client credential, no signing key, and no mobile-app allow-list row are
+          created here on purpose; those are separate, dedicated calls (steps 3, 4 and 5) so each can be re-run,
+          rotated, or audited independently.
+        </p>
+
+        <p class="subhead">Request body</p>
+        <div class="table-wrap">
+        <table class="spec">
+          <tr><th>Field</th><th>Type</th><th>Purpose</th></tr>
+          <tr><td class="field">institutionName</td><td class="type">string</td><td class="note">Human-readable FI name, ≤200 characters.</td></tr>
+          <tr><td class="field">institutionCode</td><td class="type">string</td><td class="note">Bangladesh Bank institution code — exactly 6 digits, e.g. <code>031008</code> in the BB spec's own worked example. The tenant's natural unique key, and the prefix of every <code>clientId</code> and public-key filename this tenant will own.</td></tr>
+        </table>
+        </div>
+
+        <p class="subhead">Response <span style="font-weight:400;color:var(--text-faint)">— 201 Created</span></p>
+        <div class="table-wrap">
+        <table class="spec">
+          <tr><th>Field</th><th>Type</th><th>Purpose</th></tr>
+          <tr><td class="field">tenantId</td><td class="type">GUID</td><td class="note">Server-assigned. This is the <code>:id</code> path segment for every remaining call.</td></tr>
+          <tr><td class="field">institutionName</td><td class="type">string</td><td class="note">Echoes the request.</td></tr>
+          <tr><td class="field">institutionCode</td><td class="type">string</td><td class="note">Echoes the request.</td></tr>
+          <tr><td class="field">status</td><td class="type">string</td><td class="note">Starts at <code>Pending</code>.</td></tr>
+          <tr><td class="field">isActive</td><td class="type">boolean</td><td class="note">Soft-delete flag — <code>true</code> at creation.</td></tr>
+        </table>
+        </div>
+
+        <div class="carry">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Carry <b>tenantId</b> forward as the <code>:id</code> in the path of steps 3, 4, 5 and 6.</span>
+        </div>
+
+        <div class="fail-row">
+          <span class="fail">400 validation failed</span>
+          <span class="fail warn">409 duplicate institutionCode</span>
+          <span class="fail">401 / 403 not a Platform-Admin</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= STEP 3 ================= -->
+    <section id="ep-config">
+      <div class="card endpoint">
+        <div class="endpoint-head">
+          <div class="verb-path">
+            <span class="verb">POST</span>
+            <span class="path"><span class="base-url-out"></span>/v1/admin/tenants/:id/tenant-configuration</span>
+          </div>
+          <div class="auth-badges"><span class="badge locked">Platform-Admin bearer token</span></div>
+        </div>
+        <p class="purpose">
+          Step 3 of 6. Mints the credential the FI will actually authenticate with: a <code class="mono">client_id</code>
+          shaped <code class="mono">{institutionCode}-{8hex}</code>, and a 256-bit <code class="mono">client_secret</code>.
+          No request body — the tenant is entirely identified by the route <code class="mono">:id</code>. Tenants in
+          <code class="mono">Pending</code> or <code class="mono">Active</code> may be provisioned; Suspended or
+          Terminated tenants are refused, and provisioning twice on an already-configured tenant is a conflict, not a
+          silent overwrite.
+        </p>
+
+        <p class="subhead">Request</p>
+        <div class="table-wrap">
+        <table class="spec">
+          <tr><th>Field</th><th>Type</th><th>Purpose</th></tr>
+          <tr><td class="field" colspan="3" style="color:var(--text-faint);font-style:italic">No request body — <code>:id</code> in the path is the only input.</td></tr>
+        </table>
+        </div>
+
+        <p class="subhead">Response <span style="font-weight:400;color:var(--text-faint)">— 201 Created</span></p>
+        <div class="table-wrap">
+        <table class="spec">
+          <tr><th>Field</th><th>Type</th><th>Purpose</th></tr>
+          <tr><td class="field">tenantId</td><td class="type">GUID</td><td class="note">Echoes the route <code>:id</code>.</td></tr>
+          <tr><td class="field">credentialId</td><td class="type">GUID</td><td class="note">Id of the underlying credential record — for audit lookup, not for onward calls.</td></tr>
+          <tr><td class="field">clientId</td><td class="type">string</td><td class="note">Hand this to the institution — it is what they send to <code>/oauth/token</code>.</td></tr>
+          <tr><td class="field">clientSecret <span class="req-tag once">shown once</span></td><td class="type">string</td><td class="note">Plaintext, displayed exactly once. Only its hash is stored; there is no re-display endpoint.</td></tr>
+          <tr><td class="field">expiresAt</td><td class="type">datetime (ISO-8601) / null</td><td class="note">Configuration expiry, if one is set.</td></tr>
+        </table>
+        </div>
+
+        <div class="carry">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Deliver <b>clientId</b> + <b>clientSecret</b> securely to the Institution-Admin — this pair is <i>their</i> credential at <code>/oauth/token</code>, not used again in the remaining onboarding calls.</span>
+        </div>
+
+        <div class="fail-row">
+          <span class="fail">400 validation failed</span>
+          <span class="fail">404 tenant not found</span>
+          <span class="fail warn">409 already configured, or tenant Suspended / Terminated</span>
+        </div>
+
+        <p class="constraint-note">If this secret is lost before the institution stores it, there is no recovery — suspend the configuration and provision again. Never re-transmit or re-log a captured secret (<code>C9</code>, <code>C13</code>, <code>C19</code>).</p>
+      </div>
+    </section>
+
+    <!-- ================= STEP 4 ================= -->
+    <section id="ep-keys">
+      <div class="card endpoint">
+        <div class="endpoint-head">
+          <div class="verb-path">
+            <span class="verb">POST</span>
+            <span class="path"><span class="base-url-out"></span>/v1/crypto-keys</span>
+          </div>
+          <div class="auth-badges"><span class="badge locked">Platform-Admin bearer token</span></div>
+        </div>
+        <p class="purpose">
+          Step 4 of 6. Mints the tenant's first signing key — the private half never leaves KeyCustody
+          (<code class="mono">C17</code>); this endpoint only ever returns the public half. <code class="mono">Generate</code>
+          mode has the platform create a fresh Ed25519 keypair; <code class="mono">Adopt</code> mode lets the FI bring
+          an existing key, provided its public half was already seeded into the trust store via
+          <code class="mono">/admin/institutions</code> beforehand — the same Ed25519 key pair the BB BanglaQR P2P
+          specification has each institution generate independently (<code class="mono">openssl genpkey -algorithm
+          Ed25519</code>) and register with the Bangladesh Bank trust store as <code class="mono">{institutionCode}-public.pem</code>.
+        </p>
+
+        <p class="subhead">Request body</p>
+        <div class="table-wrap">
+        <table class="spec">
+          <tr><th>Field</th><th>Type</th><th>Purpose</th></tr>
+          <tr><td class="field">tenantId</td><td class="type">GUID</td><td class="note">The tenant from step 2 to mint a key for.</td></tr>
+          <tr><td class="field">mode</td><td class="type">string</td><td class="note"><code>Generate</code> or <code>Adopt</code> (case-insensitive).</td></tr>
+          <tr><td class="field">privateKeyPem <span class="req-tag cond">conditional</span></td><td class="type">string</td><td class="note">Required only when <code>mode = Adopt</code>; the FI-supplied private key PEM.</td></tr>
+        </table>
+        </div>
+
+        <p class="subhead">Response <span style="font-weight:400;color:var(--text-faint)">— 201 Created</span></p>
+        <div class="table-wrap">
+        <table class="spec">
+          <tr><th>Field</th><th>Type</th><th>Purpose</th></tr>
+          <tr><td class="field">cryptoKeyId</td><td class="type">GUID</td><td class="note">Row identifier for this key version.</td></tr>
+          <tr><td class="field">tenantId</td><td class="type">GUID</td><td class="note">Echoes the request.</td></tr>
+          <tr><td class="field">keyId (kid)</td><td class="type">string</td><td class="note">Carried on every signed QR artifact so verifiers know which key to check.</td></tr>
+          <tr><td class="field">keyVersion</td><td class="type">integer</td><td class="note">Starts at 1; increments on each rotation.</td></tr>
+          <tr><td class="field">publicKeyPem</td><td class="type">string</td><td class="note">Public half only — published for signature verification.</td></tr>
+          <tr><td class="field">status</td><td class="type">string</td><td class="note">Expect <code>Active</code> immediately after minting.</td></tr>
+          <tr><td class="field">isActive</td><td class="type">boolean</td><td class="note">Convenience flag mirroring <code>status</code>.</td></tr>
+          <tr><td class="field">createdAt</td><td class="type">datetime (UTC)</td><td class="note">Key creation timestamp.</td></tr>
+        </table>
+        </div>
+
+        <div class="carry">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Confirm <b>status = Active</b> before calling step 6. The <code>activate</code> endpoint has no technical dependency on a key existing, but a tenant switched on without one cannot sign a single QR — treat this response as the real gate.</span>
+        </div>
+
+        <div class="fail-row">
+          <span class="fail">400 malformed / inconsistent PEM</span>
+          <span class="fail">404 tenant not found</span>
+          <span class="fail warn">409 tenant already has an Active key — use PUT to rotate instead</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ================= STEP 5 ================= -->
+    <section id="ep-apps">
+      <div class="card endpoint">
+        <div class="endpoint-head">
+          <div class="verb-path">
+            <span class="verb">POST</span>
+            <span class="path"><span class="base-url-out"></span>/v1/admin/tenants/:id/applications</span>
+          </div>
+          <div class="auth-badges"><span class="badge locked">Platform-Admin bearer token</span></div>
+        </div>
+        <p class="purpose">
+          Step 5 of 6. Registers the mobile-app identifier(s) the FI will ship — Android
+          <code class="mono">applicationId</code> or iOS bundle ID — onto the tenant's allow-list.
+          The OAuth token endpoint consults this list at mint time: a token request whose
+          <code class="mono">package_id</code> claim is not on the list is rejected with
+          <code>invalid_client / package_mismatch</code>, and a row that is later
+          <code>SUSPENDED</code> rejects every device pinning it (the per-app kill switch).
+          Call this endpoint <b>once per (platform, package_id)</b> the FI ships — typically
+          two calls in practice (one Android, one iOS) for an FI that publishes the same app
+          to both stores.
+        </p>
+
+        <p class="subhead">Request body</p>
+        <div class="table-wrap">
+        <table class="spec">
+          <tr><th>Field</th><th>Type</th><th>Purpose</th></tr>
+          <tr><td class="field">platform</td><td class="type">string</td><td class="note"><code>ANDROID</code> or <code>IOS</code>.</td></tr>
+          <tr><td class="field">package_id</td><td class="type">string</td><td class="note">Reverse-DNS identifier (Android <code>applicationId</code> or iOS bundle ID), ≤200 chars. Must match the platform's published grammar — e.g. <code>com.dhakabank.consumer</code>.</td></tr>
+        </table>
+        </div>
+
+        <p class="subhead">Response <span style="font-weight:400;color:var(--text-faint)">— 201 Created</span></p>
+        <div class="table-wrap">
+        <table class="spec">
+          <tr><th>Field</th><th>Type</th><th>Purpose</th></tr>
+          <tr><td class="field">tenantApplicationId</td><td class="type">GUID</td><td class="note">Server-assigned row id. Used by the per-app <code>suspend</code> / <code>reinstate</code> endpoints.</td></tr>
+          <tr><td class="field">tenantId</td><td class="type">GUID</td><td class="note">Echoes the route <code>:id</code>.</td></tr>
+          <tr><td class="field">platform</td><td class="type">string</td><td class="note">Echoes the request.</td></tr>
+          <tr><td class="field">packageId</td><td class="type">string</td><td class="note">Echoes the request.</td></tr>
+          <tr><td class="field">status</td><td class="type">string</td><td class="note">Starts at <code>ACTIVE</code>.</td></tr>
+          <tr><td class="field">isActive</td><td class="type">boolean</td><td class="note"><code>true</code> at registration; soft-delete flips it to <code>false</code>.</td></tr>
+          <tr><td class="field">createdAt</td><td class="type">datetime (UTC)</td><td class="note">Row creation timestamp.</td></tr>
+          <tr><td class="field">modifiedAt</td><td class="type">datetime (UTC) / null</td><td class="note">Last status flip (suspend / reinstate). <code>null</code> until the first flip.</td></tr>
+        </table>
+        </div>
+
+        <div class="carry">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M2 8H13M13 8L9 4M13 8L9 12" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Repeat this call once per platform the FI ships. The same reverse-DNS string on ANDROID and IOS is legal — that's two rows. The same string twice on one platform is not: the DB unique index <code>ix_tenant_applications_platform_package_id</code> rejects the second insert with <code>409 InvariantViolation</code>.</span>
+        </div>
+
+        <div class="fail-row">
+          <span class="fail">400 validation failed (reverse-DNS / length)</span>
+          <span class="fail">404 tenant not found</span>
+          <span class="fail warn">409 duplicate (platform, package_id) — already registered</span>
+        </div>
+
+        <p class="constraint-note">
+          <b>No duplicate app per platform.</b> The contract enforced by this endpoint: a tenant may register at
+          most one row per <code>(platform, package_id)</code> pair (FR-AUTH-002 / FR-AUTH-003 operational contract).
+          Soft-deleted (<code>is_active=false</code>) and <code>SUSPENDED</code> rows still hold their index slot, so
+          re-registering the same <code>(platform, package_id)</code> against the same tenant always returns
+          <code>409</code>. The intended recovery flow is the per-app <code>suspend</code> ↔ <code>reinstate</code>
+          pair — not delete-and-recreate.
+        </p>
+      </div>
+    </section>
+
+    <!-- ================= STEP 6 ================= -->
+    <section id="ep-activate">
+      <div class="card endpoint">
+        <div class="endpoint-head">
+          <div class="verb-path">
+            <span class="verb">POST</span>
+            <span class="path"><span class="base-url-out"></span>/v1/admin/tenants/:id/activate</span>
+          </div>
+          <div class="auth-badges"><span class="badge locked">Platform-Admin bearer token</span></div>
+        </div>
+        <p class="purpose">
+          Step 6 of 6. Moves the tenant from <code class="mono">Pending</code> to <code class="mono">Active</code>.
+          This is the last switch: once flipped, the Institution-Admin's credential from step 3, the signing key
+          from step 4, and the mobile-app allow-list from step 5 can be used together to issue and verify live
+          QR codes. No request body — again, the route <code class="mono">:id</code> is the only input.
+        </p>
+
+        <p class="subhead">Request</p>
+        <div class="table-wrap">
+        <table class="spec">
+          <tr><th>Field</th><th>Type</th><th>Purpose</th></tr>
+          <tr><td class="field" colspan="3" style="color:var(--text-faint);font-style:italic">No request body — <code>:id</code> in the path is the only input.</td></tr>
+        </table>
+        </div>
+
+        <p class="subhead">Response <span style="font-weight:400;color:var(--text-faint)">— 200 OK</span></p>
+        <div class="table-wrap">
+        <table class="spec">
+          <tr><th>Field</th><th>Type</th><th>Purpose</th></tr>
+          <tr><td class="field">tenantId</td><td class="type">GUID</td><td class="note">Echoes the route <code>:id</code>.</td></tr>
+          <tr><td class="field">institutionName</td><td class="type">string</td><td class="note">Unchanged from registration.</td></tr>
+          <tr><td class="field">institutionCode</td><td class="type">string</td><td class="note">Unchanged from registration.</td></tr>
+          <tr><td class="field">status</td><td class="type">string</td><td class="note">Now <code>Active</code>.</td></tr>
+          <tr><td class="field">isActive</td><td class="type">boolean</td><td class="note"><code>true</code>.</td></tr>
+        </table>
+        </div>
+
+        <div class="carry">
+          <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 8.5L7 11.5L12 5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span>Onboarding is complete. The FI's Institution-Admin can now call <code>/oauth/token</code> with the credential from step 3 to obtain a tenant-scoped token for QR generation and verification.</span>
+        </div>
+
+        <div class="fail-row">
+          <span class="fail">400 validation failed</span>
+          <span class="fail">404 tenant not found</span>
+          <span class="fail warn">409 already Active, or a terminal state</span>
+        </div>
+      </div>
+    </section>
+
+    <section id="notes">
+      <p class="kicker">Reference</p>
+      <h2>Notes for QA</h2>
+      <div class="card" style="padding:20px 22px;">
+        <table class="spec">
+          <tr><th>Check</th><th>What to verify</th></tr>
+          <tr><td class="field">Token reuse</td><td class="note">A step-1 token expires at <code>expires_in</code> seconds — re-request rather than assume it survives the whole onboarding run.</td></tr>
+          <tr><td class="field">Ordering</td><td class="note">Steps 3, 4, 5 and 6 all require a <code>tenantId</code> from step 2; running them out of order returns <code>404 Tenant not found</code>, not a validation error.</td></tr>
+          <tr><td class="field">Secret capture</td><td class="note">Re-running step 3 against a tenant that already has a configuration is a <code>409</code>, by design — there is no "get me the secret again."</td></tr>
+          <tr><td class="field">Key precondition</td><td class="note">Nothing technically stops calling step 6 before step 4. A negative test worth having: activate first, mint the key second, then attempt QR issuance and confirm it still fails cleanly.</td></tr>
+          <tr><td class="field">Duplicate institution</td><td class="note"><code>institutionCode</code> is a 6-digit unique key — re-registering the same code is a <code>409</code>, useful for idempotency checks.</td></tr>
+          <tr><td class="field">App allow-list</td><td class="note">A mobile build whose <code>package_id</code> is not on the tenant's <code>/applications</code> list fails closed at <code>/oauth/token</code> with <code>invalid_client / package_mismatch</code>. Skipping step 5 entirely is the most common cause of "fresh tenant, can mint admin token, every device rejected" — the per-app kill-switch <code>suspend</code> / <code>reinstate</code> pair reuses these rows.</td></tr>
+          <tr><td class="field">Duplicate app</td><td class="note">Re-running step 5 with the same <code>(platform, package_id)</code> against the same tenant is a <code>409</code>, even after a soft-delete or <code>SUSPENDED</code> — the unique index ignores <code>is_active</code> and <code>status</code>. The same <code>package_id</code> on a different platform is legal (two rows).</td></tr>
+        </table>
+      </div>
+      <footer>
+        <span>Secure BanglaQR Service — Onboarding reference, API v1</span>
+        <span>Generated for internal QA &amp; operations use</span>
+      </footer>
+    </section>
+
+  </main>
+</div>
+
+<script>
+  (function(){
+    var root = document.documentElement;
+    var btn = document.getElementById('theme-toggle');
+    var label = btn.querySelector('.label');
+    var STORAGE_KEY = 'banglaqr-onboarding-theme';
+    var order = ['system','light','dark'];
+
+    function apply(mode){
+      if(mode === 'light'){ root.setAttribute('data-theme','light'); }
+      else if(mode === 'dark'){ root.setAttribute('data-theme','dark'); }
+      else { root.removeAttribute('data-theme'); }
+      label.textContent = 'Theme: ' + mode.charAt(0).toUpperCase() + mode.slice(1);
+    }
+
+    var current = 'system';
+    try{
+      var saved = localStorage.getItem(STORAGE_KEY);
+      if(saved && order.indexOf(saved) !== -1){ current = saved; }
+    }catch(e){}
+    apply(current);
+
+    btn.addEventListener('click', function(){
+      var next = order[(order.indexOf(current) + 1) % order.length];
+      current = next;
+      apply(current);
+      try{ localStorage.setItem(STORAGE_KEY, current); }catch(e){}
+    });
+  })();
+
+  (function(){
+    var input = document.getElementById('base-url-input');
+    var outs = document.querySelectorAll('.base-url-out');
+    var STORAGE_KEY = 'banglaqr-onboarding-base-url';
+
+    function render(){
+      var value = input.value.trim().replace(/\/+$/, '');
+      outs.forEach(function(el){ el.textContent = value; });
+    }
+
+    try{
+      var saved = localStorage.getItem(STORAGE_KEY);
+      if(saved){ input.value = saved; }
+    }catch(e){}
+    render();
+
+    input.addEventListener('input', function(){
+      render();
+      try{ localStorage.setItem(STORAGE_KEY, input.value); }catch(e){}
+    });
+  })();
+</script>

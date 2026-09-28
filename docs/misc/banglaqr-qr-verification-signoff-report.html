@@ -1,0 +1,774 @@
+<!doctype html>
+<title>BanglaQR Verification Sign-off</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Manrope:wght@500;700;800&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #f6f8f5;
+    --surface: #ffffff;
+    --surface-2: #eef2ec;
+    --border: #dde4dc;
+    --text: #16211a;
+    --text-muted: #57685c;
+    --accent: #0c6b4f;      /* BanglaQR green */
+    --accent-ink: #04382a;
+    --accent-soft: #e2f1e9;
+    --flag: #b8291d;        /* Bangladesh red — reserved for critical/reject, darkened for AA text contrast */
+    --flag-soft: #fbe6e3;
+    --warn: #a3671b;
+    --warn-soft: #f7ecd9;
+    --mono-surface: #101913;
+    --mono-text: #d9ecdf;
+    --shadow: 0 1px 2px rgba(20,30,20,0.04), 0 8px 24px -12px rgba(20,30,20,0.10);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0d1310;
+      --surface: #141c17;
+      --surface-2: #1a2420;
+      --border: #263029;
+      --text: #e7ede8;
+      --text-muted: #93a599;
+      --accent: #3fcb94;
+      --accent-ink: #d3f5e5;
+      --accent-soft: #172c22;
+      --flag: #ff7c6e;
+      --flag-soft: #2c1815;
+      --warn: #e0ac52;
+      --warn-soft: #2b2210;
+      --mono-surface: #0a100c;
+      --mono-text: #bfe6cd;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px -16px rgba(0,0,0,0.55);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1310;
+    --surface: #141c17;
+    --surface-2: #1a2420;
+    --border: #263029;
+    --text: #e7ede8;
+    --text-muted: #93a599;
+    --accent: #3fcb94;
+    --accent-ink: #d3f5e5;
+    --accent-soft: #172c22;
+    --flag: #ff7c6e;
+    --flag-soft: #2c1815;
+    --warn: #e0ac52;
+    --warn-soft: #2b2210;
+    --mono-surface: #0a100c;
+    --mono-text: #bfe6cd;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px -16px rgba(0,0,0,0.55);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "IBM Plex Sans", system-ui, sans-serif;
+    font-size: 15.5px;
+    line-height: 1.6;
+    padding-inline: 16px;
+  }
+  h1, h2, h3 { font-family: "Manrope", sans-serif; text-wrap: balance; color: var(--text); }
+  code, pre, .mono, .field { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+
+  a { color: var(--accent); }
+
+  .wrap { max-width: 740px; margin: 0 auto; padding-block: 28px 64px; }
+
+  /* ---- top bar ---- */
+  .topbar {
+    position: sticky; top: 0; z-index: 20;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    margin-inline: -16px; padding-inline: 16px;
+  }
+  .topbar-inner {
+    max-width: 740px; margin: 0 auto;
+    display: flex; align-items: center; gap: 14px;
+    padding-block: 10px;
+  }
+  .brandmark {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-ink));
+    display: grid; place-items: center; flex: none;
+    box-shadow: var(--shadow);
+  }
+  .brandmark svg { width: 16px; height: 16px; }
+  .topbar-title { font-family: "Manrope"; font-weight: 700; font-size: 0.92rem; white-space: nowrap; }
+  .topbar-nav {
+    display: flex; gap: 4px; overflow-x: auto; flex: 1;
+    scrollbar-width: none;
+  }
+  .topbar-nav::-webkit-scrollbar { display: none; }
+  .topbar-nav a {
+    text-decoration: none; color: var(--text-muted); font-size: 0.82rem; font-weight: 500;
+    padding: 6px 10px; border-radius: 999px; white-space: nowrap; flex: none;
+  }
+  .topbar-nav a:hover { background: var(--surface-2); color: var(--text); }
+  .theme-toggle {
+    flex: none; border: 1px solid var(--border); background: var(--surface);
+    border-radius: 999px; width: 34px; height: 34px; display: grid; place-items: center;
+    cursor: pointer; color: var(--text);
+  }
+  .theme-toggle:focus-visible, a:focus-visible, .toc-chip:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .theme-toggle svg { width: 16px; height: 16px; }
+  .theme-toggle .moon { display: none; }
+  :root[data-theme="dark"] .theme-toggle .sun,
+  :root:not([data-theme="light"]) .theme-toggle .sun { display: none; }
+  :root[data-theme="dark"] .theme-toggle .moon,
+  :root:not([data-theme="light"]) .theme-toggle .moon { display: block; }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) .theme-toggle .sun { display: block; }
+    :root:not([data-theme="dark"]) .theme-toggle .moon { display: none; }
+  }
+
+  /* ---- header ---- */
+  .doc-head { padding-block: 30px 8px; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 0.72rem; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--accent); background: var(--accent-soft);
+    padding: 4px 10px; border-radius: 999px; margin-bottom: 14px;
+  }
+  h1 { font-size: clamp(1.6rem, 4vw, 2.2rem); font-weight: 800; margin: 0 0 8px; line-height: 1.15; }
+  .subtitle { color: var(--text-muted); font-size: 1rem; max-width: 60ch; margin: 0 0 18px; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.82rem; color: var(--text-muted); }
+  .meta-row span { display: flex; align-items: center; gap: 6px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: none; }
+
+  section { padding-block: 34px; border-top: 1px solid var(--border); }
+  section:first-of-type { border-top: none; }
+  .section-kicker {
+    font-size: 0.74rem; font-weight: 700; letter-spacing: 0.09em; text-transform: uppercase;
+    color: var(--text-muted); margin: 0 0 6px;
+  }
+  h2 { font-size: 1.35rem; font-weight: 800; margin: 0 0 14px; }
+  h3 { font-size: 1.02rem; font-weight: 700; margin: 22px 0 10px; }
+  p { margin: 0 0 12px; max-width: 68ch; }
+
+  /* ---- TL;DR ---- */
+  .tldr {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 22px 24px; box-shadow: var(--shadow);
+    display: grid; gap: 14px;
+  }
+  .tldr-verdict { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .verdict-badge {
+    font-family: "Manrope"; font-weight: 800; font-size: 0.95rem;
+    color: var(--accent-ink); background: var(--accent-soft);
+    border: 1px solid color-mix(in srgb, var(--accent) 35%, transparent);
+    padding: 7px 14px; border-radius: 10px;
+  }
+  .tldr ul { margin: 0; padding-left: 1.1em; display: grid; gap: 8px; }
+  .tldr li::marker { color: var(--accent); }
+
+  /* ---- traceability table ---- */
+  .table-wrap { overflow-x: auto; border: 1px solid var(--border); border-radius: 14px; box-shadow: var(--shadow); }
+  table { border-collapse: collapse; width: 100%; min-width: 560px; background: var(--surface); }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--border); font-size: 0.88rem; vertical-align: top; }
+  thead th {
+    background: var(--surface-2); font-family: "Manrope"; font-size: 0.72rem;
+    letter-spacing: 0.06em; text-transform: uppercase; color: var(--text-muted); font-weight: 700;
+  }
+  tbody tr:last-child td { border-bottom: none; }
+  td.field, th.field { font-family: "IBM Plex Mono"; font-size: 0.82rem; }
+
+  .badge {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 0.72rem; font-weight: 600; padding: 3px 9px; border-radius: 999px; white-space: nowrap;
+  }
+  .badge.ok { background: var(--accent-soft); color: var(--accent-ink); }
+  .badge.warn { background: var(--warn-soft); color: var(--warn); }
+  .badge.flag { background: var(--flag-soft); color: var(--flag); }
+  .badge .dot2 { width: 5px; height: 5px; border-radius: 50%; background: currentColor; }
+
+  /* ---- flow ---- */
+  .flow { display: grid; gap: 10px; counter-reset: step; }
+  .flow-step {
+    display: grid; grid-template-columns: 34px 1fr; gap: 14px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 14px 16px; box-shadow: var(--shadow);
+  }
+  .flow-num {
+    counter-increment: step;
+    width: 34px; height: 34px; border-radius: 9px;
+    background: var(--surface-2); border: 1px solid var(--border);
+    display: grid; place-items: center; font-family: "Manrope"; font-weight: 800; color: var(--accent);
+  }
+  .flow-num::before { content: counter(step); }
+  .flow-title { font-family: "Manrope"; font-weight: 700; font-size: 0.94rem; margin-bottom: 2px; }
+  .flow-detail { color: var(--text-muted); font-size: 0.86rem; margin: 0; }
+  .flow-owner {
+    display: inline-block; margin-top: 6px; font-size: 0.7rem; font-weight: 600;
+    color: var(--accent-ink); background: var(--accent-soft); padding: 2px 8px; border-radius: 6px;
+  }
+
+  /* ---- components grid ---- */
+  .grid-cards { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px,1fr)); gap: 12px; }
+  .card {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 12px;
+    padding: 15px 16px; box-shadow: var(--shadow);
+  }
+  .card h4 { margin: 0 0 6px; font-family: "Manrope"; font-size: 0.9rem; font-weight: 700; }
+  .card p { font-size: 0.84rem; color: var(--text-muted); margin: 0; max-width: none; }
+
+  /* ---- API blocks ---- */
+  .api-block {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 20px 22px; box-shadow: var(--shadow); margin-bottom: 18px;
+  }
+  .api-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+  .method {
+    font-family: "IBM Plex Mono"; font-weight: 600; font-size: 0.76rem;
+    padding: 3px 9px; border-radius: 6px; letter-spacing: 0.02em;
+  }
+  .method.post { background: var(--accent-soft); color: var(--accent-ink); }
+  .route { font-family: "IBM Plex Mono"; font-size: 0.92rem; }
+  .api-scope { margin-left: auto; }
+  .api-desc { font-size: 0.88rem; color: var(--text-muted); margin-bottom: 14px; }
+  .code-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  @media (max-width: 620px) { .code-cols { grid-template-columns: 1fr; } }
+  .code-col-label {
+    font-size: 0.68rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-muted); margin-bottom: 6px;
+  }
+  pre {
+    background: var(--mono-surface); color: var(--mono-text);
+    border-radius: 10px; padding: 14px 16px; overflow-x: auto;
+    font-size: 0.8rem; line-height: 1.55; margin: 0;
+  }
+  pre .k { color: #7fb8ff; }
+  pre .s { color: #ffce8a; }
+  pre .c { color: #6f8f7e; }
+  :root:not([data-theme="dark"]) pre .c { color: #6a8577; }
+  pre .seg-id { color: #9fd6b8; }
+  pre .seg-money { color: #ffce8a; }
+  pre .seg-sig { color: #ff9e93; }
+
+  /* ---- parse walk-through: raw substring → meaning, in string order ---- */
+  .parse-map { display: grid; gap: 8px; margin-top: 4px; }
+  .parse-row {
+    display: grid; grid-template-columns: minmax(150px, 260px) 1fr; gap: 14px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; box-shadow: var(--shadow); align-items: start; font-size: 0.86rem;
+  }
+  @media (max-width: 640px) { .parse-row { grid-template-columns: 1fr; } }
+  .parse-row code {
+    font-family: "IBM Plex Mono"; font-size: 0.76rem; word-break: break-all;
+    background: var(--surface-2); border: 1px solid var(--border); border-radius: 6px; padding: 3px 6px;
+  }
+  .parse-row.grp-id code { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 40%, var(--border)); color: var(--accent-ink); }
+  .parse-row.grp-money code { background: var(--warn-soft); border-color: color-mix(in srgb, var(--warn) 40%, var(--border)); color: var(--warn); }
+  .parse-row.grp-sig code { background: var(--flag-soft); border-color: color-mix(in srgb, var(--flag) 40%, var(--border)); color: var(--flag); }
+  .parse-sub { display: grid; grid-template-columns: minmax(120px,200px) 1fr; gap: 10px; margin-top: 6px; align-items: start; font-size: 0.82rem; }
+  @media (max-width: 640px) { .parse-sub { grid-template-columns: 1fr; } }
+  .parse-sub code { font-family: "IBM Plex Mono"; font-size: 0.74rem; word-break: break-all; }
+
+  .note {
+    border-left: 3px solid var(--warn); background: var(--warn-soft);
+    border-radius: 0 10px 10px 0; padding: 12px 16px; font-size: 0.86rem; margin-top: 14px;
+  }
+  .note.flag { border-left-color: var(--flag); background: var(--flag-soft); }
+  .note strong { font-family: "Manrope"; }
+
+  /* ---- verbatim requirement ---- */
+  .spec-quote {
+    background: var(--surface); border: 1px solid var(--border); border-left: 4px solid var(--accent);
+    border-radius: 4px 14px 14px 4px; padding: 20px 24px; box-shadow: var(--shadow);
+  }
+  .spec-quote .spec-label {
+    font-family: "Manrope"; font-weight: 700; font-size: 0.78rem; letter-spacing: 0.04em;
+    color: var(--accent-ink); margin-bottom: 10px; display: flex; align-items: center; gap: 8px;
+  }
+  .spec-quote h4 {
+    font-family: "Manrope"; font-size: 1rem; font-weight: 800; margin: 0 0 12px; color: var(--text);
+  }
+  .spec-quote p { font-size: 0.9rem; color: var(--text); max-width: none; }
+  .spec-quote p:last-child { margin-bottom: 0; }
+  .spec-quote strong { color: var(--accent-ink); }
+
+  /* ---- mandatory/optional field tables ---- */
+  .field-notes-label {
+    font-size: 0.74rem; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--text-muted); margin: 16px 0 8px;
+  }
+  .req { color: var(--flag); font-weight: 700; }
+  .opt { color: var(--text-muted); font-weight: 700; }
+  td.center, th.center { text-align: center; }
+
+  /* ---- interaction trace: module swimlane, one step per row ---- */
+  .module-flow { display: grid; gap: 8px; margin-top: 14px; counter-reset: mstep; }
+  .module-step {
+    display: grid; grid-template-columns: 28px 1fr; gap: 13px;
+    background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--border);
+    border-radius: 4px 10px 10px 4px; padding: 11px 15px; box-shadow: var(--shadow);
+  }
+  .module-step.m-qr { border-left-color: var(--accent); }
+  .module-step.m-key { border-left-color: var(--flag); }
+  .module-step.m-audit { border-left-color: var(--warn); }
+  .module-step.m-tenancy { border-left-color: color-mix(in srgb, var(--text-muted) 70%, var(--border)); }
+  .module-step.catch-row { border-left-color: var(--flag); background: var(--flag-soft); }
+  .step-no {
+    counter-increment: mstep; width: 28px; height: 28px; border-radius: 50%;
+    background: var(--surface-2); border: 1px solid var(--border);
+    display: grid; place-items: center; font-family: "Manrope"; font-weight: 800; font-size: 0.76rem; color: var(--text-muted);
+  }
+  .step-no::before { content: counter(mstep); }
+  .catch-row .step-no { background: var(--flag-soft); border-color: color-mix(in srgb, var(--flag) 40%, var(--border)); color: var(--flag); }
+  .catch-row .step-no::before { content: "!"; }
+  .step-path { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; margin-bottom: 5px; }
+  .mod-chip {
+    font-family: "Manrope"; font-weight: 700; font-size: 0.66rem; letter-spacing: 0.03em; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 999px;
+  }
+  .mod-chip.m-qr { background: var(--accent-soft); color: var(--accent-ink); }
+  .mod-chip.m-key { background: var(--flag-soft); color: var(--flag); }
+  .mod-chip.m-audit { background: var(--warn-soft); color: var(--warn); }
+  .mod-chip.m-tenancy, .mod-chip.m-caller { background: var(--surface-2); color: var(--text-muted); }
+  .step-path .dir { color: var(--text-muted); font-size: 0.72rem; }
+  .step-call { font-family: "IBM Plex Mono"; font-size: 0.85rem; margin-bottom: 3px; }
+  .step-detail { font-size: 0.84rem; color: var(--text-muted); margin: 0; }
+  .step-detail .err { color: var(--flag); font-weight: 700; font-family: "IBM Plex Mono"; }
+  .flow-legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.78rem; color: var(--text-muted); margin: 10px 0 2px; }
+  .flow-legend span { display: inline-flex; align-items: center; gap: 6px; }
+
+  /* ---- TLV anatomy (chips + table, side by side) ---- */
+  .tlv-legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 0.78rem; color: var(--text-muted); margin-bottom: 12px; }
+  .tlv-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .grp-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--text-muted); flex: none; }
+  .grp-dot.grp-id { background: var(--accent); }
+  .grp-dot.grp-money { background: var(--warn); }
+  .grp-dot.grp-sig { background: var(--flag); }
+  .tlv-chips { display: flex; flex-wrap: wrap; align-content: flex-start; gap: 6px; }
+  .tlv-chip {
+    font-family: "IBM Plex Mono"; font-size: 0.72rem; line-height: 1.3;
+    padding: 5px 9px; border-radius: 7px; border: 1px solid var(--border); background: var(--surface-2);
+  }
+  .tlv-chip b {
+    display: block; font-family: "Manrope"; font-size: 0.6rem; letter-spacing: 0.04em; text-transform: uppercase;
+    opacity: 0.6; margin-bottom: 1px; font-weight: 700;
+  }
+  .tlv-chip.grp-id { border-color: color-mix(in srgb, var(--accent) 45%, var(--border)); background: var(--accent-soft); color: var(--accent-ink); }
+  .tlv-chip.grp-money { border-color: color-mix(in srgb, var(--warn) 45%, var(--border)); background: var(--warn-soft); color: var(--warn); }
+  .tlv-chip.grp-sig { border-color: color-mix(in srgb, var(--flag) 45%, var(--border)); background: var(--flag-soft); color: var(--flag); }
+  .tlv-table-col table { min-width: 0; }
+  .payload-string { word-break: break-all; white-space: pre-wrap; }
+  .render-steps { display: grid; gap: 10px; counter-reset: rstep; margin-top: 14px; }
+  .render-steps li {
+    list-style: none; display: grid; grid-template-columns: 26px 1fr; gap: 12px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 10px 14px; box-shadow: var(--shadow); font-size: 0.86rem;
+  }
+  .render-steps li::before {
+    counter-increment: rstep; content: counter(rstep);
+    width: 26px; height: 26px; border-radius: 50%; background: var(--accent-soft); color: var(--accent-ink);
+    display: grid; place-items: center; font-family: "Manrope"; font-weight: 800; font-size: 0.78rem;
+  }
+
+  /* ---- naming rationale ---- */
+  .rationale { display: grid; gap: 10px; }
+  .rationale-row {
+    display: grid; grid-template-columns: 140px 1fr; gap: 14px;
+    background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+    padding: 12px 16px; box-shadow: var(--shadow); align-items: start;
+  }
+  @media (max-width: 560px) { .rationale-row { grid-template-columns: 1fr; } }
+  .rationale-field { font-family: "IBM Plex Mono"; font-size: 0.84rem; font-weight: 500; color: var(--accent-ink); }
+  .rationale-tag { font-size: 0.72rem; color: var(--text-muted); }
+  .rationale-why { font-size: 0.86rem; }
+  .rationale-why cite { font-style: normal; color: var(--text-muted); font-size: 0.78rem; }
+
+  /* ---- approval footer ---- */
+  .approval {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 16px;
+    padding: 24px; box-shadow: var(--shadow);
+  }
+  .approval-grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(200px,1fr)); gap: 18px; margin-top: 16px; }
+  .approval-line { border-bottom: 1px solid var(--border); padding-bottom: 6px; min-height: 34px; }
+  .approval-label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 6px; }
+
+  footer.page-foot { text-align: center; color: var(--text-muted); font-size: 0.76rem; padding-top: 34px; }
+</style>
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brandmark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="3" width="7" height="7" rx="1.5" fill="white"/><rect x="14" y="3" width="7" height="7" rx="1.5" fill="white" opacity="0.55"/><rect x="3" y="14" width="7" height="7" rx="1.5" fill="white" opacity="0.55"/><path d="M14 14h3v3h3v3h-6z" fill="white"/></svg>
+    </div>
+    <div class="topbar-title">BQR Sign-off</div>
+    <nav class="topbar-nav">
+      <a href="#tldr">TL;DR</a>
+      <a href="#spec">Spec text</a>
+      <a href="#requirement">Requirement</a>
+      <a href="#flow">How it works</a>
+      <a href="#api">API</a>
+      <a href="#payload">Payload anatomy</a>
+      <a href="#verdicts">Verdicts</a>
+      <a href="#gaps">Open items</a>
+      <a href="#approval">Approval</a>
+    </nav>
+    <button class="theme-toggle" id="themeToggle" aria-label="Toggle dark mode" type="button">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="currentColor"><path d="M20.7 15.3a8 8 0 11-9-13.5 9 9 0 009 13.5z"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="wrap">
+
+  <div class="doc-head">
+    <span class="eyebrow">Approval package · Verification module</span>
+    <h1>BanglaQR P2P — Payload Verification</h1>
+    <p class="subtitle">A build-vs-requirement walkthrough for the Ed25519 QR verification flow, prepared for Head of Engineering sign-off — companion to the QR Generation sign-off.</p>
+    <div class="meta-row">
+      <span><span class="dot"></span>Module: Verification + InstitutionTrust + KeyCustody</span>
+      <span><span class="dot"></span>Source of truth: BB BanglaQR P2P spec, §2.5 / §3</span>
+      <span><span class="dot"></span>Prepared 11 Sep 2026</span>
+    </div>
+  </div>
+
+  <section id="tldr">
+    <p class="section-kicker">Executive summary</p>
+    <h2>TL;DR</h2>
+    <div class="tldr">
+      <div class="tldr-verdict">
+        <span class="verdict-badge">✓ Core path matches spec — one external dependency open</span>
+      </div>
+      <ul>
+        <li>One endpoint, <code class="field">POST /v1/qr/validate</code>, behind a dedicated <code class="field">qr:validate</code> OAuth2 scope. A rejected QR is still a <strong>200 response</strong> — the verdict is the answer, not an error.</li>
+        <li>Pipeline, in order and fail-closed: replay window (± 5 min) → bounded TLV parse → CRC check → derive Institution ID → classify (P2P vs NON_P2P) → resolve the issuer's key from the <strong>single BB trust store</strong> (Annex B) → Ed25519 verify against the active key → historical-key retry against the latest RETIRED key. Every rejection carries a stable reason code and an audit line.</li>
+        <li>The key is never taken from the payload — only from the trust store (C16). Tenant-owned and external issuers both resolve through the same <code class="field">GetInstitutionPublicKeyQuery</code>; there is no own-custody branch.</li>
+        <li>Temporal validity (C16) is enforced in the trust-store query itself: <code class="field">ValidFrom ≤ now</code>, <code class="field">(ValidTo IS NULL OR ValidTo &gt; now)</code>, <code class="field">RevokedAt IS NULL</code>. An expired or revoked key with ACTIVE status is no longer returned.</li>
+        <li><strong>Open item:</strong> the BB Trust Store is a <strong>mock</strong> today, seeded locally. No real BB contract exists yet, so a brand-new BB key is invisible until the data is published into the directory.</li>
+      </ul>
+    </div>
+  </section>
+
+  <section id="spec">
+    <p class="section-kicker">As written, unedited</p>
+    <h2>Feature requirement — verbatim</h2>
+    <div class="spec-quote">
+      <div class="spec-label">📄 Bangla QR Payload Verification</div>
+      <p>The Sender Financial Institution's mobile application will integrate the provided SDK and use the assigned credentials to securely call the platform's QR verification endpoint with the QR payload.</p>
+      <p>Upon receiving the request, the platform will parse the QR payload in accordance with the Bangla QR specification and the applicable EMVCo TLV format. The service will validate the CRC to detect any corruption or alteration of the QR payload and derive the Recipient Financial Institution's Institution ID from the relevant TLV fields.</p>
+      <p>Using the derived Institution ID, the service will retrieve the corresponding public key from the platform's local trust store. If the public key is not available locally, the service will retrieve it from the Bangladesh Bank (BB) Trust Store. The public key will then be used to verify the QR payload's digital signature using the <strong>Ed25519 signature verification algorithm</strong>.</p>
+      <p>Based on the CRC and signature verification results, the service will return the verification response to the Sender Financial Institution. If the signature is invalid, or the required public key is unavailable or revoked, the QR payload will be considered invalid. Any subsequent transaction initiation or processing by the Sender Financial Institution is outside the scope of this platform.</p>
+    </div>
+  </section>
+
+  <section id="requirement">
+    <p class="section-kicker">Traceability</p>
+    <h2>Requirement → implementation</h2>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th style="width:36%">Requirement says</th><th style="width:44%">What's implemented</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>Sender FI mobile app calls via SDK with credentials</td>
+            <td>OAuth2 client-credentials + <span class="field">qr:validate</span> scope. Caller is the FI backend, not the on-device app — same deferral as issuance.</td>
+            <td><span class="badge warn"><span class="dot2"></span>Partial</span></td>
+          </tr>
+          <tr>
+            <td>Parse payload per Bangla QR / EMVCo TLV; validate CRC</td>
+            <td>Bounded TLV parse (≤ 2048 bytes), mandatory-tag and Tag 26 sub-shape checks; CRC-16/CCITT-FALSE over the full string before any field is trusted.</td>
+            <td><span class="badge ok"><span class="dot2"></span>Done</span></td>
+          </tr>
+          <tr>
+            <td>Derive Institution ID from TLV fields</td>
+            <td>Tag 26 sub 01 ‖ sub 02 (e.g. <code class="field">"03"+"1008" → "031008"</code>) — taken from the payload, never the caller.</td>
+            <td><span class="badge ok"><span class="dot2"></span>Done</span></td>
+          </tr>
+          <tr>
+            <td>Public key from local store, fallback to BB Trust Store</td>
+            <td>Single BB trust store (Annex B). <code class="field">GetInstitutionPublicKeyQuery</code> resolves every issuer — tenant-owned or external. The query enforces C16 temporal validity on the way out (<code class="field">ValidFrom ≤ now</code>, not expired, not revoked). <strong>The BB store itself is a seeded mock; no live BB call at verify time, by design (a BB outage can't stall verification).</strong></td>
+            <td><span class="badge ok"><span class="dot2"></span>Done</span></td>
+          </tr>
+          <tr>
+            <td>Verify signature with Ed25519</td>
+            <td>BouncyCastle Ed25519 behind a <code class="field">ISignatureVerifier</code> boundary; signed bytes rebuilt by the same shared function used at issuance, so the two sides can never drift. On active-key mismatch, a historical-key retry against the latest RETIRED key (Phase 4) restores verification for QRs signed before rotation; REVOKED keys are never retried.</td>
+            <td><span class="badge ok"><span class="dot2"></span>Done</span></td>
+          </tr>
+          <tr>
+            <td>Invalid signature, or key unavailable/revoked → invalid</td>
+            <td>Dedicated verdicts: <code class="field">INVALID_SIGNATURE</code>, <code class="field">KEY_NOT_FOUND / SUSPENDED / REVOKED / NOT_ACTIVE</code>. C16 temporal validity is enforced in the query itself, so an expired or revoked key with ACTIVE status can no longer reach the verifier.</td>
+            <td><span class="badge ok"><span class="dot2"></span>Done</span></td>
+          </tr>
+          <tr>
+            <td>Return response; transaction steps out of scope</td>
+            <td>200 with verdict, trust source, reason code, payload hash and safe recipient fields. No transaction state — the platform's job ends at the verdict.</td>
+            <td><span class="badge ok"><span class="dot2"></span>Done</span></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="flow">
+    <p class="section-kicker">Mental model</p>
+    <h2>How it works</h2>
+    <p>One request, seven gates. Each gate can end the request, each ending writes an audit line, and nothing is ever "assumed valid" — what isn't proven valid is rejected.</p>
+    <div class="flow">
+      <div class="flow-step">
+        <div class="flow-num"></div>
+        <div>
+          <div class="flow-title">Authenticated request</div>
+          <p class="flow-detail">Sender FI's backend submits the scanned payload with a <code class="field">requestId</code> + timestamp, authenticated by a <code class="field">qr:validate</code>-scoped token.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num"></div>
+        <div>
+          <div class="flow-title">Replay window — ± 5 minutes</div>
+          <p class="flow-detail">Timestamp too old or too far in the future → <code class="field">REQUEST_STALE</code>. A reused request id is caught by a database unique constraint → <code class="field">REQUEST_REPLAYED</code>.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num"></div>
+        <div>
+          <div class="flow-title">Parse &amp; CRC</div>
+          <p class="flow-detail">Bounded TLV parse; CRC recomputed over the whole string <em>before</em> any field is trusted. Any corruption anywhere → <code class="field">STRUCTURAL_INVALID / CRC_MISMATCH</code>.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num"></div>
+        <div>
+          <div class="flow-title">Derive Institution ID, resolve key from the single BB trust store</div>
+          <p class="flow-detail">Institution ID comes from the payload's Tag 26 sub 01 ‖ sub 02. The same <code class="field">GetInstitutionPublicKeyQuery</code> resolves every issuer — tenant-owned or external. The query enforces C16 temporal validity on the way out (<code class="field">ValidFrom ≤ now</code>, not expired, not revoked). A key carried inside the payload is never used.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num"></div>
+        <div>
+          <div class="flow-title">Ed25519 verification (active key)</div>
+          <p class="flow-detail">Signature (Tags 80+81, exactly 64 decoded bytes) checked against the same canonical bytes that were signed at issuance. Failure never bypasses — the next step is the only fall-through.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num"></div>
+        <div>
+          <div class="flow-title">Historical-key retry (Phase 4)</div>
+          <p class="flow-detail">If the active key doesn't verify, the latest RETIRED key is tried — a structurally valid QR issued before a recent rotation would otherwise fail forever. REVOKED keys are never retried (fail-closed on compromise). A hit is recorded as VALID with <code class="field">VERIFIED_HISTORICAL_KEY</code>.</p>
+        </div>
+      </div>
+      <div class="flow-step">
+        <div class="flow-num"></div>
+        <div>
+          <div class="flow-title">Verdict returned &amp; audited</div>
+          <p class="flow-detail">Verdict, trust source and payload hash go back with one audit line — success and failure both log, under a shared correlation id. The verifying tenant (from the bearer token, not the body) owns the audit row (C5).</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="field-notes-label">The complete call chain, top to bottom</div>
+    <pre style="white-space:pre;"><span class="c">// The Complete Call Chain (Top to Bottom)</span>
+QrValidationController.ValidateAsync()
+  <span class="k">&#9492;&#9472;</span> ValidateQrRequest (DTO; requestId/timestamp server-generated when omitted)
+  <span class="k">&#9492;&#9472;</span> mediator.Send(new ValidateQrCommand(...))
+     <span class="k">&#9492;&#9472;</span> ValidateQrCommandHandler.Handle()
+        <span class="k">&#9500;&#9472;</span> ICurrentTenant.TenantId                       <span class="c">[Tenancy &#8212; verifying tenant from token, C5]</span>
+        <span class="k">&#9500;&#9472;</span> replay-window gate (&#177;5 min, C6)            <span class="c">[defense-in-depth behind FluentValidation]</span>
+        <span class="k">&#9500;&#9472;</span> QrPayloadParser.Parse()                      <span class="c">[SharedKernel Qr Codec]</span>
+        <span class="k">&#9474;</span>   <span class="k">&#9500;&#9472;</span> TlvTokenizer.Tokenize()
+        <span class="k">&#9474;</span>   <span class="k">&#9500;&#9472;</span> Crc16CcittFalse.Compute()
+        <span class="k">&#9474;</span>   <span class="k">&#9492;&#9472;</span> ResolvedInstitutionId = Tag 26 sub01 &#8226;&#8226; sub02
+        <span class="k">&#9500;&#9472;</span> classify P2P / NON_P2P (Tag 52)
+        <span class="k">&#9500;&#9472;</span> signature tags 80+81 <span class="k">&#8594;</span> 88-char base64 <span class="k">&#8594;</span> 64 bytes
+        <span class="k">&#9500;&#9472;</span> mediator.Send(new GetInstitutionPublicKeyQuery()) <span class="c">[InstitutionTrust &#8212; single BB trust store, Annex B]</span>
+        <span class="k">&#9474;</span>   <span class="k">&#9492;&#9472;</span> enforces C16 temporal gate (ValidFrom/ValidTo/RevokedAt)
+        <span class="k">&#9500;&#9472;</span> Ed25519SignatureVerifier.VerifyAsync(activeKey)  <span class="c">[SharedKernel Cryptography]</span>
+        <span class="k">&#9474;</span>   <span class="k">&#9500;&#9472;</span> payload = SignaturePayload.Reconstruct()        <span class="c">&#8592; same function QrGeneration signs with</span>
+        <span class="k">&#9474;</span>   <span class="k">&#9500;&#9472;</span> signature = Convert.FromBase64String()          <span class="c">&#8592; signatureBytes</span>
+        <span class="k">&#9474;</span>   <span class="k">&#9492;&#9472;</span> publicKey = PEM <span class="k">&#8594;</span> Ed25519PublicKeyParameters <span class="c">&#8592; publicKeyPem</span>
+        <span class="k">&#9500;&#9472;</span> (if mismatch) GetInstitutionPublicKeyQuery(IncludeHistorical: true)
+        <span class="k">&#9474;</span>            <span class="k">&#8594;</span> retry against latest RETIRED key (Phase 4; REVOKED never retried)
+        <span class="k">&#9500;&#9472;</span> RecordAsync() <span class="k">&#8594;</span> VerificationDbContext.Validations.Add()
+        <span class="k">&#9492;&#9472;</span> IAuditLogger.LogAsync() <span class="k">&#8594;</span> AuditEntry</pre>
+    <p style="font-size:0.8rem; color:var(--text-muted); margin-top:8px;">The handler is the whole story: everything from verifying-tenant resolution to the audit line happens inside <code class="field">ValidateQrCommandHandler.Handle</code>. Key material crosses only one boundary, as a <em>public</em> PEM; the Ed25519 verify itself never sees a private key (C17). The trust-store resolver is the single authority &#8212; there is no own-custody branch and no live BB call.</p>
+  </section>
+
+  <section id="api">
+    <p class="section-kicker">Contract</p>
+    <h2>The API</h2>
+    <div class="api-block">
+      <div class="api-head">
+        <span class="method post">POST</span>
+        <span class="route">/v1/qr/validate</span>
+        <span class="api-scope"><span class="badge ok"><span class="dot2"></span>scope: qr:validate</span></span>
+      </div>
+      <p class="api-desc">Caller first gets a client-credentials token (same token endpoint as issuance). <strong>The verdict is the answer:</strong> an invalid QR is a successful API call with an invalid verdict — that's why rejections here are 200, not 4xx.</p>
+      <div class="code-cols">
+        <div>
+          <div class="code-col-label">Request <span style="opacity:.6">· Authorization: Bearer …</span></div>
+          <pre>{
+  <span class="k">"qrPayload"</span>: <span class="s">"0002010102122650..."</span>,
+  <span class="k">"requestId"</span>: <span class="s">"b7f3c2a1d4e94608"</span>,
+  <span class="k">"requestTimestamp"</span>: <span class="s">"2026-09-11T08:41:02Z"</span>
+}</pre>
+        </div>
+        <div>
+          <div class="code-col-label">Response · 200 — valid</div>
+          <pre>{
+  <span class="k">"verdict"</span>: <span class="s">"VALID"</span>,
+  <span class="k">"trustSource"</span>: <span class="s">"TRUST_DIRECTORY"</span>,
+  <span class="k">"reasonCode"</span>: <span class="k">null</span>,
+  <span class="k">"institutionCode"</span>: <span class="s">"031008"</span>,
+  <span class="k">"payloadHash"</span>: <span class="s">"9f2c7e...ab13"</span>,
+  <span class="k">"recipientName"</span>: <span class="s">"Farhan Ahmed"</span>,
+  <span class="k">"recipientPan"</span>: <span class="s">"017902200011234"</span>,
+  <span class="k">"qrClassification"</span>: <span class="s">"DYNAMIC"</span>
+}</pre>
+        </div>
+      </div>
+      <div class="field-notes-label" style="margin-top:12px;">Response · 200 — invalid (corrupted payload)</div>
+      <pre>{
+  <span class="k">"verdict"</span>: <span class="s">"STRUCTURAL_INVALID"</span>,
+  <span class="k">"trustSource"</span>: <span class="k">null</span>,
+  <span class="k">"reasonCode"</span>: <span class="s">"CRC_MISMATCH"</span>,
+  <span class="k">"institutionCode"</span>: <span class="k">null</span>,
+  <span class="k">"payloadHash"</span>: <span class="s">"4d11aa...77c0"</span>,
+  <span class="k">"recipientName"</span>: <span class="k">null</span>,
+  <span class="k">"recipientPan"</span>: <span class="k">null</span>,
+  <span class="k">"qrClassification"</span>: <span class="s">"UNKNOWN"</span>
+}</pre>
+      <div class="note">
+        <strong>Field notes:</strong> <code class="field">qrPayload</code> is the raw scanned string, capped at 2048 bytes (validation + codec each enforce it). <code class="field">requestId</code> / <code class="field">requestTimestamp</code> drive C6 replay protection — both are <strong>optional on the wire</strong>: when a client omits them, the controller mints a fresh <code class="field">requestId</code> (<code class="field">Guid.NewGuid().ToString("N")</code>) and stamps <code class="field">DateTimeOffset.UtcNow</code>. Clients that omit them lose the C6 replay-detection guarantee for their own traffic (every request looks like a brand-new one); when the on-the-wire C6 contract returns, callers should send both. Recipient fields appear only on VALID verdicts.
+      </div>
+    </div>
+  </section>
+
+  <section id="payload">
+    <p class="section-kicker">What the endpoint receives, and how it reads it</p>
+    <h2>TLV payload — parse mapping</h2>
+    <p>This is the exact <code class="field">qrPayload</code> string from the request above, as the parser sees it. EMVCo TLV has no delimiters: each tag is <strong>2-digit id + 2-digit length + that many characters of value</strong> — the length is what tells the parser where one tag ends and the next begins.</p>
+
+    <div class="field-notes-label">Input — one flat ASCII string, no line breaks</div>
+    <pre class="payload-string">000201010212<span class="seg-id">26500013bd.org.bb.npsb010203020410080315017902200011234</span><span class="seg-money">52044829530305054071250.00</span>5802BD5912Farhan Ahmed6005Dhaka6104121262210609Farhan A.0804Gift<span class="seg-sig">8002018188iHvhoWYG0NFUjjEsDTjJjmz3eMcaqvLfKFQxBvpqS0nHQCbIpR4LgycNZaeg4zqZYqiXoWC21begvt0+Iccchw==</span>6304C4D9</pre>
+    <p style="font-size:0.82rem; color:var(--text-muted); margin-top:8px;">Illustrative values — shaped like a real payload, not a byte-exact spec vector. Color key: <span style="color:var(--accent); font-weight:600;">recipient identity</span> · <span style="color:var(--warn); font-weight:600;">money / P2P check</span> · <span style="color:var(--flag); font-weight:600;">signature</span>.</p>
+
+    <div class="field-notes-label">Parse mapping — each slice of that string, left to right</div>
+    <div class="parse-map">
+      <div class="parse-row"><code>000201</code><div><strong>Tag 00 · Payload Format Indicator</strong> — must be "01"; part of the mandatory-tag set (00, 26, 52, 53, 58, 59, 60, 63).</div></div>
+      <div class="parse-row"><code>010212</code><div><strong>Tag 01 · Point of Initiation</strong> — "12" dynamic, "11" static; also feeds <code class="field">qrClassification</code> in the response.</div></div>
+      <div class="parse-row grp-id">
+        <code>26500013bd.org.bb.npsb010203020410080315017902200011234</code>
+        <div>
+          <strong>Tag 26 · Merchant Account Info</strong> — a 50-char template, itself four sub-tags. This is where the Institution ID comes from:
+          <div class="parse-sub"><code>0013bd.org.bb.npsb</code><span>26·00 — Globally Unique Identifier; must equal <code class="field">bd.org.bb.npsb</code> or the payload is rejected (<code class="field">TAG26_GUID_MISMATCH</code>)</span></div>
+          <div class="parse-sub"><code>010203</code><span>26·01 — Institution type "03"; must be two digits 00–05 (<code class="field">TAG26_INVALID_TYPE</code>)</span></div>
+          <div class="parse-sub"><code>02041008</code><span>26·02 — Institution id "1008"; must be exactly 4 digits (<code class="field">TAG26_INVALID_ID</code>)</span></div>
+          <div class="parse-sub"><code>0315017902200011234</code><span>26·03 — Recipient PAN, length-capped (<code class="field">TAG26_SUBTAG_MISSING</code> / <code class="field">QR_LENGTH_OVERFLOW</code>)</span></div>
+          <div class="parse-sub" style="margin-top:4px;"><code style="color:var(--accent-ink); background:var(--accent-soft);">"03" + "1008" → institutionCode "031008"</code><span>the derived Institution ID — the key used for trust lookup, taken from the payload, never from the caller</span></div>
+        </div>
+      </div>
+      <div class="parse-row grp-money"><code>52044829</code><div><strong>Tag 52 · Merchant Category Code</strong> — must be "4829" for BanglaQR P2P; anything else → <code class="field">NON_P2P</code> verdict (clean "not ours", not an error).</div></div>
+      <div class="parse-row grp-money"><code>5303050</code><div><strong>Tag 53 · Transaction Currency</strong> — "050" = BDT.</div></div>
+      <div class="parse-row grp-money"><code>54071250.00</code><div><strong>Tag 54 · Transaction Amount</strong> — dynamic only; carried as a string end to end, never parsed to a number (A8).</div></div>
+      <div class="parse-row"><code>5802BD</code><div><strong>Tag 58 · Country Code</strong> — "BD".</div></div>
+      <div class="parse-row"><code>5912Farhan Ahmed</code><div><strong>Tag 59 · Recipient Name</strong> — length-capped; also one half of the signed bytes (see Tag 81 below).</div></div>
+      <div class="parse-row"><code>6005Dhaka</code><div><strong>Tag 60 · Recipient City</strong> — mandatory, length-capped.</div></div>
+      <div class="parse-row"><code>61041212</code><div><strong>Tag 61 · Postal Code</strong> — optional at issuance, tolerated here.</div></div>
+      <div class="parse-row">
+        <code>62210609Farhan A.0804Gift</code>
+        <div>
+          <strong>Tag 62 · Additional Data</strong> — template (len 21), two sub-tags:
+          <div class="parse-sub"><code>0609Farhan A.</code><span>62·06 — Customer Label</span></div>
+          <div class="parse-sub"><code>0804Gift</code><span>62·08 — Purpose of Transaction</span></div>
+        </div>
+      </div>
+      <div class="parse-row grp-sig"><code>800201</code><div><strong>Tag 80 · Signature scheme</strong> — "01" = Ed25519. Absent tags 80/81 → <code class="field">SIGNATURE_TAGS_MISSING</code>.</div></div>
+      <div class="parse-row grp-sig"><code>8188iHvhoWYG...ccchw==</code><div><strong>Tag 81 · Signature</strong> — 88 base64 chars decoding to exactly 64 bytes, or <code class="field">SIGNATURE_MALFORMED</code>. Verified against the canonical signed bytes: <strong>Tag 59 value ‖ Tag 26 sub 03</strong> (e.g. <code class="field">"Farhan Ahmed017902200011234"</code>), rebuilt by the same shared function used at issuance.</div></div>
+      <div class="parse-row"><code>6304C4D9</code><div><strong>Tag 63 · CRC</strong> — CRC-16/CCITT-FALSE over everything up to and including the literal "6304". Checked <strong>first</strong>, before any field above is trusted — one flipped character anywhere → <code class="field">CRC_MISMATCH</code>.</div></div>
+    </div>
+
+    <div class="note">
+      <strong>Order of parsing in code:</strong> size bound (≤ 2048 bytes) → CRC → mandatory tags &amp; structure → Tag 26 sub-shape (Institution ID) → Tag 52 P2P check → signature shape → key resolution → Ed25519 verify. Every slice above has its own frozen reason code if it fails (A11).
+    </div>
+  </section>
+
+  <section id="verdicts">
+    <p class="section-kicker">Fail-closed by design</p>
+    <h2>What each verdict looks like</h2>
+    <p>Every row below is an HTTP 200 with an audit line. True HTTP errors are reserved for a bad request (400) or a caller that isn't allowed to ask (401/403).</p>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Situation</th><th class="field">verdict</th><th class="field">reasonCode</th></tr></thead>
+        <tbody>
+          <tr><td>Everything checks out</td><td class="field">VALID</td><td class="field">—</td></tr>
+          <tr><td>Valid against a previous (RETIRED) key — signed before the latest rotation</td><td class="field">VALID</td><td class="field">VERIFIED_HISTORICAL_KEY</td></tr>
+          <tr><td>Signature wrong, missing (Tags 80/81 absent), or malformed</td><td class="field">INVALID_SIGNATURE</td><td class="field">SIGNATURE_MISMATCH · SIGNATURE_TAGS_MISSING · SIGNATURE_MALFORMED</td></tr>
+          <tr><td>CRC mismatch — any corruption or alteration</td><td class="field">STRUCTURAL_INVALID</td><td class="field">CRC_MISMATCH</td></tr>
+          <tr><td>Bad TLV framing, duplicate/missing tags, length overflows</td><td class="field">STRUCTURAL_INVALID</td><td class="field">MALFORMED_TLV · DUPLICATE_TAG · MANDATORY_TAG_MISSING · …</td></tr>
+          <tr><td>Issuer unknown to the trust store (no key row, or all keys expired/revoked)</td><td class="field">KEY_NOT_FOUND</td><td class="field">TRUST_DIRECTORY_MISS</td></tr>
+          <tr><td>Key suspended / revoked / inactive</td><td class="field">KEY_SUSPENDED / KEY_REVOKED / KEY_NOT_ACTIVE</td><td class="field">same-named</td></tr>
+          <tr><td>Not a BanglaQR P2P code (MCC ≠ 4829)</td><td class="field">NON_P2P</td><td class="field">—</td></tr>
+          <tr><td>Timestamp outside ± 5-minute window</td><td class="field">REQUEST_STALE</td><td class="field">TIMESTAMP_STALE</td></tr>
+          <tr><td>Same <span class="field">(tenant, requestId)</span> seen before</td><td class="field">REQUEST_REPLAYED</td><td class="field">REPLAY_DETECTED</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section id="gaps">
+    <p class="section-kicker">For the record</p>
+    <h2>Open items</h2>
+    <div class="note flag">
+      <strong>1 · BB Trust Store is a mock.</strong> Verification reads the seeded trust directory; no real BB contract is published yet. The local-read design is deliberate (a BB outage can't stall verification), but keep the real-BB integration on the GA dependency list.
+    </div>
+    <div class="note">
+      <strong>Closed since the last revision:</strong>
+      <strong>· Gate 1 (C16).</strong> Key expiry dates are now enforced inside <code class="field">GetInstitutionPublicKeyQueryHandler</code> — <code class="field">ValidFrom ≤ now</code>, <code class="field">(ValidTo IS NULL OR ValidTo &gt; now)</code>, <code class="field">RevokedAt IS NULL</code>. An expired or revoked key with ACTIVE status is no longer returned as an activator.
+      <strong>· Historical-key resolution (Phase 4).</strong> A signature that misses the active key is retried against the latest RETIRED key; a hit is recorded as <code class="field">VALID · VERIFIED_HISTORICAL_KEY</code>. REVOKED keys are never retried — fail-closed on compromise.
+    </div>
+    <div class="note">
+      <strong>Also tracked:</strong> no rate-limit policy on <code class="field">/qr/validate</code> yet (C7, due with the 22 Oct load-test milestone) · on-the-wire C6 contract (caller-supplied <code class="field">requestId</code> + <code class="field">requestTimestamp</code>) not yet enforced; today they're server-generated when omitted, so a client that doesn't send them loses the C6 replay-detection guarantee for its own traffic · mobile SDK plane deferred, same as issuance.
+    </div>
+  </section>
+
+  <section id="approval">
+    <p class="section-kicker">Decision</p>
+    <h2>Sign-off</h2>
+    <p>Recommendation: <strong>approve</strong> — the core verification path matches spec intent (single BB trust store per Annex B, C16 temporal gate, historical-key retry) and is round-trip tested. Condition on the one remaining gate: keep the mock-BB dependency visible in the launch checklist until the real-BB integration lands.</p>
+    <div class="approval">
+      <p style="margin:0; font-size:0.9rem; color:var(--text-muted);">Reviewed against <code class="field">docs/bb-banglaqr-p2p-specification.md</code> §2.5/§3, Annex B and <code class="field">docs/security-constraints.md</code> (A1, A5, A11, C5, C6, C16, C17, C18).</p>
+      <div class="approval-grid">
+        <div>
+          <div class="approval-line">&nbsp;</div>
+          <div class="approval-label">Head of Engineering — signature</div>
+        </div>
+        <div>
+          <div class="approval-line">&nbsp;</div>
+          <div class="approval-label">Date</div>
+        </div>
+        <div>
+          <div class="approval-line">☐ Approved &nbsp; ☐ Approved with follow-ups &nbsp; ☐ Changes requested</div>
+          <div class="approval-label">Decision</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <footer class="page-foot">BQR Secure Manager · QR Verification sign-off · generated for internal review</footer>
+</div>
+
+<script>
+  (function () {
+    var root = document.documentElement;
+    var btn = document.getElementById('themeToggle');
+    try {
+      var saved = localStorage.getItem('bqr-theme');
+      if (saved === 'dark' || saved === 'light') root.setAttribute('data-theme', saved);
+    } catch (e) {}
+    btn.addEventListener('click', function () {
+      var current = root.getAttribute('data-theme');
+      var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var effectiveDark = current ? current === 'dark' : prefersDark;
+      var next = effectiveDark ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('bqr-theme', next); } catch (e) {}
+    });
+  })();
+</script>
+</html>

@@ -1,0 +1,528 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>SBQR — Parties &amp; Interactions Diagram (reference: Dart SDK Integration Guide)</title>
+<style>
+  :root {
+    --bg: #ffffff;
+    --fg: #1a1a1a;
+    --muted: #5b6472;
+    --border: #e2e5ea;
+    --accent: #0b5fff;
+    --mtls: #0c8a4e;
+    --code-bg: #f4f6f8;
+    --table-head: #f0f2f5;
+    --band: rgba(12, 138, 78, 0.07);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0f1216;
+      --fg: #e6e8eb;
+      --muted: #9aa4b2;
+      --border: #2a2f37;
+      --accent: #6ea8ff;
+      --mtls: #52c98b;
+      --code-bg: #171b20;
+      --table-head: #1a1f26;
+      --band: rgba(82, 201, 139, 0.08);
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--fg);
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    line-height: 1.6;
+  }
+  main { max-width: 1160px; margin: 0 auto; padding: 36px 28px 80px; }
+  h1 { font-size: 24px; margin: 0 0 6px; letter-spacing: -0.01em; }
+  h2 { font-size: 18px; margin: 36px 0 10px; padding-top: 16px; border-top: 1px solid var(--border); }
+  p.sub { color: var(--muted); margin-top: 0; }
+  code {
+    background: var(--code-bg); padding: 0.12em 0.4em; border-radius: 4px;
+    font-family: "SF Mono", SFMono-Regular, Consolas, Menlo, monospace; font-size: 0.88em;
+  }
+  table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 8px 12px; border: 1px solid var(--border); vertical-align: top; }
+  th { background: var(--table-head); font-weight: 600; }
+  ul { padding-left: 22px; } li { margin: 6px 0; }
+  .diagram-wrap { margin: 18px 0 6px; overflow-x: auto; }
+  svg.diagram { width: 100%; min-width: 900px; height: auto; display: block; }
+  .caption { color: var(--muted); font-size: 12.5px; text-align: center; margin: 6px 0 18px; }
+
+  svg.diagram .actor-box { fill: var(--code-bg); stroke: var(--border); stroke-width: 1.4; rx: 9; }
+  svg.diagram .actor-name { fill: var(--fg); font-size: 12.5px; font-weight: 650; }
+  svg.diagram .actor-sub { fill: var(--muted); font-size: 10px; }
+  svg.diagram .lifeline { stroke: var(--border); stroke-width: 1.2; stroke-dasharray: 3 4; }
+  svg.diagram .group-box { fill: none; stroke: var(--border); stroke-width: 1.4; stroke-dasharray: 5 4; }
+  svg.diagram .group-label { fill: var(--muted); font-size: 10.5px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; }
+  svg.diagram .msg { stroke: var(--fg); stroke-width: 1.5; fill: none; }
+  svg.diagram .msg.dashed { stroke-dasharray: 5 3; }
+  svg.diagram .msg.muted { stroke: var(--muted); }
+  svg.diagram .msg.mtls { stroke: var(--mtls); }
+  svg.diagram .arrowhead { fill: var(--fg); }
+  svg.diagram .arrowhead.mtls { fill: var(--mtls); }
+  svg.diagram .arrowhead.muted { fill: var(--muted); }
+  svg.diagram text.title {
+    fill: var(--fg); font-size: 12px; font-weight: 600;
+    paint-order: stroke; stroke: var(--bg); stroke-width: 3.5px; stroke-linejoin: round;
+  }
+  svg.diagram text.sub {
+    fill: var(--muted); font-size: 10.5px;
+    paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round;
+  }
+  svg.diagram text.proto {
+    font-size: 10px; font-weight: 800; letter-spacing: 0.04em;
+    paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round;
+  }
+  svg.diagram text.proto.https { fill: var(--accent); }
+  svg.diagram text.proto.mtls { fill: var(--mtls); }
+  svg.diagram text.proto.trust { fill: var(--muted); }
+  svg.diagram .vpn-band { fill: var(--band); stroke: var(--mtls); stroke-width: 1; stroke-dasharray: 4 3; }
+  svg.diagram .vpn-label { fill: var(--mtls); font-size: 10.5px; font-weight: 800; letter-spacing: 0.08em; }
+  svg.diagram .cap { fill: var(--muted); font-size: 11px; }
+
+  svg.diagram .proc-box { fill: var(--code-bg); stroke: var(--accent); stroke-width: 1.6; }
+  svg.diagram .proc-title { fill: var(--fg); font-size: 13px; font-weight: 700; }
+  svg.diagram .comp { fill: var(--bg); stroke: var(--border); stroke-width: 1.3; }
+  svg.diagram .comp.hl { stroke: var(--accent); stroke-width: 1.6; }
+  svg.diagram .comp-t { fill: var(--fg); font-size: 11.5px; font-weight: 650; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round; }
+  svg.diagram .chip { fill: var(--table-head); stroke: var(--border); stroke-width: 1.2; }
+  svg.diagram .chip.cert { stroke: #a07d1c; }
+  svg.diagram .chip.trust { stroke: var(--mtls); }
+  svg.diagram .chip-t { fill: var(--fg); font-size: 11px; font-weight: 700; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round; }
+  svg.diagram .chip-s { fill: var(--muted); font-size: 9.5px; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round; }
+  svg.diagram .pill { fill: var(--band); stroke: var(--mtls); stroke-width: 1.2; }
+  svg.diagram .pill.ready { fill: var(--code-bg); stroke: var(--accent); }
+  svg.diagram .pill-t { fill: var(--mtls); font-size: 10.5px; font-weight: 700; paint-order: stroke; stroke: var(--bg); stroke-width: 3px; stroke-linejoin: round; }
+  svg.diagram .tunnel { fill: var(--band); stroke: var(--mtls); stroke-width: 1.4; stroke-dasharray: 6 3; }
+  svg.diagram .tunnel-t { fill: var(--mtls); font-size: 11px; font-weight: 800; letter-spacing: 0.06em; }
+
+  .legend { display: flex; flex-wrap: wrap; gap: 18px; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+  .legend .key { display: inline-flex; align-items: center; gap: 7px; }
+  .legend .swatch { width: 30px; height: 0; border-top: 2.5px solid var(--fg); display: inline-block; }
+  .legend .swatch.mtls { border-color: var(--mtls); }
+  .legend .swatch.dashed { border-top-style: dashed; border-color: var(--muted); }
+  .legend .swatch.muted { border-color: var(--muted); border-top-style: dotted; }
+
+  details { margin-top: 14px; }
+  summary { cursor: pointer; font-weight: 600; }
+  pre {
+    background: var(--code-bg); border: 1px solid var(--border); border-radius: 8px;
+    padding: 14px 16px; overflow-x: auto; font-size: 12.5px;
+  }
+  .footer-note { margin-top: 44px; padding-top: 18px; border-top: 1px solid var(--border); color: var(--muted); font-size: 12.5px; }
+</style>
+</head>
+<body>
+<main>
+<h1>SBQR — Parties &amp; Interactions (end-to-end)</h1>
+<p class="sub">প্রতিটা party, কে কার সাথে কথা বলে, কোন protocol-এ, কার credential দিয়ে — এক ডায়াগ্রামে।<br>
+Reference: <code>rvl-sbqr-app-emulator/docs/Dart-SDK-Integration-Guide.html</code> §2 (Architecture) — step নম্বর ①–⑥ ওই guide-এর list-এর সাথে মিলবে; ②b/③b/④a–c/⑤b এই ডায়াগ্রামের খোঁজা সূক্ষ্ম ধাপ।</p>
+
+<div class="diagram-wrap">
+<svg class="diagram" viewBox="0 0 1060 700" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Sequence diagram: App User, Mobile App with Dart SDK, FI IdP, FI Gateway BFF, sbqr.api platform, Bangladesh Bank Trust Store, and their labeled interactions">
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" class="arrowhead"/>
+    </marker>
+    <marker id="ahMtls" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" class="arrowhead mtls"/>
+    </marker>
+    <marker id="ahMuted" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" class="arrowhead muted"/>
+    </marker>
+  </defs>
+
+  <!-- ── group: FI Infrastructure ── -->
+  <rect class="group-box" x="352" y="62" width="316" height="80" rx="12"/>
+  <text class="group-label" x="510" y="80" text-anchor="middle">FI Infrastructure (Bank)</text>
+
+  <!-- ── actor headers ── -->
+  <rect class="actor-box" x="8"   y="90" width="104" height="44" rx="9"/>
+  <text class="actor-name" x="60"  y="109" text-anchor="middle">App User</text>
+  <text class="actor-sub"  x="60"  y="125" text-anchor="middle">customer</text>
+
+  <rect class="actor-box" x="154" y="90" width="120" height="44" rx="9"/>
+  <text class="actor-name" x="214" y="109" text-anchor="middle">Mobile App</text>
+  <text class="actor-sub"  x="214" y="125" text-anchor="middle">Dart SDK (sbqr_sdk)</text>
+
+  <rect class="actor-box" x="370" y="90" width="120" height="44" rx="9"/>
+  <text class="actor-name" x="430" y="109" text-anchor="middle">FI IdP</text>
+  <text class="actor-sub"  x="430" y="125" text-anchor="middle">login · token issue</text>
+
+  <rect class="actor-box" x="540" y="90" width="120" height="44" rx="9"/>
+  <text class="actor-name" x="600" y="109" text-anchor="middle">FI Gateway</text>
+  <text class="actor-sub"  x="600" y="125" text-anchor="middle">BFF</text>
+
+  <rect class="actor-box" x="730" y="90" width="120" height="44" rx="9"/>
+  <text class="actor-name" x="790" y="109" text-anchor="middle">Platform</text>
+  <text class="actor-sub"  x="790" y="125" text-anchor="middle">sbqr.api</text>
+
+  <rect class="actor-box" x="915" y="90" width="120" height="44" rx="9"/>
+  <text class="actor-name" x="975" y="109" text-anchor="middle">Trust Store</text>
+  <text class="actor-sub"  x="975" y="125" text-anchor="middle">Bangladesh Bank</text>
+
+  <!-- ── lifelines ── -->
+  <line class="lifeline" x1="60"  y1="134" x2="60"  y2="646"/>
+  <line class="lifeline" x1="214" y1="134" x2="214" y2="646"/>
+  <line class="lifeline" x1="430" y1="134" x2="430" y2="646"/>
+  <line class="lifeline" x1="600" y1="134" x2="600" y2="646"/>
+  <line class="lifeline" x1="790" y1="134" x2="790" y2="646"/>
+  <line class="lifeline" x1="975" y1="134" x2="975" y2="646"/>
+
+  <!-- ── VPN / mTLS boundary band between Gateway & Platform ── -->
+  <rect class="vpn-band" x="688" y="150" width="14" height="470" rx="6"/>
+  <text class="vpn-label" transform="rotate(-90 695 285)" x="695" y="285" text-anchor="middle">SECURE VPN · mTLS</text>
+
+  <!-- ── messages ── -->
+
+  <!-- 0: user opens app -->
+  <line class="msg" x1="60" y1="172" x2="208" y2="172" marker-end="url(#ah)"/>
+  <text class="title" x="134" y="163" text-anchor="middle">opens app</text>
+
+  <!-- 1: App -> IdP login -->
+  <line class="msg" x1="218" y1="208" x2="424" y2="208" marker-end="url(#ah)"/>
+  <text class="proto https" x="322" y="184" text-anchor="middle">HTTPS</text>
+  <text class="title" x="322" y="199" text-anchor="middle">① POST /connect/token</text>
+  <text class="sub"   x="322" y="223" text-anchor="middle">grant_type=password · username + password</text>
+
+  <!-- 2: IdP -> App tokens -->
+  <line class="msg" x1="420" y1="242" x2="222" y2="242" marker-end="url(#ah)"/>
+  <text class="proto https" x="322" y="234" text-anchor="middle">HTTPS</text>
+  <text class="title" x="322" y="256" text-anchor="middle">② 200 OK</text>
+  <text class="sub"   x="322" y="270" text-anchor="middle">access_token (customer JWT) · refresh_token</text>
+
+  <!-- 2b: refresh (dotted, alternate path) -->
+  <line class="msg muted dashed" x1="218" y1="292" x2="424" y2="292" marker-end="url(#ahMuted)"/>
+  <text class="proto https" x="322" y="284" text-anchor="middle">HTTPS</text>
+  <text class="title" x="322" y="306" text-anchor="middle">②b token refresh (on 300s expiry)</text>
+  <text class="sub"   x="322" y="320" text-anchor="middle">grant_type=refresh_token — pair rotates, single-use</text>
+
+  <!-- 3: App -> Gateway QR generate -->
+  <line class="msg" x1="218" y1="352" x2="594" y2="352" marker-end="url(#ah)"/>
+  <text class="proto https" x="406" y="328" text-anchor="middle">HTTPS</text>
+  <text class="title" x="406" y="343" text-anchor="middle">③ POST /v1/qr/generate/static | dynamic</text>
+  <text class="sub"   x="406" y="367" text-anchor="middle">Authorization: Bearer customer JWT · X-Correlation-Id · [Idempotency-Key]</text>
+
+  <!-- 3b: App -> Gateway validate -->
+  <line class="msg" x1="218" y1="390" x2="594" y2="390" marker-end="url(#ah)"/>
+  <text class="proto https" x="406" y="382" text-anchor="middle">HTTPS</text>
+  <text class="title" x="406" y="404" text-anchor="middle">③b POST /v1/qr/validate</text>
+  <text class="sub"   x="406" y="418" text-anchor="middle">fresh requestId + requestTimestamp (replay guard)</text>
+
+  <!-- 4a: Gateway -> Platform token fetch (mTLS) -->
+  <line class="msg mtls" x1="604" y1="448" x2="784" y2="448" marker-end="url(#ahMtls)"/>
+  <text class="proto mtls" x="695" y="424" text-anchor="middle">mTLS</text>
+  <text class="title" x="695" y="439" text-anchor="middle">④a POST /v1/oauth/token — server-side</text>
+  <text class="sub"   x="695" y="463" text-anchor="middle">client_credentials: gateway's own id/secret + client certificate</text>
+
+  <!-- 4b: platform token back -->
+  <line class="msg mtls" x1="786" y1="482" x2="606" y2="482" marker-end="url(#ahMtls)"/>
+  <text class="proto mtls" x="695" y="474" text-anchor="middle">mTLS</text>
+  <text class="title" x="695" y="496" text-anchor="middle">④b 200 platform_token</text>
+
+  <!-- 4c: forwarded QR call -->
+  <line class="msg mtls" x1="604" y1="516" x2="784" y2="516" marker-end="url(#ahMtls)"/>
+  <text class="proto mtls" x="695" y="508" text-anchor="middle">mTLS</text>
+  <text class="title" x="695" y="530" text-anchor="middle">④c forwarded QR request</text>
+  <text class="sub"   x="695" y="544" text-anchor="middle">Bearer platform_token · correlation / idempotency headers pass through</text>
+
+  <!-- 5: response back -->
+  <line class="msg mtls" x1="786" y1="572" x2="606" y2="572" marker-end="url(#ahMtls)"/>
+  <text class="proto mtls" x="695" y="564" text-anchor="middle">mTLS</text>
+  <text class="title" x="695" y="586" text-anchor="middle">⑤ 201 qrPayload · 200 verdict</text>
+
+  <!-- 5b/5c: trust store (validate only, dashed) -->
+  <line class="msg dashed" x1="796" y1="596" x2="969" y2="596" marker-end="url(#ahMuted)"/>
+  <text class="proto trust" x="882" y="588" text-anchor="middle">VALIDATE ONLY</text>
+  <text class="title" x="882" y="610" text-anchor="middle">⑤b fetch recipient FI's Ed25519 signing key</text>
+  <line class="msg dashed" x1="969" y1="622" x2="796" y2="622" marker-end="url(#ahMuted)"/>
+  <text class="sub"   x="882" y="636" text-anchor="middle">key / suspension status returned</text>
+
+  <!-- 6: Gateway -> App pass-through -->
+  <line class="msg" x1="594" y1="606" x2="222" y2="606" marker-end="url(#ah)"/>
+  <text class="proto https" x="406" y="598" text-anchor="middle">HTTPS</text>
+  <text class="title" x="406" y="620" text-anchor="middle">⑥ response — passed through unmodified</text>
+
+  <!-- 7: App -> User -->
+  <line class="msg" x1="208" y1="638" x2="64" y2="638" marker-end="url(#ah)"/>
+  <text class="title" x="136" y="630" text-anchor="middle">QR shown — pay only on VALID</text>
+
+  <text class="cap" x="530" y="682" text-anchor="middle">Fig. A — SBQR end-to-end: parties, protocols per hop, and the credential each hop carries. Steps ①–⑥ mirror the Dart SDK Integration Guide §2.</text>
+</svg>
+</div>
+<p class="caption">মোবাইল থেকে যতখানি দেখা যায় (③→⑥), তার পেছনে Gateway–Platform hop-টা পুরোটা server-side (④) — app কখনোই <code>sbqr.api</code>-কে সরাসরি ডাকে না।</p>
+
+<div class="legend">
+  <span class="key"><span class="swatch"></span> App-facing call — HTTPS, customer credential</span>
+  <span class="key"><span class="swatch mtls"></span> Server-to-server — secure VPN + mTLS (client certificate)</span>
+  <span class="key"><span class="swatch dashed"></span> Validate-only trust lookup (generate-এ কখনো হয় না)</span>
+  <span class="key"><span class="swatch muted"></span> Alternate path — token refresh (300s মেয়াদের পর)</span>
+</div>
+
+<h2>Hop অনুযায়ী credential — কে কার credential ব্যবহার করে</h2>
+<table>
+  <thead><tr><th>Hop</th><th>Caller → Callee</th><th>Protocol</th><th>Credential</th><th>কার দৃষ্টিতে</th></tr></thead>
+  <tbody>
+    <tr><td>①②②b</td><td>Mobile App → FI IdP</td><td>HTTPS</td><td>Customer-র username/password → customer JWT (RS256) + rotating refresh token</td><td>App-এর — secure storage-তে রাখে, কখনো server-এ পাঠায় না</td></tr>
+    <tr><td>③③b</td><td>Mobile App → FI Gateway</td><td>HTTPS</td><td>সেই customer JWT-ই <code>Authorization: Bearer</code> হিসেবে</td><td>Gateway verify করে (IdP-র JWKS দিয়ে)</td></tr>
+    <tr><td>④a</td><td>FI Gateway → sbqr.api</td><td>mTLS over VPN</td><td>Gateway-র নিজের <code>client_id</code>/<code>client_secret</code> <strong>+ client certificate</strong> — সম্পূর্ণ server-side</td><td>App এটা কখনো দেখে না / রাখে না</td></tr>
+    <tr><td>④c–⑤</td><td>FI Gateway ⇄ sbqr.api</td><td>mTLS over VPN</td><td>Bearer <code>platform_token</code> (④a-তে পাওয়া)</td><td>Platform দুই স্তরে চেনে: TLS স্তরে certificate, app স্তরে token</td></tr>
+    <tr><td>⑤b</td><td>sbqr.api → BB Trust Store</td><td>internal</td><td>— (platform-এর নিজস্ব trust-directory lookup)</td><td>শুধু <code>/v1/qr/validate</code>-এ; recipient FI-র Ed25519 signing key যাচাই</td></tr>
+  </tbody>
+</table>
+
+<h2>ডায়াগ্রামের সোনালি নিয়ম (guide §2, §11 থেকে)</h2>
+<ul>
+  <li>App <strong>কখনো</strong> <code>sbqr.api</code>-কে সরাসরি call করে না, এবং platform-এর <code>client_id</code>/<code>client_secret</code> কখনো হাতে পায় না — সেটা শুধু Gateway-এর, server-side।</li>
+  <li>SDK মোট <strong>দুইটা host</strong>-ই চেনে: FI IdP (login/refresh) আর FI Gateway (তিনটা QR call)।</li>
+  <li><code>access_token</code> মেয়াদ ৩০০ সেকেন্ড — refresh single-flight, refresh token single-use ও rotating।</li>
+  <li>Trust Store-যাচাই শুধু validate-এ; প্রতিটা non-<code>VALID</code> verdict = <strong>block</strong>, client-side bypass নেই।</li>
+  <li>Gateway-এর রেসপন্স pass-through — app যা পায়, platform-ই দিয়েছে (contract pinning ছাড়া কিছু বদলায় না)।</li>
+</ul>
+
+<details>
+<summary>Mermaid সংস্করণ (markdown-এ paste করার জন্য)</summary>
+<pre>sequenceDiagram
+    autonumber
+    actor U as App User
+    participant A as Mobile App (Dart SDK)
+    participant I as FI IdP
+    participant G as FI Gateway (BFF)
+    participant P as sbqr.api (Platform)
+    participant T as BB Trust Store
+
+    U-&gt;&gt;A: opens app
+    A-&gt;&gt;I: POST /connect/token (grant_type=password)
+    I--&gt;&gt;A: access_token (customer JWT) + refresh_token
+    A-&gt;&gt;I: ②b refresh (on 300s expiry, rotating)
+    A-&gt;&gt;G: POST /v1/qr/generate/static|dynamic (Bearer JWT)
+    A-&gt;&gt;G: POST /v1/qr/validate (fresh requestId+timestamp)
+    Note over G,P: secure VPN · mTLS (client certificate)
+    G-&gt;&gt;P: POST /v1/oauth/token (client_credentials, server-side)
+    P--&gt;&gt;G: platform_token
+    G-&gt;&gt;P: forwarded QR request (Bearer platform_token)
+    P-&gt;&gt;T: fetch recipient FI Ed25519 key (validate only)
+    T--&gt;&gt;P: key / trust status
+    P--&gt;&gt;G: 201 qrPayload / 200 verdict
+    G--&gt;&gt;A: response (pass-through, unmodified)
+    A--&gt;&gt;U: QR shown — pay only on VALID</pre>
+</details>
+
+<h2>Zoom-in: Gateway ⇄ SBQR hop — CA, certificate আর ভেতরের components</h2>
+<p class="sub">উপরের ডায়াগ্রামের ④ হপটাই এখন খুলে দেখা হলো: উপরে issuer (Root CA) কীভাবে দুই পক্ষের certificate-এ সই করে ও <code>ca.crt</code> দুই পক্ষের trust anchor হয়ে ছড়ায়; মাঝখানে TLS handshake-এর H1–H6 ধাপ (কোথায় কোন certificate যায়, কোথায় কার চেইন-যাচাই); তারপর তৈরি হওয়া encrypted channel-এর ভেতরে token (T) ও QR request/response (R) কীভাবে চলাচল করে।</p>
+
+<div class="diagram-wrap">
+<svg class="diagram" viewBox="0 0 1060 790" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Zoomed component diagram of the FI Gateway to sbqr.api mTLS hop: root CA issuing certificates, components inside both services, handshake steps H1 to H6, and request response flow inside the encrypted channel">
+  <defs>
+    <marker id="ah2" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" class="arrowhead"/>
+    </marker>
+    <marker id="ah2m" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" class="arrowhead muted"/>
+    </marker>
+    <marker id="ah2g" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto">
+      <path d="M0,0 L10,5 L0,10 z" class="arrowhead mtls"/>
+    </marker>
+  </defs>
+
+  <!-- ══ Issuer / Root CA ══ -->
+  <rect class="actor-box" x="390" y="24" width="280" height="60" rx="10"/>
+  <text class="actor-name" x="530" y="46" text-anchor="middle">ROOT CA — issuer (dev-certs/)</text>
+  <text class="actor-sub"  x="530" y="63" text-anchor="middle">ca.crt (public — সবার কাছে যায়) · ca.key 🔒 শুধু issuer-এর কাছে</text>
+
+  <!-- signing arrows CA → client/server certs -->
+  <line class="msg muted dashed" x1="405" y1="84" x2="128" y2="196" marker-end="url(#ah2m)"/>
+  <text class="sub" x="238" y="128" text-anchor="middle">সই করে (sign) — clientAuth</text>
+  <line class="msg muted dashed" x1="655" y1="84" x2="800" y2="196" marker-end="url(#ah2m)"/>
+  <text class="sub" x="748" y="128" text-anchor="middle">সই করে (sign) — serverAuth</text>
+
+  <!-- ca.crt distribution arrows -->
+  <line class="msg muted dashed" x1="480" y1="84" x2="272" y2="196" marker-end="url(#ah2m)"/>
+  <text class="sub" x="362" y="152" text-anchor="middle">ca.crt কপি → trust anchor</text>
+  <line class="msg muted dashed" x1="580" y1="84" x2="936" y2="196" marker-end="url(#ah2m)"/>
+  <text class="sub" x="772" y="152" text-anchor="middle">ca.crt কপি → trust anchor</text>
+
+  <!-- ══ Gateway process box ══ -->
+  <rect class="proc-box" x="40" y="170" width="300" height="580" rx="12"/>
+  <text class="proc-title" x="190" y="192" text-anchor="middle">FI Gateway (.NET 8)</text>
+
+  <rect class="chip cert" x="56"  y="202" width="132" height="42" rx="8"/>
+  <text class="chip-t" x="122" y="219" text-anchor="middle">🔑 fi-gateway.pfx</text>
+  <text class="chip-s" x="122" y="234" text-anchor="middle">client cert · clientAuth</text>
+  <rect class="chip trust" x="198" y="202" width="128" height="42" rx="8"/>
+  <text class="chip-t" x="262" y="219" text-anchor="middle">ca.crt</text>
+  <text class="chip-s" x="262" y="234" text-anchor="middle">ServerCaCertPath</text>
+
+  <rect class="comp" x="60" y="256" width="260" height="40" rx="7"/>
+  <text class="comp-t" x="190" y="272" text-anchor="middle">QrProxyController</text>
+  <text class="chip-s" x="190" y="287" text-anchor="middle">/v1/qr/* endpoints</text>
+
+  <rect class="comp" x="60" y="308" width="260" height="40" rx="7"/>
+  <text class="comp-t" x="190" y="324" text-anchor="middle">PlatformAuthHandler</text>
+  <text class="chip-s" x="190" y="339" text-anchor="middle">Bearer platform token attach · 401→refresh</text>
+
+  <rect class="comp" x="60" y="360" width="260" height="40" rx="7"/>
+  <text class="comp-t" x="190" y="376" text-anchor="middle">Polly resilience</text>
+  <text class="chip-s" x="190" y="391" text-anchor="middle">5xx/timeout retry — TLS স্তরের উপরে</text>
+
+  <rect class="comp hl" x="60" y="412" width="260" height="64" rx="7"/>
+  <text class="comp-t" x="190" y="428" text-anchor="middle">HttpClientHandler (primary)</text>
+  <text class="chip-s" x="190" y="443" text-anchor="middle">★ ClientCertificates = fi-gateway.pfx</text>
+  <text class="chip-s" x="190" y="458" text-anchor="middle">★ ServerCertValidation = ca.crt pinned</text>
+
+  <rect class="comp" x="60" y="492" width="260" height="52" rx="7"/>
+  <text class="comp-t" x="190" y="508" text-anchor="middle">MtlsConfigurator + MtlsOptions</text>
+  <text class="chip-s" x="190" y="523" text-anchor="middle">Enabled · CertPath · CertPassword</text>
+  <text class="chip-s" x="190" y="538" text-anchor="middle">· ServerCaCertPath</text>
+
+  <rect class="comp" x="60" y="560" width="260" height="40" rx="7"/>
+  <text class="comp-t" x="190" y="576" text-anchor="middle">PlatformToken HttpClient</text>
+  <text class="chip-s" x="190" y="591" text-anchor="middle">④a token fetch — একই mTLS চ্যানেল, একই cert</text>
+
+  <rect class="comp" x="60" y="616" width="260" height="40" rx="7"/>
+  <text class="comp-t" x="190" y="632" text-anchor="middle">ContractValidator</text>
+  <text class="chip-s" x="190" y="647" text-anchor="middle">2xx body vs v1.public.json — না মিললে 502</text>
+
+  <!-- gateway internal flow -->
+  <line class="msg" x1="190" y1="296" x2="190" y2="304" marker-end="url(#ah2)"/>
+  <line class="msg" x1="190" y1="348" x2="190" y2="356" marker-end="url(#ah2)"/>
+  <line class="msg" x1="190" y1="400" x2="190" y2="408" marker-end="url(#ah2)"/>
+  <line class="msg muted dashed" x1="190" y1="492" x2="190" y2="480" marker-end="url(#ah2m)"/>
+  <path class="msg muted dashed" d="M 100,560 L 336,560 L 336,460 L 324,460" fill="none" marker-end="url(#ah2m)"/>
+  <path class="msg muted dashed" d="M 122,244 L 48,244 L 48,444 L 56,444" fill="none" marker-end="url(#ah2m)"/>
+  <path class="msg muted dashed" d="M 262,244 L 332,244 L 332,444 L 324,444" fill="none" marker-end="url(#ah2m)"/>
+
+  <!-- ══ SBQR process box ══ -->
+  <rect class="proc-box" x="720" y="170" width="300" height="580" rx="12"/>
+  <text class="proc-title" x="870" y="192" text-anchor="middle">sbqr.api (.NET 10) — platform</text>
+
+  <rect class="chip cert" x="736" y="202" width="132" height="42" rx="8"/>
+  <text class="chip-t" x="802" y="219" text-anchor="middle">🔑 sbqr-api.pfx</text>
+  <text class="chip-s" x="802" y="234" text-anchor="middle">server cert · serverAuth</text>
+  <rect class="chip trust" x="878" y="202" width="128" height="42" rx="8"/>
+  <text class="chip-t" x="942" y="219" text-anchor="middle">ca.crt</text>
+  <text class="chip-s" x="942" y="234" text-anchor="middle">CaCertificatePath</text>
+
+  <rect class="comp hl" x="740" y="256" width="260" height="52" rx="7"/>
+  <text class="comp-t" x="870" y="272" text-anchor="middle">Kestrel HTTPS :7443</text>
+  <text class="chip-s" x="870" y="287" text-anchor="middle">★ RequireCertificate — cert ছাড়া handshake নেই</text>
+  <text class="chip-s" x="870" y="300" text-anchor="middle">★ ClientCertificateValidation callback</text>
+
+  <rect class="comp hl" x="740" y="320" width="260" height="52" rx="7"/>
+  <text class="comp-t" x="870" y="336" text-anchor="middle">ClientCertificateValidator</text>
+  <text class="chip-s" x="870" y="351" text-anchor="middle">chain vs ca.crt · EKU clientAuth</text>
+  <text class="chip-s" x="870" y="364" text-anchor="middle">· thumbprint allowlist</text>
+
+  <rect class="comp" x="740" y="384" width="260" height="40" rx="7"/>
+  <text class="comp-t" x="870" y="400" text-anchor="middle">TenantCertificateThumbprintSync</text>
+  <text class="chip-s" x="870" y="415" text-anchor="middle">DB → validator (per-FI cert onboard/revoke)</text>
+
+  <rect class="comp" x="740" y="436" width="260" height="40" rx="7"/>
+  <text class="comp-t" x="870" y="452" text-anchor="middle">DB: tenant_configurations</text>
+  <text class="chip-s" x="870" y="467" text-anchor="middle">client_certificate_thumbprint</text>
+
+  <rect class="comp" x="740" y="488" width="260" height="52" rx="7"/>
+  <text class="comp-t" x="870" y="504" text-anchor="middle">MtlsOptions (server)</text>
+  <text class="chip-s" x="870" y="519" text-anchor="middle">Enabled · HttpsPort · ServerCertificatePath</text>
+  <text class="chip-s" x="870" y="532" text-anchor="middle">· CaCertificatePath · AllowedClientThumbprints</text>
+
+  <rect class="comp" x="740" y="556" width="260" height="40" rx="7"/>
+  <text class="comp-t" x="870" y="572" text-anchor="middle">Module controllers</text>
+  <text class="chip-s" x="870" y="587" text-anchor="middle">/v1/qr/* · /v1/oauth/token</text>
+
+  <rect class="comp" x="740" y="612" width="260" height="40" rx="7"/>
+  <text class="comp-t" x="870" y="628" text-anchor="middle">HTTP :5001</text>
+  <text class="chip-s" x="870" y="643" text-anchor="middle">health · docs — certificate লাগে না</text>
+
+  <!-- sbqr internal flow -->
+  <line class="msg muted dashed" x1="870" y1="308" x2="870" y2="316" marker-end="url(#ah2m)"/>
+  <line class="msg muted dashed" x1="870" y1="424" x2="870" y2="380" marker-end="url(#ah2m)"/>
+  <line class="msg muted dashed" x1="870" y1="476" x2="870" y2="428" marker-end="url(#ah2m)"/>
+  <path class="msg muted dashed" d="M 740,510 L 730,510 L 730,282 L 738,282" fill="none" marker-end="url(#ah2m)"/>
+  <path class="msg" d="M 1000,336 L 1008,336 L 1008,576 L 1002,576" fill="none" marker-end="url(#ah2)"/>
+  <text class="chip-s" x="1005" y="460" transform="rotate(-90 1005 460)" text-anchor="middle">verify ✓ → route</text>
+
+  <!-- ══ Center: handshake ladder ══ -->
+  <line class="msg" x1="352" y1="212" x2="708" y2="212" marker-end="url(#ah2)"/>
+  <text class="title" x="530" y="204" text-anchor="middle">H1  ClientHello</text>
+
+  <line class="msg" x1="708" y1="244" x2="352" y2="244" marker-end="url(#ah2)"/>
+  <text class="title" x="530" y="228" text-anchor="middle">H2  ServerHello + server cert (sbqr-api.pfx)</text>
+  <text class="sub"   x="530" y="258" text-anchor="middle">+ CertificateRequest — "তোমার certificate দাও"</text>
+
+  <rect class="pill" x="360" y="272" width="340" height="30" rx="15"/>
+  <text class="pill-t" x="530" y="291" text-anchor="middle">H3 ✓ Gateway যাচাই: server cert — ca.crt চেইন (pinned)</text>
+
+  <line class="msg" x1="352" y1="326" x2="708" y2="326" marker-end="url(#ah2)"/>
+  <text class="title" x="530" y="318" text-anchor="middle">H4  client cert (fi-gateway.pfx) + private-key প্রমাণ</text>
+
+  <rect class="pill" x="360" y="342" width="340" height="30" rx="15"/>
+  <text class="pill-t" x="530" y="361" text-anchor="middle">H5 ✓ Server যাচাই: ca.crt চেইন + clientAuth EKU + thumbprint</text>
+
+  <rect class="pill ready" x="400" y="384" width="260" height="30" rx="15"/>
+  <text class="pill-t" x="530" y="403" text-anchor="middle">H6  session keys — চ্যানেল প্রস্তুত</text>
+
+  <!-- encrypted tunnel -->
+  <rect class="tunnel" x="360" y="428" width="340" height="180" rx="12"/>
+  <text class="tunnel-t" x="530" y="450" text-anchor="middle">ENCRYPTED CHANNEL — mTLS over VPN</text>
+
+  <line class="msg mtls" x1="376" y1="476" x2="684" y2="476" marker-end="url(#ah2g)"/>
+  <text class="title" x="530" y="468" text-anchor="middle">T1  POST /v1/oauth/token (client_credentials)</text>
+
+  <line class="msg mtls" x1="684" y1="506" x2="376" y2="506" marker-end="url(#ah2g)"/>
+  <text class="title" x="530" y="500" text-anchor="middle">T2  200 platform_token</text>
+
+  <line class="msg mtls" x1="376" y1="556" x2="684" y2="556" marker-end="url(#ah2g)"/>
+  <text class="title" x="530" y="548" text-anchor="middle">R1  POST /v1/qr/generate|validate</text>
+  <text class="sub"   x="530" y="572" text-anchor="middle">Authorization: Bearer platform_token</text>
+
+  <line class="msg mtls" x1="684" y1="592" x2="376" y2="592" marker-end="url(#ah2g)"/>
+  <text class="title" x="530" y="616" text-anchor="middle">R2  201 qrPayload / 200 verdict</text>
+
+  <text class="sub" x="530" y="640" text-anchor="middle">R = প্রতিটা call · T = মেয়াদ শেষ হলে আবার (token cached)</text>
+
+  <!-- wire connectors gateway/sbqr to center -->
+  <line class="msg" x1="340" y1="440" x2="360" y2="440" />
+  <line class="msg" x1="700" y1="440" x2="720" y2="440" />
+
+  <text class="cap" x="530" y="772" text-anchor="middle">Fig. B — Gateway ⇄ sbqr.api হপের ভেতরের চিত্র: certificate-এর জন্ম (CA), প্রতিটা যাচাই-পয়েন্ট (H3/H5), আর channel-এর ভেতরের traffic (T/R)।</text>
+</svg>
+</div>
+
+<div class="legend">
+  <span class="key"><span class="swatch"></span> Request/response পথ</span>
+  <span class="key"><span class="swatch mtls"></span> mTLS চ্যানেলের ভেতরের বার্তা</span>
+  <span class="key"><span class="swatch dashed"></span> Certificate সই/বিতরণ ও config wiring</span>
+  <span class="key">✓ pill — যাচাই-পয়েন্ট · ★ — certificate যেখানে হাতে ছোঁয়</span>
+</div>
+
+<h2>ডায়াগ্রামের উপাদান → আসল ফাইল</h2>
+<table>
+  <thead><tr><th>উপাদান</th><th>আসল ফাইল / জায়গা</th></tr></thead>
+  <tbody>
+    <tr><td>ROOT CA + তিন cert + evil pair</td><td><code>rvl-secure-bqr-manager/scripts/dev-certs-generate.sh</code> → <code>dev-certs/</code></td></tr>
+    <tr><td>🔑 fi-gateway.pfx → <code>Mtls:CertPath</code></td><td>gateway <code>Mtls/MtlsOptions.cs</code> · <code>appsettings.MtlsTesting.json</code></td></tr>
+    <tr><td>HttpClientHandler-এ cert attach (★)</td><td>gateway <code>Mtls/MtlsConfigurator.cs</code> — <code>ConfigurePrimaryHttpMessageHandler</code></td></tr>
+    <tr><td>H3: server-cert pinned যাচাই</td><td><code>MtlsConfigurator.cs</code> — <code>ServerCertificateCustomValidationCallback</code> (<code>ServerCaCertPath</code>)</td></tr>
+    <tr><td>PlatformAuthHandler / Polly / ContractValidator</td><td>gateway <code>Platform/PlatformAuthHandler.cs</code> · <code>Resilience/</code> · <code>Contracts/</code></td></tr>
+    <tr><td>Kestrel HTTPS :7443 + RequireCertificate (★)</td><td>manager <code>SBQR.Api/Mtls/MtlsEndpointsExtensions.cs</code></td></tr>
+    <tr><td>H5: ClientCertificateValidator</td><td>manager <code>SBQR.Api/Mtls/ClientCertificateValidator.cs</code></td></tr>
+    <tr><td>Per-FI thumbprint sync + DB</td><td>manager <code>SBQR.Api/Mtls/TenantCertificateThumbprintSyncService.cs</code> · <code>public.tenant_configurations.client_certificate_thumbprint</code></td></tr>
+    <tr><td>HTTP :5001 (cert ছাড়া)</td><td>একই extension-এ <code>Listen(:5001)</code> — health/docs বাঁচানো</td></tr>
+  </tbody>
+</table>
+
+<p class="sub">লক্ষ করুন: H1–H6 প্রতিটা নতুন connection-এ একবার হয়; তারপর সেই connection-এ যত খুশি R চলাচল করে (HttpClient connection reuse)। T-flow আর R-flow দুটোই এখন একই mTLS চ্যানেলে — দুই HttpClient-ই cert-attached। প্রোডাকশনে এই পুরো ছবি অপরিবর্তিত থাকে; শুধু উপরের CA বদলে যায় (offline PKI টিম, CSR flow)।</p>
+
+<div class="footer-note">
+  Source of truth: <code>rvl-sbqr-app-emulator/docs/Dart-SDK-Integration-Guide.html</code> (§2 Architecture, §4–8 steps, §11 security rules)। ④a-এর client-certificate অংশ বর্তমান gateway implementation অনুযায়ী (দুই platform HttpClient-ই mTLS-attached)। Dev hosts: <code>fi-idp-dhakabank.fly.dev</code> · <code>rvl-sbqr-fi-gateway.fly.dev</code> · <code>sbqr-api-dev.fly.dev</code> (app এটা ব্যবহার করে না)।
+  Doc-only deliverable — কোনো repo/code touch হয়নি।
+</div>
+</main>
+</body>
+</html>
