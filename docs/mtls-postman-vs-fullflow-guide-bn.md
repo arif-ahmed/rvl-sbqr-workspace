@@ -13,12 +13,12 @@
 [Postman]  ← আপনি দুই ভূমিকায়: (ক) gateway সেজে সরাসরি mTLS, (খ) mobile-user সেজে পুরো flow
    │
    ▼
-[FI IdP mock :5105] ──login──► [FI Gateway :8080] ══mTLS (client cert)══► [SBQR api :7443]
- (docker, rvl-sbqr-mocks)       (rvl-sbqr-fi-gateway)                     (rvl-secure-bqr-manager)
-                                                                        + HTTP :5001 (health/docs)
+[FI IdP — deployed dev] ──login──► [FI Gateway :8080] ══mTLS (client cert)══► [SBQR api :7443]
+ https://fi-idp-dhakabank.fly.dev   (rvl-sbqr-fi-gateway)                     (rvl-secure-bqr-manager)
+ (rvl-sbqr-mocks আর লাগে না)                                                  + HTTP :5001 (health/docs)
 
 [dev-pki/] ← নিরপেক্ষ PKI ফোল্ডার — CA এখানে থাকে, কোনো repo-র ভেতরে না
-[Postgres :5432] [BB trust-store mock :5002]  ← পেছনের সাপোর্ট
+[Postgres :5432]  ← একমাত্র লোকাল সাপোর্ট; IdP + trust store দুটোই deployed দূরে চলছে
 ```
 
 **নাম-জোড়া (ভুল হবে না):**
@@ -28,8 +28,8 @@
 | **sbqr-api** (platform) | `rvl-secure-bqr-manager/src/Host/SBQR.Api` | mTLS-এর **server** — `:7443`-এ client cert ছাড়া ঢুকতেই দেয় না |
 | **sbqr-gateway** (BFF) | `rvl-sbqr-fi-gateway/src/SBQR.FiGateway.Api` | mTLS-এর **client** — নিজের cert নিয়ে `:7443`-এ ঢোকে |
 | **dev-pki** | workspace-root-এ `dev-pki/` | **নিরপেক্ষ issuer** — CA, sbqr-api-র server cert, প্রতি FI-এর client cert, evil জোড়া। সব repo-র **বাইরে** |
-| IdP mock | `rvl-sbqr-mocks` (docker) | Fatema-র login/JWT দেয় |
-| Trust store mock | `rvl-bb-trust-store` | QR validate-এ প্রতিষ্ঠান-তালিকা |
+| **FI IdP** (deployed dev) | `https://fi-idp-dhakabank.fly.dev` | Fatema-র login/JWT দেয় — লোকাল mock নয়, চালু সার্ভার (ইন্টারনেট লাগবে) |
+| **BB trust store** (deployed dev) | `https://rvl-bb-trust-store.onrender.com` | প্রতিষ্ঠান-key তালিকার BB-পক্ষের উৎস — এখান থেকে sync হয়ে platform-এ আসে |
 
 **dev-pki কেন repo-র বাইরে — এক লাইনে তিনটা কারণ:** (১) বাস্তবেও CA স্বতন্ত্র তৃতীয় পক্ষ (BB PKI-র মতো), কোনো অ্যাপ repo-র জিনিস না; (২) কোনো `.git`-এর ভেতরে না থাকায় `ca.key` বা private key **ভুলেও commit হওয়ার পথ নেই**; (৩) repo বদলালে/ফেলে দিলে PKI অক্ষত থাকে (`rvl-sbqr-api` copy এভাবেই ফেলে দেওয়া হয়েছে)।
 
@@ -51,10 +51,10 @@ dotnet --version    # .NET 10 SDK দরকার (SBQR.Api)
 **PowerShell**-এ:
 
 ```powershell
-docker --version    # Postgres + IdP mock
+docker --version    # Postgres — একমাত্র লোকাল সাপোর্ট (api-র sbqr_app + sbqr_key_vault)
 ```
 
-আর লাগবে: **Visual Studio** (দুই solution), **Postman** (desktop app)।
+আর লাগবে: **Visual Studio** (দুই solution), **Postman** (desktop app), আর **ইন্টারনেট** (IdP এখন deployed সার্ভারে)।
 
 ### 1.2 নতুন PKI বানানো — দুই কমান্ড (Git Bash)
 
@@ -95,9 +95,11 @@ openssl x509 -in dev-pki/sbqr-api.crt -text -noout | grep -A2 "Alternative"
 #   DNS:localhost, IP:127.0.0.1  ← তাই BaseUrl-এ localhost-ই লিখতে হবে
 ```
 
-### 1.4 sbqr-api-তে mTLS চালু (`.env`)
+### 1.4 দুই সার্ভিসে mTLS চালু — দুই repo-তে একই নিয়মে দুইটা `.env`
 
-`rvl-secure-bqr-manager` repo-root-এর **`.env`**-এর শেষে mTLS অংশ এমন থাকতে হবে (path-গুলো repo-root থেকে relative — `dev-pki/` sibling বলে `../dev-pki/...`):
+দুই সার্ভিসই এখন একই ব্যবস্থা মানে: **gitignored repo-root `.env`**, key-গুলো `__` আকারে, আর ফাইলটা সব কনফিগের **সবার শেষে লোড** হয় — মানে appsettings আর `$env:` variable দুটোকেই হারায়। boot লগে `[dev] loading .env: …` লাইন এলেই বুঝবেন লোড হয়েছে।
+
+**sbqr-api** — `rvl-secure-bqr-manager/.env` (path-গুলো repo-root থেকে relative — `dev-pki/` sibling বলে `../dev-pki/...`):
 
 ```ini
 Mtls__Enabled=true
@@ -107,38 +109,42 @@ Mtls__CaCertificatePath=../dev-pki/ca.crt
 #Mtls__AllowedClientThumbprints__0=<স্ক্রিপ্টের প্রিন্ট করা thumbprint, কোলন ছাড়া>
 ```
 
-> `.env` শুধু **Development** environment-এ লোড হয় (এজন্যই VS-এর ডিফল্ট profile-ই চলবে), আর gitignored। এই মেশিনে Postgres/S3-এর connection `.env`-এ আগেই সেট আছে; নতুন মেশিনে `.env.example` + `docs/dev-s3-guide.md` দেখে ভরতে হবে।
+**sbqr-gateway** — `rvl-sbqr-fi-gateway/.env` (আগে এগুলো `appsettings.MtlsTesting.json`-এ বসানো ছিল; এখন ওই ফাইলে শুধু environment-জিনিস — BaseUrl/ClientId/Auth — থাকে, mTLS এখানে এসেছে):
 
-### 1.5 সাপোর্ট সার্ভিস (Docker + একটা dotnet)
+```ini
+Mtls__Enabled=true
+Mtls__CertPath=../dev-pki/clients/fi-gateway-000085-dhakabank.pfx
+Mtls__CertPassword=fi-gateway-dhakabank-dev
+Mtls__ServerCaCertPath=../dev-pki/ca.crt
+```
+
+> **নোট ১:** gateway-এর `.env` শুধু `Development` ও `MtlsTesting` environment-এ লোড হয়; sbqr-api-টা `Development`-এ। দুটোই Production-এ সম্পূর্ণ inert।
+>
+> **নোট ২ (গুরুত্বপূর্ণ):** `.env` সবার শেষে লোড হয় বলে **`$env:Mtls__*` দিয়ে আর ওভাররাইড করা যায় না** — লোকাল experiment এখন `.env` এডিট + restart দিয়েই হবে (অংশ ৫-এর টেস্টগুলো সেই নিয়মে লেখা)। অন্য FI সেজে পরীক্ষা করতে চাইলেও এই ফাইলের `CertPath`/`CertPassword` বদলান।
+>
+> **নোট ৩:** এই মেশিনে api-র `.env`-এ Postgres/S3-এর connection আগেই সেট আছে; নতুন মেশিনে `.env.example` + `docs/dev-s3-guide.md` দেখে ভরতে হবে।
+
+### 1.5 সাপোর্ট — শুধুই Postgres (IdP ও trust store দুটোই deployed)
 
 **PowerShell:**
 
 ```powershell
-# (ক) Postgres — এক কমান্ড (Docker Desktop নিজেই চালু করে নেয়)
 cd D:\Workspace\Sources\RVL\rvl-sbqr\rvl-sbqr-workspace\rvl-secure-bqr-manager
 pwsh docker/start-db.ps1          # শেষে sbqr_app + sbqr_key_vault healthy দেখাবে
-
-# (গ) BB trust store mock — আলাদা উইন্ডোতে চালু রাখুন
-cd D:\Workspace\Sources\RVL\rvl-sbqr\rvl-sbqr-workspace\rvl-bb-trust-store\src\BB.TrustStoreMock
-dotnet run                         # :5002
 ```
 
-**Git Bash** (বা PowerShell-এ `docker compose up --build`):
+> **আর কিছু লোকালে তুলতে হবে না।** Fatema-র JWT আসবে deployed IdP `https://fi-idp-dhakabank.fly.dev` থেকে, আর প্রতিষ্ঠান-key sync হবে deployed trust store `https://rvl-bb-trust-store.onrender.com` থেকে (manager `.env`-এ `TrustStore__BaseUrl` এমনিই সেট করা)। `rvl-sbqr-mocks` বা লোকাল trust store-এর আজ **কোনো কাজ নেই**।
 
-```bash
-# (খ) FI IdP mock — gateway-এর JWT এখান থেকেই আসবে
-cd /d/Workspace/Sources/RVL/rvl-sbqr/rvl-sbqr-workspace/rvl-sbqr-mocks
-docker compose up --build          # fi-idp-dhakabank :5105
-```
-
-দ্রুত যাচাই:
+দ্রুত যাচাই (দুটোই ইন্টারনেটে):
 
 ```powershell
-curl.exe -s http://localhost:5105/health    # {"status":"ok",...,"users":5}
-curl.exe -s http://localhost:5002/health    # {"status":"ok"}
+curl.exe -s https://fi-idp-dhakabank.fly.dev/health            # {"status":"ok","fi_id":"dhakabank","issuer":"https://...","users":5}
+curl.exe -s https://rvl-bb-trust-store.onrender.com/health     # {"status":"ok"}
 ```
 
 > PowerShell-এ `curl` লিখলে সেটা `Invoke-WebRequest`-এর alias — তাই `curl.exe` লিখুন, নয় Git Bash ব্যবহার করুন।
+
+> **Trust store কতটা দরকারি (এক প্যারা):** mTLS টেস্টিংয়ের জন্য প্রায় **না-ই**। platform validate-এর সময় প্রতিষ্ঠানের public key খোঁজে **নিজের লোকাল trust-directory** থেকে — আর নিজের (000085) key প্রথম QR generate-এর সময়ই সেখানে publish হয়ে যায়; তাই fatema-র generate→validate round-trip এই সার্ভিসের উপর নির্ভর করে না। deployed store থেকে sync নেয় শুধু **বাইরের** প্রতিষ্ঠানের key (BB-পক্ষ থেকে `PUT /trust-store/institutions/{id}/public-key` করা হয়)। store ঘুমিয়ে থাকলে যা হয় তা মাত্র: api-র লগে sync-এর warning — কোনো flow বন্ধ হয় না।
 
 ---
 
@@ -161,7 +167,7 @@ Now listening on: https://127.0.0.1:7443    ← ★ mTLS দরজা
 
 ### 2.2 sbqr-gateway — `MtlsTesting` environment-এ
 
-সাধারণ Development-এ gateway `http://localhost:5001`-এ plain HTTP-এ কথা বলে। আজ দরকার `https://localhost:7443` + certificate — এজন্য আলাদা environment: **`MtlsTesting`** (`appsettings.MtlsTesting.json`-এ সব সেট-করা: BaseUrl, cert path `dev-pki/clients/fi-gateway-000085-dhakabank.pfx`, CA path)।
+সাধারণ Development-এ gateway `http://localhost:5001`-এ plain HTTP-এ কথা বলে। আজ দরকার `https://localhost:7443` + certificate — এজন্য আলাদা environment: **`MtlsTesting`**। এই environment-এর ফাইলে (`appsettings.MtlsTesting.json`) থাকে environment-জিনিস: BaseUrl `https://localhost:7443`, platform ClientId/Contract, আর `Auth` — কারণ customer JWT এখন যাচাই হবে **deployed IdP** `https://fi-idp-dhakabank.fly.dev`-এর JWKS দিয়ে। আর **cert/password/CA আসে gateway-এর `.env` থেকে** (১.৪) — sbqr-api-র মতোই এক জায়গায়।
 
 **পদ্ধতি A — Visual Studio (ডিবাগ চাইলে):** gateway-এর `Properties/launchSettings.json`-এ profile যোগ করুন:
 
@@ -186,7 +192,7 @@ $env:ASPNETCORE_URLS        = "http://localhost:8080"
 dotnet run --no-launch-profile
 ```
 
-> অবশ্যই **প্রজেক্ট ফোল্ডার থেকে** চালান — cert path-গুলো relative (`../../../dev-pki/...`)। অন্য কোনো FI সেজে পরীক্ষা করতে চাইলে শুধু env var বদলান: `$env:Mtls__CertPath="...\dev-pki\clients\fi-gateway-000086-ebl.pfx"` + `$env:Mtls__CertPassword="fi-gateway-ebl-dev"`।
+> অবশ্যই **প্রজেক্ট ফোল্ডার থেকে** চালান — `.env` খোঁজা হয় repo-root-এ (দুই ধাপ উপরে), আর সেখান থেকেই `../dev-pki/...` path-গুলো মেলে। অন্য কোনো FI সেজে পরীক্ষা করতে চাইলে gateway-এর `.env`-এ `Mtls__CertPath` + `Mtls__CertPassword` বদলান (১.৪-এর নোট ২)।
 
 ### 2.3 উঠল কি না — প্রথম প্রমাণসহ
 
@@ -230,15 +236,15 @@ Postman → ⚙️ **Settings** → **Certificates**:
 
 | Variable | Value |
 |---|---|
-| `idp_base` | `http://localhost:5105` |
+| `idp_base` | `https://fi-idp-dhakabank.fly.dev` |
 | `gw_base` | `http://localhost:8080` |
 | `fatema_token` | (খালি — Step ২-এর script ভরবে) |
 
-> শর্টকাট: `rvl-sbqr-fi-gateway/docs/postman-dhakabank-fatema-e2e-dev.postman_collection.json` **Import** করুন — ১২ ধাপের তৈরি collection; শুধু base URL লোকাল করুন।
+> শর্টকাট: `rvl-sbqr-fi-gateway/docs/postman-dhakabank-fatema-e2e-dev.postman_collection.json` **Import** করুন — ১২ ধাপের তৈরি collection; ওটা এমনিতেই fly.dev IdP-কেই ধরে, শুধু `gw_base` → `http://localhost:8080` করে নিন।
 
 ### 4.2 ধাপে ধাপে
 
-**Step ১ — IdP healthy:** `GET {{idp_base}}/health` → `200 {"status":"ok","fi_id":"dhakabank",...}`
+**Step ১ — IdP healthy (deployed):** `GET {{idp_base}}/health` → `200 {"status":"ok","fi_id":"dhakabank","issuer":"https://fi-idp-dhakabank.fly.dev","users":5}`
 
 **Step ২ — Fatema লগইন:** `POST {{idp_base}}/connect/token`, body (x-www-form-urlencoded): `grant_type=password`, `username=fatema`, `password=fatema@1234` → `200` + `access_token`। Tests tab:
 
@@ -265,7 +271,7 @@ pm.environment.set("qr_dynamic_payload", pm.response.json().qrPayload);
 pm.environment.set("qr_dynamic_hash", pm.response.json().payloadHash);
 ```
 
-**Step ৬ — validate (স্ক্যান):** `POST {{gw_base}}/v1/qr/validate`, `Authorization: Bearer {{fatema_token}}`, body `{ "qrPayload": "{{qr_dynamic_payload}}" }` → `200`, `verdict: "VALID"`, আর **hash হুবহু মিলবে** — এটাই pass/fail গেট:
+**Step ৬ — validate (স্ক্যান):** `POST {{gw_base}}/v1/qr/validate`, `Authorization: Bearer {{fatema_token}}`, body `{ "qrPayload": "{{qr_dynamic_payload}}" }` → `200`, `verdict: "VALID"`, আর **hash হুবহু মিলবে** — এটাই pass/fail গেট। রেসপন্সে `trustSource: "TRUST_DIRECTORY"` = signature মিলিয়ে দেখা হয়েছে trust-directory-র ACTIVE key দিয়ে — ওই key প্রথম generate-এই publish হয়ে গিয়েছিল (১.৫-এর নোট):
 
 ```javascript
 pm.test("verdict VALID + hash round-trip", () => {
@@ -283,7 +289,7 @@ pm.test("verdict VALID + hash round-trip", () => {
 
 ## ৫. Edge cases + Evil scenarios — আত্মবিশ্বাসের আসল অংশ
 
-> নিয়ম: **প্রতিটা টেস্টের পর স্টেট ফেরত আনবেন** (cert ফিরিয়ে দিন, env var মুছুন, `.env` আগের মতো করুন) — নইলে পরের অংশ ভাঙা অবস্থায় শুরু হবে।
+> নিয়ম: **প্রতিটা টেস্টের পর স্টেট ফেরত আনবেন** (Postman-এর cert ফিরিয়ে দিন, `.env`-এর বদলানো লাইন আগের মতো করে restart দিন) — নইলে পরের অংশ ভাঙা অবস্থায় শুরু হবে। মনে রাখুন: `.env` সবার শেষে লোড, তাই `$env:Mtls__*` দিয়ে আর ওভাররাইড হয় না।
 
 ### 5.1 Evil client (transport-layer আক্রমণ) — অংশ ৩.২ প্রোব ৩
 `evil-client` cert দিয়ে ঢোকা → handshake-ই মরে (alert 48), sbqr-api console-এ: untrusted chain, `CN=attacker` — rejected।
@@ -292,24 +298,21 @@ pm.test("verdict VALID + hash round-trip", () => {
 
 Gateway কি সত্যিই server-এর cert যাচাই করে, নাকি যে-কোনো server মানে? পরীক্ষা:
 
-```powershell
-# Gateway বন্ধ করে আবার চালান — এবার ভুল CA দেখিয়ে:
-$env:ASPNETCORE_ENVIRONMENT = "MtlsTesting"
-$env:ASPNETCORE_URLS        = "http://localhost:8081"
-$env:Mtls__ServerCaCertPath = "D:\Workspace\Sources\RVL\rvl-sbqr\rvl-sbqr-workspace\dev-pki\evil-ca.crt"
-dotnet run --no-launch-profile
+```ini
+# Gateway বন্ধ করুন। rvl-sbqr-fi-gateway/.env-এ CA-র লাইনটা এদিকে ঘুরিয়ে দিন:
+Mtls__ServerCaCertPath=../dev-pki/evil-ca.crt
 ```
 
-প্রত্যাশিত: `/health/ready` (এবার `:8081`-এ) **লাল** — gateway-এর `MtlsConfigurator` server cert-টা `evil-ca` দিয়ে যাচাই করতে গিয়ে ব্যর্থ (`AuthenticationException: The remote certificate is invalid...`)। অর্থাৎ **client-পাশের validation-ও সত্যিকারের চালু** — ভুয়া server-কে gateway চিনবে না। শেষ হলে `$env:Mtls__ServerCaCertPath` মুছে ফেলুন।
+তারপর আবার চালান (আগের মতোই `MtlsTesting`, `:8080`)। প্রত্যাশিত: `/health/ready` **লাল** — gateway-এর `MtlsConfigurator` server cert-টা `evil-ca` দিয়ে যাচাই করতে গিয়ে ব্যর্থ (`AuthenticationException: The remote certificate is invalid...`)। অর্থাৎ **client-পাশের validation-ও সত্যিকারের চালু** — ভুয়া server-কে gateway চিনবে না। শেষ হলে `.env`-এর লাইনটা `../dev-pki/ca.crt`-তে ফেরত এনে restart দিন।
 
 ### 5.3 Gateway-এর mTLS বন্ধ করে পাঠানো
 
-```powershell
-$env:MTLS__ENABLED = "false"   # MtlsTesting config-কে override করে
-dotnet run --no-launch-profile
+```ini
+# gateway .env-এ এক লাইন বদলে restart:
+Mtls__Enabled=false
 ```
 
-প্রত্যাশিত: `/health/ready` লাল — cert ছাড়া `:7443` ঢুকতে দেয় না। **দরজাটা সত্যিই বন্ধ, gateway-এর ভালো আচরণের ভরসায় না।**
+প্রত্যাশিত: `/health/ready` লাল — cert ছাড়া `:7443` ঢোকতে দেয় না। **দরজাটা সত্যিই বন্ধ, gateway-এর ভালো আচরণের ভরসায় না।** শেষে `Mtls__Enabled=true` ফেরত এনে restart।
 
 ### 5.4 Thumbprint pinning — দ্বিতীয় FI-এর গল্প (সবচেয়ে শিক্ষণীয়)
 
@@ -333,12 +336,12 @@ dotnet run --no-launch-profile
 
 ### 5.5 ভুল PFX password — fail-fast প্রমাণ
 
-```powershell
-$env:Mtls__CertPassword = "wrong-password"
-dotnet run --no-launch-profile
+```ini
+# gateway .env-এ password ভেঙে restart:
+Mtls__CertPassword=wrong-password
 ```
 
-প্রত্যাশিত: gateway **শুরুই হয় না** — cert লোডেই `CryptographicException` (PFX ভাঙা পেলে `FileNotFoundException`, মিসিং config পেলে `InvalidOperationException` — তিনটাই actionable message-সহ fail-fast; মাঝপথে নিঃশব্দে চলতে চলতে মরে না)।
+প্রত্যাশিত: gateway **শুরুই হয় না** — cert লোডেই `CryptographicException` (PFX ভাঙা পেলে `FileNotFoundException`, মিসিং config পেলে `InvalidOperationException` — তিনটাই actionable message-সহ fail-fast; মাঝপথে নিঃশব্দে চলতে চলতে মরে না)। শেষে আসল password ফেরত।
 
 ### 5.6 মেয়াদোত্তীর্ণ certificate (ভাঙা না দেখেই বুঝে নেওয়া)
 
@@ -385,13 +388,14 @@ dotnet run --no-launch-profile
 
 | দিক | Config key | কোডে কোথায় | কাজ |
 |---|---|---|---|
+| দুই সার্ভিসই | repo-root `.env` (শুধু Development/MtlsTesting) | দুই `Program.cs`-এর প্রথম অংশ — `ParseDotEnv`, **সবার শেষে** লোড | লোকাল override-এর একমাত্র জায়গা — appsettings ও `$env:` দুটোকেই হারায় |
 | api | `Mtls__Enabled` | `MtlsEndpointsExtensions.AddServerMtls()` (Program.cs §1b) | true হলেই `:5001`+`:7443` Listen, cert লোড |
 | api | `Mtls__ServerCertificatePath=../dev-pki/sbqr-api.pfx` | একই ফাইল — `LoadPkcs12FromFile` | নিজের পরিচয় (pass `sbqr-dev`) |
 | api | `Mtls__CaCertificatePath=../dev-pki/ca.crt` | `ClientCertificateValidator` — `CustomRootTrust` | এই CA-র সই ছাড়া client মানে না |
 | api | `Mtls__AllowedClientThumbprints__0..N` | একই validator | ভরলে শুধু ওই thumbprint-রা; fallback বন্ধ |
-| gateway | `Platform__BaseUrl=https://localhost:7443` | Program.cs-এর দুই HttpClient | mTLS দরজার ঠিকানা |
-| gateway | `Mtls__CertPath / CertPassword` | `MtlsConfigurator.Apply()` | client cert পরানো (`fi-gateway-000085-dhakabank.pfx`) |
-| gateway | `Mtls__ServerCaCertPath=../../../dev-pki/ca.crt` | একই ফাইলের callback | server-কে শুধু এই CA-তে বাঁধা |
+| gateway | `Platform__BaseUrl=https://localhost:7443` | `appsettings.MtlsTesting.json` → Program.cs-এর দুই HttpClient | mTLS দরজার ঠিকানা |
+| gateway | `Mtls__CertPath / CertPassword` (`.env`) | `MtlsConfigurator.Apply()` | client cert পরানো (`fi-gateway-000085-dhakabank.pfx`) |
+| gateway | `Mtls__ServerCaCertPath=../dev-pki/ca.crt` (`.env`) | একই ফাইলের callback | server-কে শুধু এই CA-তে বাঁধা |
 
 দুই পাশেই নিয়ম এক: **"শুধু আমার দেওয়া একটা CA-কে বিশ্বাস করব" (`CustomRootTrust`)** — Windows-এর বিশ্বাসের লম্বা তালিকা অপ্রাসঙ্গিক।
 
@@ -405,13 +409,16 @@ dotnet run --no-launch-profile
 | api boot-এ `ServerCertificatePath was not found` | dev-pki নেই/পথ ভুল | অংশ ১.২; `.env`-এ `../dev-pki/...` ঠিক আছে কি না |
 | api-তে DB connection error, কিন্তু `:7443` লাইন আছে | Postgres নেই — mTLS ঠিকই, support নেই | `pwsh docker/start-db.ps1` |
 | api `--no-launch-profile`-এ বিদ্যুৎ-বেগে connection-string error | environment Production হয়ে গেছে, `.env` লোডই হয়নি | `$env:ASPNETCORE_ENVIRONMENT="Development"` সেট করুন |
-| gateway `FileNotFoundException: …dhakabank.pfx` | relative path মেপে পড়েনি | gateway প্রজেক্ট ফোল্ডার থেকে চালান |
-| gateway ready লাল + `AuthenticationException … validation procedure` | server-CA/নাম মিলছে না | `MtlsTesting` env চালু কি না; `ServerCaCertPath` ঠিক CA-তে নির্দেশ করছে কি না (5.2-এর env var রয়ে গেলে মুছুন!) |
+| gateway বুট লগে `[dev] loading .env` লাইন নেই | environment Development/MtlsTesting না, বা `rvl-sbqr-fi-gateway/.env` নেই | অংশ ১.৪; ফাইল বানিয়ে restart |
+| gateway `FileNotFoundException: …dhakabank.pfx` | gateway `.env`-এর `Mtls__CertPath` মেলেনি (repo-root থেকে relative) | dev-pki-তে ফাইল আছে কি না দেখুন; `.env`-এ `../dev-pki/clients/…` বানান — `MtlsConfigurator` repo-root আগে মেপে দেখে |
+| gateway ready লাল + `AuthenticationException … validation procedure` | server-CA/নাম মিলছে না | `MtlsTesting` env চালু কি না; `.env`-এর `Mtls__ServerCaCertPath` ঠিক `../dev-pki/ca.crt`-তে আছে কি না (৫.২-এর বদল রয়ে গেলে ফেরত আনুন!) |
 | `The specified network password is not correct` | PFX password ভুল | api: `sbqr-dev`; gateway: `fi-gateway-<fi-id>-dev` |
 | Postman-এ server cert error | CA import করেননি | Settings → Certificates → CA Certificates → `dev-pki/ca.crt` |
+| Postman CA import-এ "…one or more trusted certificates in PEM format" | CA ঘরে ভুল ফাইল পড়েছে (key বা .pfx) — `ca.crt` নিজে ঠিক PEM-ই | CA Certificates-এ **শুধু** `dev-pki\ca.crt` (প্রথম লাইন `-----BEGIN CERTIFICATE-----`); এরপরও হলে `ca.pem` নামে কপি করে import + Postman রিস্টার্ট |
 | Postman client cert দিয়েও মরছে | পুরনো cert বসানো আছে / ভুল জোড়া / pinning-এ unregistered | fresh জেনারেটের পর Postman-এ নতুন ফাইল বসান; 5.4 চেক |
 | `curl` PowerShell-এ অদ্ভুত | alias | `curl.exe` লিখুন / Git Bash |
-| trust-store sync error লগে (:5002) | mock চালু নেই | অংশ ১.৫(গ) |
+| api লগে trust-store sync warning (প্রতি মিনিটে) | deployed trust store ঘুমিয়ে আছে (Render free tier অলস থাকলে জাগতে একাধিক মিনিট) | mTLS flow-এর জন্য চিন্তা নেই (১.৫-এর নোট); BB-leg দরকার হলে ব্রাউজারে `https://rvl-bb-trust-store.onrender.com/health` খুলে জাগান। একদম লাগবেই → fallback: `rvl-bb-trust-store\src\BB.TrustStoreMock`-এ `dotnet run` (`:5002`) + `.env`-এ `TrustStore__BaseUrl=http://localhost:5002` |
+| fatema login-এ timeout / gateway সব JWT ফেলাচ্ছে | রিমোট IdP-তে পৌঁছাচ্ছে না (নেট/VPN) | `curl.exe -s https://fi-idp-dhakabank.fly.dev/health` — না এলে সংযোগ ঠিক করুন; IdP ছাড়া mTLS অংশ (৩/৫) তবুও চলবে |
 
 ---
 
@@ -429,7 +436,8 @@ dotnet run --no-launch-profile
 |---|---|
 | ☐ | `dev-pki-init.sh` + `dev-client-issue.sh` চলে, thumbprint প্রিন্ট হয় |
 | ☐ | api console-এ `http://127.0.0.1:5001` + `https://127.0.0.1:7443` দুই লাইনই |
-| ☐ | gateway `/health/ready` সবুজ (mTLS পথে token) |
+| ☐ | দুই লগেই `[dev] loading .env: …` লাইন (দুই repo-র ফাইল লোড হয়েছে) |
+| ☐ | gateway `/health/ready` সবুজ (mTLS পথে token — `.env`-এর cert দিয়েই) |
 | ☐ | Postman + dhakabank cert → `:7443/health/live` = 200 |
 | ☐ | cert বন্ধ → মৃত (alert 46); evil cert → মৃত (alert 48); **কোনো status code নেই** |
 | ☐ | পুরো flow: fatema login → QR static/dynamic 201 → validate `VALID` + hash মিল |
