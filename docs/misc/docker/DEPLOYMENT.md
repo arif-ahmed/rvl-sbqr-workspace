@@ -373,16 +373,104 @@ migration **before** you write the rollback ticket.
 
 ## 6. Observability — where logs land
 
-| Sink | Local | Staging | Production |
-|---|---|---|---|
-| stdout / docker logs | ✅ | (captured by ACA) | (captured by AKS / kubectl logs) |
-| Application Insights | ❌ | ✅ | ✅ |
-| Azure Log Analytics | ❌ | ✅ | ✅ |
+The SBQR.Api host writes ONLY to stdout (and stderr). Retention, rotation,
+and shipping are the wrapper's job. This section pins the wrapper per
+environment. The app image is identical across all four rows below; only
+the wrapper changes.
 
-The host's logging is wired in `appsettings.json` (`Logging.LogLevel`). In
-Production the dev override is removed and any inbox-zero rule for
-`Microsoft.AspNetCore` is dropped to `Warning`. Real instrumentation
-(OTel + Application Insights exporter) lands in epic-1.
+### 6.1 Local — bare `dotnet run`
+
+Stdout goes to the terminal. There is **no `logs/` directory** in this repo
+by design. See `docs/logging-plan.md` §3.6.5 for the rationale. Default
+mode for a developer running a smoke test or stepping through a request
+with the debugger.
+
+### 6.2 Local — Docker Compose
+
+`docker/docker-compose.yml` pins `sbqr.api` to the `json-file` driver with
+`max-size: 50m`, `max-file: 10` (~500 MB cap per container). Access:
+
+```bash
+docker compose -f docker/docker-compose.yml logs -f sbqr.api
+docker compose -f docker/docker-compose.yml logs --tail=200 sbqr.api
+```
+
+To switch the dev stack to a remote sink (so logs survive
+`docker compose down`), edit the `logging:` block — see
+`docs/logging-plan.md` §3.5.3 for the `awslogs` / `gcplogs` / `loki`
+driver shapes.
+
+### 6.3 Staging — Azure Container Apps
+
+ACA captures container stdout automatically. Two shipping options:
+
+**Option A (default):** Container Apps environment diagnostic settings
+→ Log Analytics workspace. Turn on `ContainerAppConsoleLogs` in the ACA
+env's "Diagnostic settings" blade. Query in Log Analytics:
+
+```
+ContainerAppConsoleLogs_CL
+| where ContainerAppName_s == "sbqr-api"
+| where Log_s contains "correlation_id"
+| project TimeGenerated, Log_s, ContainerAppName_s
+```
+
+Retention: set on the Log Analytics workspace (30 days default; bump to
+90 if the regulator audit window warrants it).
+
+**Option B:** Application Insights connection string in env
+(`APPLICATIONINSIGHTS_CONNECTION_STRING=...`) + the
+`Microsoft.ApplicationInsights.AspNetCore` SDK already wired in
+`Program.cs`. Lets you correlate stdout with HTTP requests + dependency
+calls in one tool. Used in staging to validate the trace story end-to-end
+before prod. Not used in prod because Azure Monitor's per-GB cost is
+significant at the FI's request volume; AKS uses Loki + Fluent Bit
+instead (cheaper, owned by us).
+
+Access the staging log:
+
+```bash
+az containerapp logs show -n sbqr-api -g rg-sbqr-staging --tail 200
+```
+
+### 6.4 Production — AKS + Fluent Bit + Loki
+
+The AKS node's kubelet tails every container's stdout to
+`/var/log/pods/<ns>_<pod>/<container>/0.log` on the node. A **Fluent Bit
+DaemonSet** (one pod per node) tails those files, parses the JSON,
+**applies a PII scrubber** (strips any `recipient_pan` / `recipient_name`
+keys that slipped through, plus the raw `qr_payload` if it ever appears),
+and pushes to Loki. Grafana queries Loki.
+
+The app stays unchanged — same stdout-only contract. Fluent Bit config
+(in the Helm chart) is the single PII defense-in-depth point.
+
+```bash
+# Operator runbook:
+kubectl -n sbqr logs -l app=fluent-bit --tail=100          # is the shipper healthy?
+kubectl -n sbqr port-forward svc/loki 3100:3100            # browse in Grafana via http://localhost:3000
+logcli -addr=http://localhost:3100 query '{app="sbqr-api"}' | head
+```
+
+Retention:
+
+- Loki hot tier: 30 days on the cluster's local PVCs
+- Loki cold tier: 1 year on S3 (the regional bucket; cross-region
+  replication per the bank's DR plan)
+
+> **Note:** regulator `audit_logs` (PostgreSQL hash-chain) is a SEPARATE
+> store, on its own retention tier (7-year tamper-evident per Bangladesh
+> Bank ICT guidelines). Application logs are operational, not
+> regulatory — never confuse the two.
+
+### 6.5 Quick reference table
+
+| Env | Wrapper | Sink | Retention |
+|---|---|---|---|
+| Dev (`dotnet run`) | The terminal emulator | Terminal scroll buffer | None |
+| Dev (Compose) | Docker `json-file` driver | Container json-file under `/var/lib/docker/containers/...` | 50 MB × 10 files (~500 MB) |
+| Staging (ACA) | ACA log stream → Log Analytics workspace | Application Insights / Log Analytics | 30 days hot, configurable |
+| Prod (AKS) | kubelet tails container stdout → Fluent Bit DaemonSet → Loki | Loki + Grafana | 30 days hot in Loki; 1 year cold in S3 |
 
 ---
 

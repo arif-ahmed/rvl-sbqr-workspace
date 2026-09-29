@@ -66,7 +66,7 @@ Read this section once. Every step later in the doc refers back to one of these 
 | | Application logs (this plan) | Audit trail (`audit_logs` table) |
 |---|---|---|
 | Purpose | Debugging, operations, incident investigation | Legal and compliance evidence of who did what |
-| Where | stdout, then the hosting platform's log viewer | PostgreSQL, hash-chained, append-only |
+| Where | stdout — captured by the wrapper (shell redirect on a dev laptop, Docker logging driver in a container, kubelet + DaemonSet in Kubernetes, CloudWatch agent on a VM). **See §3.5** for the per-environment medium. | PostgreSQL, hash-chained, append-only |
 | Can lines be lost? | Yes, occasionally. That is acceptable. | No. That is the point of the table. |
 | Who reads it | Developers and on-call engineers | Auditors, compliance, Bangladesh Bank |
 
@@ -199,6 +199,223 @@ Reading it: *FI tenant `3f1c…` (their reference `fi-ref-8a3d`) verified QR `9f
 | Trace / span | `Scopes[].TraceId` / `SpanId` |
 
 > **Why `State` and not `Scopes` for the summary fields:** `State` is a JSON **object**, so `State.verdict` always has the same path and is easy to filter on. `Scopes` is an **array** whose order can vary. Use it to find lines by ID (`grep`), not to filter by field.
+
+---
+
+## 3.5 Where the JSON log lives (dev machine, container, orchestrator)
+
+The application **only writes to stdout** — there is no `Microsoft.Extensions.Logging.File` provider, no in-process rolling, and no Serilog sink in the current host. That is deliberate: stdout is the universal contract every container runtime and orchestrator knows how to capture, and it keeps the app 12-factor and stateless. The job of *retaining* and *querying* the log belongs to whatever is wrapping the process. **Each environment writes the log to a different medium; the choice matters because a process crash, a container restart, or a pod eviction erases the buffer.** Pick the right medium for the environment, or you will lose the only evidence you have the moment you need it.
+
+| Environment | Who captures stdout | Where it lands | Retention | PII guard |
+|---|---|---|---|---|
+| **Dev machine** (`dotnet run` from a developer's laptop) | The shell. The repo's launch profile does NOT redirect. | `rvl-secure-bqr-manager/logs/api-stdout.log` — the file is created by the shell `>` redirection in the run command (see §3.5.1). Not by the app. | Until the developer deletes it. **There is no rotation.** Do not ship this file anywhere. | None — never leave the file on a shared drive. |
+| **Single-VM / bare-metal deploy** (the current staging box; this is what F1 below covers) | The process supervisor (systemd unit, `nohup`, or a CloudWatch agent) — see §3.5.2 | A rolling file under `/var/log/sbqr/` (or the CloudWatch log group) | Daily roll, 30 days, then delete | The shipper (CloudWatch agent / Fluent Bit) is the one place that enforces masking. The app stays strict; the shipper is the safety net. |
+| **Containerized deploy** (Docker / Compose — what we run for the dev DB and may use for one-off stacks) | The container runtime captures stdout via the configured **logging driver**. Default driver is `json-file`. | Either a file on the Docker host (rotated by the driver) or a remote sink like `awslogs`, `gcplogs`, `loki`, `splunk` | Set per-driver: `--log-opt max-size=50m --log-opt max-file=10` for `json-file`; or the remote sink's retention policy | Done by the driver / shipper, not by the app. |
+| **Orchestrated deploy** (Kubernetes / AKS / EKS) | kubelet tails the container's stdout to `/var/log/pods/<ns>_<pod>/<container>/0.log` on the node | Picked up by a **DaemonSet** (Fluent Bit, Vector, Filebeat) and shipped to Loki / Elasticsearch / CloudWatch | Cluster-wide retention set in the sink (e.g. Loki compactor) | The DaemonSet is the only PII scrub point. |
+
+**One rule across every environment:** the app never opens a log file itself. If you ever feel the need to add a file sink inside the host, stop — the answer is to fix the wrapper, not the app.
+
+### 3.5.1 Dev machine: how the file under `logs/` actually gets created
+
+The repo's `launchSettings.json` has two profiles (text, JSON) and **neither of them redirects stdout to a file**. The `logs/api-stdout.log` you see is created by the **outer** command you use to run the API — for example, the shell helper used by the e2e trace tool:
+
+```bash
+# manual: redirects stdout into a file the shell owns, not the app
+mkdir -p logs
+dotnet run --project src/Host/SBQR.Api > logs/api-stdout.log 2>&1
+```
+
+The trace tool in `reports/logging-plan-e2e/trace-tool/Trace/Program.cs` then tails that file via `FileShare.ReadWrite | FileShare.Delete` so it can read while `dotnet run` is still appending. **If you start the API from inside Visual Studio or Rider, no file is created at all — output just stays in the IDE's debug console**, and that's fine for development.
+
+This is fragile on purpose: it makes it obvious the file is not a production artifact. For the dev-machine flow, the standards are:
+
+- **Always start `dotnet run` from the repo root** so the `logs/` folder lands inside the submodule (it is already gitignored in effect — formalize the entry, see §3.5.4).
+- **Delete the file when you're done** with an investigation; it grows unbounded.
+- **Never copy it into a release artifact or a shared folder.** PII containment starts with "this file never leaves your laptop".
+- **The trace tool's `logPath` is hard-coded to the developer's path** (`Program.cs` line ~17). Update it when you re-run on another machine, or pass it in via an env var (recommended follow-up).
+
+### 3.5.2 Single-VM deploy: rolling file + log shipper
+
+The pattern on the current dev EC2 box (and what §F1 below elaborates on) is:
+
+1. The app writes to stdout via `Microsoft.Extensions.Logging.Console`.
+2. A supervisor (systemd unit, or the CloudWatch agent reading stdout) writes those lines to `/var/log/sbqr/sbqr-api-YYYYMMDD.log` with **daily rotation** and a **30-day `retainedFileCountLimit`**.
+3. The CloudWatch agent / Fluent Bit shipper tails the rotated files and forwards to the central log store, **scrubbing PII fields one more time** at the shipper as a defense in depth.
+
+**Why the app does not write the rotated file itself.** Adding `Serilog.Sinks.File` (or `Microsoft.Extensions.Logging.File`, or a custom rolling sink) inside the host would:
+
+- Couple the app to a filesystem layout the orchestrator does not know about.
+- Make container images non-portable (the path `/var/log/sbqr/` does not exist in a Kubernetes pod).
+- Duplicate the rotation logic that the platform already does better (logrotate / CloudWatch agent / Docker driver / kubelet).
+
+The only place an in-app file sink is acceptable is a long-running bare-metal VM that lacks any log shipper — and even there, prefer `logrotate(8)` + stdout redirection over adding a sink, so the format stays identical to every other environment.
+
+### 3.5.3 Containerized deploy: pick the driver, set rotation, no app change
+
+For a single-host Docker or Compose stack, the **container runtime** owns the log. The standard pattern:
+
+```bash
+# docker run: pin rotation on the default json-file driver
+docker run --name sbqr-api \
+  --log-driver json-file \
+  --log-opt max-size=50m \
+  --log-opt max-file=10 \
+  -p 5001:5001 \
+  sbqr-api:latest
+```
+
+For Docker Compose:
+
+```yaml
+services:
+  sbqr-api:
+    image: sbqr-api:latest
+    logging:
+      driver: json-file
+      options:
+        max-size: "50m"
+        max-file: "10"
+```
+
+`max-size=50m` and `max-file=10` caps each container at roughly 500 MB on disk, with the oldest file rolled out when the cap is hit. That is enough for ~30 days at the current request volume; tune to your retention requirement.
+
+If you are deploying to AWS / GCP / a centralized Loki stack, **switch the driver instead of adding a sink**:
+
+```yaml
+# AWS — push straight to CloudWatch Logs
+logging:
+  driver: awslogs
+  options:
+    awslogs-region: us-east-1
+    awslogs-group: sbqr-api
+    awslogs-create-group: "true"
+
+# Grafana Loki — push via the Loki Docker driver
+logging:
+  driver: loki
+  options:
+    loki-url: "http://loki:3100/loki/api/v1/push"
+    loki-batch-size: "400"
+```
+
+In every case the **app stays unchanged**. The driver is configuration on the wrapper, not code in the host.
+
+### 3.5.4 Orchestrated deploy: DaemonSet + Loki, not in-app files
+
+For Kubernetes / AKS / EKS (the eventual target), the convention is:
+
+1. Pod spec sets `restartPolicy: Always`, no `volumeMount`, no log path. Container just writes to stdout/stderr.
+2. kubelet tails each container's stdout to `/var/log/pods/<namespace>_<pod>/<container>/0.log` on the node.
+3. A **Fluent Bit (or Vector) DaemonSet** runs one pod per node, reads every container's log file under `/var/log/pods/`, parses the JSON, **applies a PII scrubber**, and ships to Loki (or Elasticsearch / CloudWatch).
+4. Grafana queries Loki; retention is set by the Loki compactor (e.g. 30 days hot, 1 year cold in S3).
+
+This pattern is the 12-factor answer. The app remains a black box; the platform owns retention, rotation, scrubbing, and access control. Implementing it is §F1 below; **do not** start writing files from inside the app "to make Loki work" — that defeats the whole architecture.
+
+### 3.5.5 What to add to `.gitignore`
+
+The dev-machine flow drops files under `rvl-secure-bqr-manager/logs/`. Formalize the ignore so a developer can never accidentally commit one:
+
+```gitignore
+# Local API logs — created by shell redirection of dotnet run stdout.
+# Never committed. PII containment rule §3.5.1.
+logs/
+*.log
+!.gitkeep
+```
+
+(Add a one-byte `.gitkeep` if you want the directory to exist on a fresh clone.)
+
+### 3.5.6 Decision: when IS it right to add a sink inside the app?
+
+Rare, but there are two:
+
+1. **A long-running Windows service** on a partner bank's own machine, where there is no container runtime and no log shipper, and the bank's ops team will only ever read files. In that case add `Serilog.Sinks.File` with `rollingInterval: Day`, `retainedFileCountLimit: 30`, `outputTemplate: "{Timestamp:yyyy-MM-ddTHH:mm:ss.fffZ} [{Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}"` so the file is still parseable JSON-line-per-line, and document the path in the partner's runbook.
+2. **A crash dump** (`Serilog.Sinks.Debug` / `SelfLog`) gated to a debug-only path, never enabled in production.
+
+For everything else, **fix the wrapper**. The line between "the app should log to a file" and "the platform should capture the app's log" is the line between a 12-factor app and one that you cannot move to a new orchestrator.
+
+---
+
+## 3.6 Run the API with logs captured (concrete recipes)
+
+§3.5 explained the rule. This section is the recipe. There are **three
+sinks** corresponding to the three layers of the deployment pyramid; the
+app image is identical at every layer.
+
+> **Supersedes §3.5.1 and §3.5.5.** §3.5.1 described a `logs/api-stdout.log`
+> created by shell redirection from `dotnet run`, and §3.5.5 recommended a
+> `logs/` gitignore entry. After review we **rejected both**: the dev's
+> terminal is the sink for `dotnet run`, and the Compose `json-file`
+> driver (rotation-capped) is the sink for the Compose stack. There is
+> no `logs/` directory in the repo by design — `**/*.log` is the
+> defense-in-depth rule in `.gitignore`. The narrative below is the
+> authoritative recipe.
+
+### 3.6.1 Dev laptop — bare `dotnet run` (terminal sink)
+
+```bash
+# From the submodule root
+dotnet run --project src/Host/SBQR.Api
+```
+
+Stdout goes to the terminal. `Ctrl+C` to stop. There is **no `logs/`
+directory in this repo by design** — see §3.6.5 for why. This is the
+default mode for a developer running a quick smoke test or stepping
+through a single request with the debugger attached.
+
+### 3.6.2 Dev laptop — Docker Compose (json-file sink with rotation)
+
+`docker/docker-compose.yml` pins `sbqr.api` to the `json-file` driver
+with `max-size: 50m`, `max-file: 10` (~500 MB cap). Access:
+
+```bash
+docker compose -f docker/docker-compose.yml logs -f sbqr.api
+docker compose -f docker/docker-compose.yml logs --tail=200 sbqr.api
+```
+
+The container's stdout flows through Docker's driver; the dev reads it
+via `docker compose logs`. No file sink in the app, no sidecar, no extra
+container.
+
+### 3.6.3 Deployed — staging ACA and prod AKS
+
+See `docs/misc/docker/DEPLOYMENT.md` §6 for the deployed sink table:
+
+| Env | Wrapper | Sink | Retention |
+|---|---|---|---|
+| Dev (`dotnet run`) | The terminal emulator | Terminal scroll buffer | None |
+| Dev (Compose) | Docker `json-file` driver | Container json-file under `/var/lib/docker/containers/...` | 50 MB × 10 files (~500 MB) |
+| Staging (ACA) | ACA log stream → Log Analytics workspace | Application Insights / Log Analytics | 30 days hot, configurable |
+| Prod (AKS) | kubelet tails container stdout → Fluent Bit DaemonSet → Loki | Loki + Grafana | 30 days hot in Loki; 1 year cold in S3 |
+
+### 3.6.4 Cheat sheet for "where is the log right now?"
+
+| Question | Answer |
+|---|---|
+| I ran `dotnet run` on my laptop | The terminal — there is no log file |
+| I ran Compose on my laptop | `docker compose logs sbqr.api` (driver stores under `/var/lib/docker/containers/...`) |
+| I deployed to staging (ACA) | `az containerapp logs show -n sbqr-api -g rg-sbqr-staging` OR Application Insights → `traces` / `customEvents` |
+| I deployed to prod (AKS) | `kubectl logs -n sbqr deploy/sbqr-api` OR Grafana → Loki datasource → `{app="sbqr-api"}` |
+
+### 3.6.5 What we do NOT support, by design
+
+- A `logs/` directory in the repo (file sink — same anti-pattern as a
+  Serilog file sink; the orchestrator doesn't know about it; survives
+  across restarts on the dev's laptop; no rotation policy).
+- A Serilog `Sinks.File` / `Sinks.RollingFile` configuration inside the
+  app.
+- A custom `IFileLogSink` abstraction "so devs can plug in their own."
+- Per-environment branching in the host
+  (`if (env.IsDevelopment()) WriteTo.File(...)`).
+- A `Serilog.Sinks.Seq` package or a Seq sidecar container. The dev's
+  terminal is the dev's sink; the platform's stdout-shipping is the
+  deployed sink. Anything in between is a hidden filesystem sink in
+  disguise.
+
+If you find yourself wanting any of the above, **the wrapper is wrong**.
+Console for the dev laptop, `json-file` rotation for Compose, ACA Log
+Analytics for staging, Fluent Bit + Loki for prod — pick the layer, the
+layer picks the sink.
 
 ---
 
