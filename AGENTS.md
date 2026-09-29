@@ -30,3 +30,13 @@ This repo is the **orchestrator** for the RVL SBQR system. All application code 
 ## Commands
 
 Bootstrap and sibling-sync commands live in `README.md` (source of truth).
+
+## rvl-commit + rvl-reviewer (maker-checker)
+
+`/rvl-commit <plan-doc-path>` — guarded commit gate for submodule work (canonical: `.claude/skills/rvl-commit/SKILL.md`; opencode mirror: `.opencode/skill/rvl-commit/`). It reviews uncommitted changes in the auto-detected dirty submodule against a frozen plan doc, hard-blocks on secrets, any unimplemented plan item, or a missing/mismatched HTML audit report, then drafts a single gitmoji commit with the Jira ref parsed from the branch name — executed only after explicit approval. After push it dispatches the `rvl-reviewer` agent for an independent PASS/FAIL verdict (plan compliance, HTML audit report, VAPT regression vs `docs/misc/security/vapt-*.md`, coding guidelines); on PASS it creates the PR after a separate approval. It never commits to the root repo and never force-pushes. Prefer it over manual commits when finishing plan work.
+
+`rvl-reviewer` (canonical: `.claude/agents/rvl-reviewer.md`; opencode: `.opencode/agent/rvl-reviewer.md`) is the read-only checker agent — it never writes files and never mutates git state, and returns a structured `VERDICT: PASS|FAIL` block with a PR draft on PASS.
+
+## Canonical vs mirror
+
+If you edit the rvl-commit skill, edit `.claude/skills/rvl-commit/SKILL.md` and re-copy to `.opencode/skill/rvl-commit/SKILL.md` to keep them identical. The rvl-reviewer agent files share the same body but differ in frontmatter (per-tool agent schemas): edit `.claude/agents/rvl-reviewer.md` as canonical and mirror body changes into `.opencode/agent/rvl-reviewer.md`, preserving its opencode frontmatter (`mode`, `permission`).

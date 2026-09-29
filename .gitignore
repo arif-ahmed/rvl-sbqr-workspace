@@ -433,3 +433,6 @@ FodyWeavers.xsd
 # search — search them by passing the path explicitly):
 /dev-pki/
 /rvl-sbqr-keys/
+
+# Local CLI tool settings (puku-cli per-machine permissions)
+/.puku-cli/
