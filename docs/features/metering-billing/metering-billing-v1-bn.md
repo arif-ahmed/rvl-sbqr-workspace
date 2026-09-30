@@ -151,7 +151,7 @@ Reporting আলাদা module নয় — Billing-এর read endpoint (Met
 ```
 FI → POST /v1/qr/generate/dynamic   (Idempotency-Key: K)
   → validate → sign
-  → এক transaction: INSERT qr_generations + INSERT outbox_messages(qr-generation.qr-generated.v1)   ← BILLABLE মুহূর্ত (commit)
+  → এক transaction: INSERT qr_generations + INSERT outbox_messages(QrGenerated)   ← BILLABLE মুহূর্ত (commit)
   → 201
 
 Dispatcher (~১ সেকেন্ড পরে) → Metering.QrGeneratedHandler
@@ -182,12 +182,18 @@ Dispatcher (~১ সেকেন্ড পরে) → Metering.QrGeneratedHandle
 
 ### ৪.৫ Integration events
 
-Producer-এর `.Contracts` project-এ, versioned। SharedKernel-এ নতুন `IIntegrationEvent : INotification { Guid EventId; DateTimeOffset OccurredAt; }`।
+Producer-এর `.Contracts` project-এ (`SBQR.Modules.QrGeneration.Contracts`, `SBQR.Modules.Verification.Contracts`)। SharedKernel-এ নতুন `IIntegrationEvent : INotification { Guid EventId; DateTimeOffset OccurredAt; }`।
 
 | `event_type` | Producer | Payload | Consumer |
 |---|---|---|---|
-| `qr-generation.qr-generated.v1` | QrGeneration | EventId, QrGenerationId, TenantId, QrType, IdempotencyKey, OccurredAt | Metering → `GENERATION_STATIC` / `GENERATION_DYNAMIC` |
-| `verification.qr-validated.v1` | Verification (প্রতিটি রেকর্ড হওয়া row) | EventId, QrValidationId, TenantId (verifying), Verdict, RequestId, OccurredAt | Metering → `VALIDATION` (billable flag policy অনুযায়ী) |
+| `QrGenerated` | QrGeneration | EventId, QrGenerationId, TenantId, QrType, IdempotencyKey, OccurredAt | Metering → `GENERATION_STATIC` / `GENERATION_DYNAMIC` |
+| `QrValidated` | Verification (প্রতিটি রেকর্ড হওয়া row) | EventId, QrValidationId, TenantId (verifying), Verdict, RequestId, OccurredAt | Metering → `VALIDATION` (billable flag policy অনুযায়ী) |
+
+**নাম ও version:**
+
+- C# class-এর নাম আর `event_type` string একই: `QrGenerated`, `QrValidated`। Codebase-এর domain event-এর মতো PascalCase, অতীত কাল, `Event` suffix ছাড়া (যেমন `TenantRegistered`, `KeySuspended`)। কোন module-এর event, সেটা namespace থেকে বোঝা যায়।
+- শুরুতে নামে version নেই। Payload-এ breaking change এলে নতুন class `QrGeneratedV2` (`event_type` = `QrGeneratedV2`) যোগ হবে। পুরনো class registry-তে থাকবে, যতক্ষণ outbox-এ তার `PENDING` বা `DEAD` row আছে।
+- Registry-তে একই `event_type` দুবার থাকলে app startup-এ fail করবে।
 
 Billing কোনো event প্রকাশ করে না (notification নেই); তার সিদ্ধান্তগুলো সরাসরি `audit_logs`-এ যায়।
 
@@ -223,7 +229,7 @@ Billing কোনো event প্রকাশ করে না (notification ন
 CREATE TABLE IF NOT EXISTS public.outbox_messages (
   outbox_message_id uuid PRIMARY KEY,                 -- = integration event id
   source_module     varchar(50)  NOT NULL,            -- 'qr-generation' | 'verification'
-  event_type        varchar(150) NOT NULL,            -- যেমন 'qr-generation.qr-generated.v1'
+  event_type        varchar(150) NOT NULL,            -- 'QrGenerated' | 'QrValidated'
   payload           jsonb        NOT NULL,
   occurred_at       timestamptz  NOT NULL,
   status            varchar(15)  NOT NULL DEFAULT 'PENDING'
@@ -811,10 +817,19 @@ Pending ──(যুক্ত statement Finalize)──► Applied
 
 ### ১৪.৬ Domain events
 
-| Event | কোথায় যায় |
-|---|---|
-| `qr-generation.qr-generated.v1`, `verification.qr-validated.v1` | Outbox → Metering (integration event) |
-| `billing.rate_card.added`, `billing.adjustment.recorded`, `billing.period.drafted`, `billing.period.finalized` | শুধু `audit_logs` (কোনো subscriber নেই) |
+একই ঘটনার দুটো নাম, দুটোর কাজ আলাদা। Codebase-এ আগে থেকেই এই নিয়ম চলে (যেমন event `TenantActivated`, audit action `tenant.activated`):
+
+- **Event-এর নাম:** PascalCase, অতীত কাল, `Event` suffix ছাড়া।
+- **Audit action:** `audit_logs.action`-এ dotted lowercase string।
+
+| Event | Audit action | কোথায় যায় |
+|---|---|---|
+| `QrGenerated` | `qr.generated` (আগে থেকেই আছে) | Outbox → Metering (integration event) |
+| `QrValidated` | `qr.validated` (আগে থেকেই আছে) | Outbox → Metering (integration event) |
+| `RateCardAdded` | `billing.rate_card.added` | শুধু `audit_logs` (কোনো subscriber নেই) |
+| `AdjustmentRecorded` | `billing.adjustment.recorded` | শুধু `audit_logs` |
+| `BillingPeriodDrafted` | `billing.period.drafted` | শুধু `audit_logs` |
+| `BillingPeriodFinalized` | `billing.period.finalized` | শুধু `audit_logs` (ভবিষ্যতে outbox-এও, F8) |
 
 ---
 
@@ -854,7 +869,7 @@ Pending ──(যুক্ত statement Finalize)──► Applied
 | F5 | Invoice number, VAT, paid/void (পুরনো design-এ তৈরি আছে) | Finance চাইলে |
 | F6 | **Admin Portal** — platform team-এর জন্য: rate card, adjustment, draft review ও finalize-এর UI; FI ও platform report দেখা (chart সহ); dead letter দেখা ও requeue। v1-এর admin API-র ওপরেই বসবে। | Admin Portal-এর roadmap হলে |
 | F7 | **Customer Portal** — FI-দের self-service: নিজের provisional usage, statement ও report দেখা, PDF/CSV ও raw usage extract নামানো, dispute তোলা। এর জন্য FI-facing read-only usage API (tenant-scoped) লাগবে। | FI self-service চাইলে |
-| F8 | **স্বয়ংক্রিয় বিল পাঠানো ও Notification system** — Finalize হলে প্রতিটি FI-র statement (PDF + CSV) নির্দিষ্ট billing contact-এর কাছে স্বয়ংক্রিয়ভাবে email-এ যাবে। অন্যান্য notification: FI-কে dispute window শেষ হওয়ার reminder আর Adjustment যুক্ত হওয়ার খবর; platform team-কে Draft review-এর জন্য তৈরি, dead letter আর finalize দেরি হওয়ার alert। নকশা: Billing `billing.period.finalized` event outbox-এ প্রকাশ করবে, আর একটা আলাদা Notification module সেটা শুনে পাঠাবে। এতে Billing email-এর কিছু জানবে না, আর পাঠানো ব্যর্থ হলে retry হবে। প্রতিটি পাঠানোর রেকর্ড রাখা হবে (কাকে, কখন, কোন statement, delivered কিনা), যাতে dispute-এর সময় প্রমাণ থাকে। FI-র billing contact Tenancy-তে রাখতে হবে। | হাতে পাঠানো ঝামেলা হলে বা FI সংখ্যা বাড়লে |
+| F8 | **স্বয়ংক্রিয় বিল পাঠানো ও Notification system** — Finalize হলে প্রতিটি FI-র statement (PDF + CSV) নির্দিষ্ট billing contact-এর কাছে স্বয়ংক্রিয়ভাবে email-এ যাবে। অন্যান্য notification: FI-কে dispute window শেষ হওয়ার reminder আর Adjustment যুক্ত হওয়ার খবর; platform team-কে Draft review-এর জন্য তৈরি, dead letter আর finalize দেরি হওয়ার alert। নকশা: Billing `BillingPeriodFinalized` event outbox-এ প্রকাশ করবে, আর একটা আলাদা Notification module সেটা শুনে পাঠাবে। এতে Billing email-এর কিছু জানবে না, আর পাঠানো ব্যর্থ হলে retry হবে। প্রতিটি পাঠানোর রেকর্ড রাখা হবে (কাকে, কখন, কোন statement, delivered কিনা), যাতে dispute-এর সময় প্রমাণ থাকে। FI-র billing contact Tenancy-তে রাখতে হবে। | হাতে পাঠানো ঝামেলা হলে বা FI সংখ্যা বাড়লে |
 | F9 | User-ভিত্তিক login + four-eyes finalize | C5 সমাধানে |
 | F10 | Message broker (dispatcher → broker publish) | Metering আলাদা service হলে |
 | F11 | `usage_events` monthly partition বা daily rollup | Report ধীর হলে |

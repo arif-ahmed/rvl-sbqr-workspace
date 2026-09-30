@@ -10,6 +10,10 @@ FI-দের QR generation ও validation-এর জন্য usage metering ও
 | Doc | অবস্থা | কী আছে |
 |---|---|---|
 | [metering-billing-v1-bn.md](metering-billing-v1-bn.md) | ✅ **বর্তমান (v1.1)** | চূড়ান্ত design, domain model, report template, open concern, HoE-এর প্রশ্ন |
+| [metering-billing-strategic-ddd-bn.md](metering-billing-strategic-ddd-bn.md) ([English](metering-billing-strategic-ddd.md)) | ✅ v1.1 থেকে তৈরি | Strategic DDD: subdomain, bounded context, ubiquitous language, context map, integration contract, boundary/terminology সমস্যা, open question |
+| [bounded-context-discovery-bn.md](bounded-context-discovery-bn.md) | ✅ code + v1.1 থেকে | চারটে নির্দিষ্ট context (QrGeneration, QrVerification, Metering, Billing): দায়িত্ব, মালিকানা, integration event, সম্পর্ক, context map |
+| [metering-tactical-ddd-bn.md](metering-tactical-ddd-bn.md) | ✅ discovery + code থেকে | Metering-এর tactical model: business action, invariant, domain object, persistence, production risk (aggregate লাগে না কেন) |
+| [billing-tactical-ddd-bn.md](billing-tactical-ddd-bn.md) | ✅ discovery + code থেকে | Billing-এর tactical model: একমাত্র aggregate `BillingPeriod`; rate card ও adjustment append-only; invariant, concurrency, open question |
 
 পুরনো design ([`metering-billing-design.md`](../../misc/metering-billing-design.md), [বাংলা](../../misc/metering-billing-design-bn.md)) এখন `docs/misc/`-এ, শুধু রেফারেন্সের জন্য। এর architecture অংশ v1.1-এ নেওয়া হয়েছে; commercial অংশ ভবিষ্যৎ scope (F1, F5)-এর জন্য।
 
