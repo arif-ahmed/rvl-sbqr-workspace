@@ -5,9 +5,9 @@
   - কোনো context নতুন করে বানানো, ভাঙা, জোড়া বা নাম বদলানো হয়নি।
   - Tactical DDD (aggregate, entity ইত্যাদি) এর বাইরে।
 - **ভিত্তি:**
-  - Design: [metering-billing-v1-bn.md](metering-billing-v1-bn.md) (v1.1)। এখানে যত `§` আছে, সব এই doc-এর।
+  - Design: [metering-billing-v1-bn.md](metering-billing-v1-bn.md) (v1.1)। এখানে "design ৪.৫"-এর মতো রেফারেন্স মানে এই doc-এর অংশ ৪.৫।
   - Glossary: [`rvl-secure-bqr-manager/CONTEXT.md`](../../../rvl-secure-bqr-manager/CONTEXT.md)
-  - ADR: [0002](../../../rvl-secure-bqr-manager/docs/adr/0002-bill-conclusive-verdicts-to-verifying-fi.md)
+  - ADR: [0002](adr/0002-bill-conclusive-verdicts-to-verifying-fi.md)
   - Code: `rvl-secure-bqr-manager/src/Modules/{QrGeneration,Verification}`
 - **প্রমাণের অবস্থা:**
 
@@ -33,11 +33,11 @@ FI-র অনুরোধে BanglaQR P2P QR (static বা dynamic) তৈর�
 - একই tenant-এর একই Idempotency key দিয়ে দ্বিতীয়বার তৈরি আটকানো (409)।
 - প্রতিটি সফল তৈরির রেকর্ড রাখা: কে, কী ধরনের QR, কোন key version। QR string নিজে সংরক্ষিত হয় না।
 - সফল, বাতিল ও ব্যর্থ তৈরির audit রাখা।
-- *(Design, এখনো code-এ নেই)* "QR তৈরি হয়েছে" ঘটনাটা বাইরে জানানো (§৪.৫)।
+- *(Design, এখনো code-এ নেই)* "QR তৈরি হয়েছে" ঘটনাটা বাইরে জানানো (design ৪.৫)।
 
 **Owns**
 - **QR generation-এর রেকর্ড:** কোন tenant, কোন QR type (STATIC / DYNAMIC), key version, idempotency key, কখন।
-- **"তৈরি সফল হয়েছে"** এই ঘটনা। Design অনুযায়ী এটাই billable মুহূর্ত: রেকর্ডটা commit হওয়া (§৪.৩)।
+- **"তৈরি সফল হয়েছে"** এই ঘটনা। Design অনুযায়ী এটাই billable মুহূর্ত: রেকর্ডটা commit হওয়া (design ৪.৩)।
 - প্রতি tenant-এ Idempotency key-এর অনন্যতা।
 
 **Does Not Own**
@@ -57,7 +57,7 @@ FI-র অনুরোধে BanglaQR P2P QR (static বা dynamic) তৈর�
 **Integration Events Published**
 | Event | Business Meaning | Consumer |
 |---|---|---|
-| `QrGenerated` *(design; code-এ নেই)* | একটা QR সফলভাবে তৈরি ও save হয়েছে (201)। 409, 4xx বা 5xx হলে কখনো প্রকাশ হয় না। থাকে: event id, generation id, tenant id, QR type, idempotency key, কখন হয়েছে (§৪.৫)। | Metering |
+| `QrGenerated` *(design; code-এ নেই)* | একটা QR সফলভাবে তৈরি ও save হয়েছে (201)। 409, 4xx বা 5xx হলে কখনো প্রকাশ হয় না। থাকে: event id, generation id, tenant id, QR type, idempotency key, কখন হয়েছে (design ৪.৫)। | Metering |
 
 **Integration Events Consumed**
 | Event | Producer | Why Consumed |
@@ -81,7 +81,7 @@ FI-র পাঠানো QR payload spec-এর Annex B অনুযায়�
 - Ed25519 signature যাচাই করে verdict ঠিক করা।
 - প্রতিটি যাচাইয়ের এক row রাখা, যাচাইকারী tenant-এর নামে। শুধু replay হলে row হয় না, audit হয়।
 - Audit রাখা।
-- *(Design, এখনো code-এ নেই)* "QR যাচাই হয়েছে" ঘটনাটা বাইরে জানানো (§৪.৫)।
+- *(Design, এখনো code-এ নেই)* "QR যাচাই হয়েছে" ঘটনাটা বাইরে জানানো (design ৪.৫)।
 
 **Owns**
 - **Verdict** আর তার মানে: `VALID`, `INVALID_SIGNATURE`, `STRUCTURAL_INVALID`, `KEY_NOT_FOUND`, `KEY_SUSPENDED`, `KEY_REVOKED`, `KEY_NOT_ACTIVE`, `NON_P2P`, `REQUEST_STALE`, `REQUEST_REPLAYED`।
@@ -90,7 +90,7 @@ FI-র পাঠানো QR payload spec-এর Annex B অনুযায়�
 - Request id-এর একবার-ব্যবহার নিয়ম।
 
 **Does Not Own**
-- কোন verdict-এ টাকা লাগবে → **Metering**। §২.২ স্পষ্ট বলে: "Verification শুধু business fact প্রকাশ করে; billable কিনা জানে না।"
+- কোন verdict-এ টাকা লাগবে → **Metering**। design ২.২ স্পষ্ট বলে: "Verification শুধু business fact প্রকাশ করে; billable কিনা জানে না।"
 - Trust store-এর key → InstitutionTrust (আর KeyCustody)।
 - Tenant-এর পরিচয় → Tenancy।
 - দাম, statement → Billing।
@@ -109,7 +109,7 @@ FI-র পাঠানো QR payload spec-এর Annex B অনুযায়�
 **Integration Events Published**
 | Event | Business Meaning | Consumer |
 |---|---|---|
-| `QrValidated` *(design; code-এ নেই)* | একটা যাচাই verdict সহ রেকর্ড হয়েছে। প্রতিটি রেকর্ড হওয়া row-এর জন্য একটা; replay বা HTTP error-এ নয়। থাকে: event id, validation id, যাচাইকারী tenant id, verdict, request id, কখন হয়েছে (§৪.৫)। | Metering |
+| `QrValidated` *(design; code-এ নেই)* | একটা যাচাই verdict সহ রেকর্ড হয়েছে। প্রতিটি রেকর্ড হওয়া row-এর জন্য একটা; replay বা HTTP error-এ নয়। থাকে: event id, validation id, যাচাইকারী tenant id, verdict, request id, কখন হয়েছে (design ৪.৫)। | Metering |
 
 **Integration Events Consumed**
 | Event | Producer | Why Consumed |
@@ -120,19 +120,19 @@ FI-র পাঠানো QR payload spec-এর Annex B অনুযায়�
 
 ### `Metering`
 
-> শুধু design-এ আছে (v1.1 §৪.৬, §১৪.২)।
+> শুধু design-এ আছে (design ৪.৬, ১৪.২)।
 
 **Purpose:**
 Platform যত QR তৈরি ও যাচাই করে, প্রতিটি **ঠিক একবার, স্থায়ীভাবে** গুনে রাখা। প্রতিটি billable কিনা চিহ্ন দেওয়া, আর কোন FI-র নামে পড়বে তা রাখা। "কী ব্যবহার হয়েছে?" প্রশ্নের একমাত্র উৎস হওয়া।
 
 **Responsibilities**
 - দুই producer-এর ঘটনা থেকে ব্যবহার রেকর্ড করা। একই ব্যবসায়িক ঘটনা দুবার এলেও একবারই গোনা হয় (`(source_type, source_id)` অনন্য)।
-- **Billable কিনা ঠিক করা:** Conclusive verdict হলে billable, Protocol rejection হলে নয় (§২.২, ADR 0002)। চিহ্নটা রেকর্ডের সময়ই বসে, আর পরে বদলায় না।
-- **কে টাকা দেবে ঠিক করা:** ঘটনায় যে tenant আছে, সে (§১৪.৫)।
+- **Billable কিনা ঠিক করা:** Conclusive verdict হলে billable, Protocol rejection হলে নয় (design ২.২, ADR 0002)। চিহ্নটা রেকর্ডের সময়ই বসে, আর পরে বদলায় না।
+- **কে টাকা দেবে ঠিক করা:** ঘটনায় যে tenant আছে, সে (design ১৪.৫)।
 - কাজটা আসলে কখন হয়েছে (`occurred_at`) রাখা, যাতে দিন আর মাস ঠিক থাকে।
 - ব্যবহারের হিসাব দেওয়া: billable সংখ্যা, দিন/meter/verdict/tenant অনুযায়ী ভাগ, প্রতিটি কাজের তালিকা (raw extract)।
 - "একটা নির্দিষ্ট সময় পর্যন্ত সব ব্যবহার রেকর্ড হয়েছে কি?" প্রশ্নের উত্তর দেওয়া (usage completeness)।
-- ব্যবহারের তথ্য অন্তত ১৩ মাস রাখা (§৯)।
+- ব্যবহারের তথ্য অন্তত ১৩ মাস রাখা (design ৯)।
 
 **Owns**
 - **Usage event:** প্রতিটি কাজের স্থায়ী রেকর্ড।
@@ -165,7 +165,7 @@ Platform যত QR তৈরি ও যাচাই করে, প্রতি�
 **Integration Events Published**
 | Event | Business Meaning | Consumer |
 |---|---|---|
-| — | কিছুই না। Billing নিজে query করে সংখ্যা নেয় (§৪.৭)। | — |
+| — | কিছুই না। Billing নিজে query করে সংখ্যা নেয় (design ৪.৭)। | — |
 
 **Integration Events Consumed**
 | Event | Producer | Why Consumed |
@@ -177,20 +177,20 @@ Platform যত QR তৈরি ও যাচাই করে, প্রতি�
 
 ### `Billing`
 
-> শুধু design-এ আছে (v1.1 §৩, §৪.৭, §৫, §১৪.৩)।
+> শুধু design-এ আছে (design ৩, ৪.৭, ৫, ১৪.৩)।
 
 **Purpose:**
 মাসের billable ব্যবহারকে প্রতিটি Billable FI-র জন্য একটা **review করা, চূড়ান্ত Statement**-এ পরিণত করা। চূড়ান্ত হওয়ার পর ভুল শুধু Adjustment দিয়ে শোধরানো। FI আর platform team-কে ব্যবহার ও টাকার report দেওয়া। "এর দাম কত?" আর "FI-কে কত চার্জ করা হবে?" প্রশ্নের উত্তর দেওয়া।
 
 **Responsibilities**
 - প্রতি FI-র rate card রাখা: প্রতি unit-এ দাম, কোনো ভবিষ্যৎ মাসের ১ তারিখ থেকে কার্যকর।
-- **কোন FI billable ঠিক করা:** যার ওই মাসে rate card আছে (§২.৫)।
-- **দাম হিসাব (Rating):** সংখ্যা × দাম, প্রতি line-এ একবার rounding (§৩)।
-- মাসের জীবনচক্র চালানো: Open → Draft → Finalized। Grace আর usage completeness না মিললে Draft হয় না; `expectedTotal` না মিললে Finalize হয় না (§৫)।
+- **কোন FI billable ঠিক করা:** যার ওই মাসে rate card আছে (design ২.৫)।
+- **দাম হিসাব (Rating):** সংখ্যা × দাম, প্রতি line-এ একবার rounding (design ৩)।
+- মাসের জীবনচক্র চালানো: Open → Draft → Finalized। Grace আর usage completeness না মিললে Draft হয় না; `expectedTotal` না মিললে Finalize হয় না (design ৫)।
 - প্রতি FI, প্রতি মাসে Statement তৈরি; তাতে সেই সময়ের দামের কপি থাকে।
 - Adjustment দিয়ে সংশোধন; dispute window ৩০ দিন।
-- FI report আর Platform report বানানো (§৭)। Report আলাদা context নয়, Billing-এর "পড়ার দিক" (§৪.২)।
-- টাকা-সংক্রান্ত প্রতিটি কাজের audit রাখা (§১০)।
+- FI report আর Platform report বানানো (design ৭)। Report আলাদা context নয়, Billing-এর "পড়ার দিক" (design ৪.২)।
+- টাকা-সংক্রান্ত প্রতিটি কাজের audit রাখা (design ১০)।
 
 **Owns**
 - Rate card
@@ -224,13 +224,13 @@ Platform যত QR তৈরি ও যাচাই করে, প্রতি�
 **Integration Events Published**
 | Event | Business Meaning | Consumer |
 |---|---|---|
-| — | v1-এ বাইরে কিছুই প্রকাশ হয় না (§৪.৫)। Billing-এর ঘটনাগুলো (`RateCardAdded`, `AdjustmentRecorded`, `BillingPeriodDrafted`, `BillingPeriodFinalized`) শুধু audit-এ যায় (`billing.*` action হিসেবে), তাই সেগুলো ভেতরের ঘটনা, এই তালিকায় পড়ে না (§১৪.৬)। | — |
+| — | v1-এ বাইরে কিছুই প্রকাশ হয় না (design ৪.৫)। Billing-এর ঘটনাগুলো (`RateCardAdded`, `AdjustmentRecorded`, `BillingPeriodDrafted`, `BillingPeriodFinalized`) শুধু audit-এ যায় (`billing.*` action হিসেবে), তাই সেগুলো ভেতরের ঘটনা, এই তালিকায় পড়ে না (design ১৪.৬)। | — |
 | `BillingPeriodFinalized` *(শুধু ভবিষ্যৎ scope F8)* | একটা মাস চূড়ান্ত হয়েছে। | একটা ভবিষ্যৎ Notification module; `Unclear / Needs Decision` |
 
 **Integration Events Consumed**
 | Event | Producer | Why Consumed |
 |---|---|---|
-| — | — | কিছুই না। Metering থেকে query করে সংখ্যা নেয়; event-এ subscribe করে না, কারণ statement একটা batch কাজ (§৪.৭)। |
+| — | — | কিছুই না। Metering থেকে query করে সংখ্যা নেয়; event-এ subscribe করে না, কারণ statement একটা batch কাজ (design ৪.৭)। |
 
 ---
 
@@ -238,15 +238,15 @@ Platform যত QR তৈরি ও যাচাই করে, প্রতি�
 
 | Upstream | Downstream | Information Exchanged | Mechanism | DDD Relationship |
 |---|---|---|---|---|
-| QrGeneration | Metering | "একটা QR তৈরি হয়েছে": generation id, tenant id, QR type (static/dynamic), idempotency key, কখন হয়েছে | **Integration Event**: transactional outbox → in-process publish; অন্তত একবার পৌঁছায় (§৪.৪) *(design; code-এ নেই)* | **Published Language**: versioned event; producer billable কিনা জানে না (§১৪.১) |
-| QrVerification | Metering | "একটা যাচাই হয়েছে": validation id, যাচাইকারী tenant id, verdict, request id, কখন হয়েছে | **Integration Event**: ওপরের মতো *(design; code-এ নেই)* | **Published Language** (§১৪.১) |
-| Metering | Billing | Tenant আর meter অনুযায়ী billable সংখ্যা; দিন/meter/verdict/tenant অনুযায়ী ভাগ; প্রতিটি কাজের তালিকা; usage complete কিনা | **Query/API**: in-process `IMeteringQueries`, synchronous pull (§৪.৬) | **Customer–Supplier**: Billing গ্রাহক, Metering সরবরাহকারী (§১৪.১) |
+| QrGeneration | Metering | "একটা QR তৈরি হয়েছে": generation id, tenant id, QR type (static/dynamic), idempotency key, কখন হয়েছে | **Integration Event**: transactional outbox → in-process publish; অন্তত একবার পৌঁছায় (design ৪.৪) *(design; code-এ নেই)* | **Published Language**: versioned event; producer billable কিনা জানে না (design ১৪.১) |
+| QrVerification | Metering | "একটা যাচাই হয়েছে": validation id, যাচাইকারী tenant id, verdict, request id, কখন হয়েছে | **Integration Event**: ওপরের মতো *(design; code-এ নেই)* | **Published Language** (design ১৪.১) |
+| Metering | Billing | Tenant আর meter অনুযায়ী billable সংখ্যা; দিন/meter/verdict/tenant অনুযায়ী ভাগ; প্রতিটি কাজের তালিকা; usage complete কিনা | **Query/API**: in-process `IMeteringQueries`, synchronous pull (design ৪.৬) | **Customer–Supplier**: Billing গ্রাহক, Metering সরবরাহকারী (design ১৪.১) |
 | QrGeneration ↔ QrVerification | (দুই দিকেই) | QR payload-এর গঠন আর signature payload বানানোর নিয়ম। একটা context আরেকটাকে সরাসরি call করে না। | **Other**: একই shared code `SBQR.SharedKernel.QrCodec`। QrGeneration এটা দিয়ে sign করার payload বানায়, QrVerification একই function দিয়ে সেটা আবার তৈরি করে (`ValidateQrCommandHandler.cs`-এর মন্তব্য) | **Shared Kernel** (code-এ প্রমাণিত) |
 
 যা **নেই** (ইচ্ছাকৃত):
 
-- **QrGeneration/QrVerification → Billing:** কোনো সরাসরি সম্পর্ক নেই। Billing শুধু Metering থেকে নেয় (§৪.২)।
-- **Metering → QrGeneration/QrVerification:** কোনো call বা query নেই। Metering তাদের table পড়ে না (§৪.১, v1.1-এর মূল পরিবর্তন)।
+- **QrGeneration/QrVerification → Billing:** কোনো সরাসরি সম্পর্ক নেই। Billing শুধু Metering থেকে নেয় (design ৪.২)।
+- **Metering → QrGeneration/QrVerification:** কোনো call বা query নেই। Metering তাদের table পড়ে না (design ৪.১, v1.1-এর মূল পরিবর্তন)।
 - **Billing → Metering-এর দিকে কোনো ঘটনা:** নেই। দিক সবসময় Metering থেকে Billing।
 
 ---
@@ -281,7 +281,7 @@ QrGeneration   ◄──── Shared Kernel: SBQR.SharedKernel.QrCodec ──�
 4. **Key এখনো ঐচ্ছিক, অথচ design বলে বাধ্যতামূলক।**
    - QR তৈরিতে `Idempotency-Key` ঐচ্ছিক (`QrGenerationController.cs:58`)।
    - যাচাইয়ে `requestId` না দিলে server নিজে বানায় (`QrValidationController.cs:59`)।
-   - Design দুটোকেই বাধ্যতামূলক করতে বলে (§২.৪)। তার আগে event-এ এই field খালি আসতে পারে।
+   - Design দুটোকেই বাধ্যতামূলক করতে বলে (design ২.৪)। তার আগে event-এ এই field খালি আসতে পারে।
 5. **দুটো ছোট অবশিষ্ট বিষয়।**
    - `src/Modules/Issuance/`-এ শুধু `bin`/`obj` folder আছে, কোনো source নেই। অথচ QrGeneration-এর pipeline-এর নাম `QrIssuancePipeline`। এটা সম্ভবত পুরনো নামের অবশিষ্টাংশ; QrGeneration-এর মালিকানা নিয়ে বিভ্রান্তি তৈরি করতে পারে।
    - Canonical repo কোনটা (`rvl-secure-bqr-manager` নাকি `rvl-sbqr-api`), design-এ আগেই C6 হিসেবে খোলা আছে।
@@ -294,11 +294,11 @@ QrGeneration   ◄──── Shared Kernel: SBQR.SharedKernel.QrCodec ──�
 
 | # | প্রশ্ন | কী প্রভাবিত করে |
 |---|---|---|
-| 1 | Context-এর canonical নাম কী হবে: `QrVerification`, নাকি code-এর `Verification`? Event namespace (`verification.*`) কি সেটাই অনুসরণ করবে? | Event contract, নামকরণ |
+| 1 | Context-এর canonical নাম কী হবে: `QrVerification`, নাকি code-এর `Verification`? Contracts namespace (`SBQR.Modules.Verification.Contracts`) কি সেটাই অনুসরণ করবে? | Event contract, নামকরণ |
 | 2 | Verdict-এর তালিকা (`QrVerdict`) কি `Verification.Contracts`-এ প্রকাশ করা হবে, যাতে Metering সেটা published language হিসেবে পায়? নাকি event-এ verdict শুধু string থাকবে, আর তালিকার মালিক কে হবে? | Integration contract |
 | 3 | `REQUEST_STALE` কি কখনো `QrValidated`-এ আসবে, নাকি সবসময় 400 হয়ে আটকে যাবে? (C8) | Event contract; Metering-এর billable-নয় পথ |
-| 4 | `Idempotency-Key` আর `requestId` বাধ্যতামূলক হওয়ার আগে event-এ এই field কি খালি আসতে পারবে? নাকি বাধ্যতামূলক করাটা event চালুর পূর্বশর্ত? (§২.৪) | Event contract |
+| 4 | `Idempotency-Key` আর `requestId` বাধ্যতামূলক হওয়ার আগে event-এ এই field কি খালি আসতে পারবে? নাকি বাধ্যতামূলক করাটা event চালুর পূর্বশর্ত? (design ২.৪) | Event contract |
 | 5 | `QrValidated`-এর `TenantId` মানে যাচাইকারী tenant। Contract-এ field-এর নাম কি সেটা স্পষ্ট বলবে (যেমন verifying tenant)? Metering-এর Attribution এই মানের ওপরই নির্ভর করে (ADR 0002)। | Event contract, Attribution-এর মালিকানা |
-| 6 | Platform report-এ "late usage" (চূড়ান্ত হওয়ার পরে রেকর্ড হওয়া ব্যবহার) দেখাতে Metering-এর query-তে "কখন রেকর্ড হয়েছে" দিয়ে filter লাগে। এটা `IMeteringQueries`-এর তালিকায় নেই। এটা কি Metering → Billing চুক্তিতে যোগ হবে? (§৫ item 5, §৭.২) | Metering → Billing contract |
+| 6 | Platform report-এ "late usage" (চূড়ান্ত হওয়ার পরে রেকর্ড হওয়া ব্যবহার) দেখাতে Metering-এর query-তে "কখন রেকর্ড হয়েছে" দিয়ে filter লাগে। এটা `IMeteringQueries`-এর তালিকায় নেই। এটা কি Metering → Billing চুক্তিতে যোগ হবে? (design ৫ item 5, design ৭.২) | Metering → Billing contract |
 | 7 | "Billable FI" কে ঠিক করবে: Billing (rate card দিয়ে, এখনকার design), নাকি ভবিষ্যতে Tenancy-র service flag দিয়ে (F15, প্রশ্ন ১৭)? | Billing-এর মালিকানা |
 | 8 | `BillingPeriodFinalized` কি কখনো outbox-এ প্রকাশ হবে (F8)? হলে consumer কোন context? | Billing-এর published event |

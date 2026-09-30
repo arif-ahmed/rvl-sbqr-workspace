@@ -1,7 +1,7 @@
 # Metering ও Billing — v1.1 Design (Minimal, Production-grade)
 
 - **তারিখ:** 2026-09-30
-- **অবস্থা:** Design চূড়ান্ত; কিছু বিষয় HoE ও Product team-এর confirm বাকি (§১৫.৩); implementation বাকি
+- **অবস্থা:** Design চূড়ান্ত; কিছু বিষয় HoE ও Product team-এর confirm বাকি (অংশ ১৫.৩); implementation বাকি
 - **Target repo:** `rvl-secure-bqr-manager` (branch `feature/mtls-server`)
 - **নতুন module:** **Metering** ও **Billing** (+ shared **Outbox** infrastructure)
 - **মূলনীতি:** DDD mindset (পুরো ceremony নয়), Event-driven Modular Monolith, Clean Architecture। হিসাব নির্ভুল ও audit-যোগ্য; accounting system নয়।
@@ -23,7 +23,7 @@ FI-দের বিল করা হবে **শুধু দুটো জিন
 - **FI report** — FI-র নিজের usage ও টাকা (platform team তৈরি করে FI-কে পাঠাবে)
 - **Platform report** — সব FI মিলিয়ে volume, revenue, trend
 
-v1-এ কোনো portal নেই — সব কিছু **admin API** (scope `admin`) দিয়ে। FI-facing কোনো API নেই। **Customer Portal** ও **Admin Portal** ভবিষ্যৎ scope (§১৫ F6, F7)।
+v1-এ কোনো portal নেই — সব কিছু **admin API** (scope `admin`) দিয়ে। FI-facing কোনো API নেই। **Customer Portal** ও **Admin Portal** ভবিষ্যৎ scope (অংশ ১৫ F6, F7)।
 
 ---
 
@@ -39,7 +39,7 @@ v1-এ কোনো portal নেই — সব কিছু **admin API** (scop
 
 Static ও Dynamic-এর **রেট একই**; Metering দুটোকে আলাদা meter হিসেবে রাখে, report-এ আলাদা দেখায়।
 
-> ⏳ **নিশ্চিত করা বাকি:** এই তিনটি বিষয় (একই রেট, আলাদা meter, report-এ আলাদা দেখানো) HoE ও Product team-এর সাথে কথা বলে confirm করতে হবে (§১৫ C15, প্রশ্ন ১৬)।
+> ⏳ **নিশ্চিত করা বাকি:** এই তিনটি বিষয় (একই রেট, আলাদা meter, report-এ আলাদা দেখানো) HoE ও Product team-এর সাথে কথা বলে confirm করতে হবে (অংশ ১৫ C15, প্রশ্ন ১৬)।
 
 ### ২.২ Validation
 
@@ -59,7 +59,7 @@ Static ও Dynamic-এর **রেট একই**; Metering দুটোকে �
 | `REQUEST_REPLAYED` | ❌ (row নেই, event নেই) |
 | 400 / 401 / 403 / 5xx | ❌ |
 
-`STRUCTURAL_INVALID` ও `NON_P2P` billable — garbage input-ও platform-এর resource খরচ করে, আর free রাখলে abuse-এর পথ খোলে। এগুলো platform-এ পাঠানোর আগেই client-side-এ আটকানো যায় কিনা, সেটা আলাদা প্রশ্ন (§১৫ C14)।
+`STRUCTURAL_INVALID` ও `NON_P2P` billable — garbage input-ও platform-এর resource খরচ করে, আর free রাখলে abuse-এর পথ খোলে। এগুলো platform-এ পাঠানোর আগেই client-side-এ আটকানো যায় কিনা, সেটা আলাদা প্রশ্ন (অংশ ১৫ C14)।
 
 **এই নিয়মের মালিক Metering।** Verification শুধু "verdict X দিয়ে validate হয়েছে" — এই business fact প্রকাশ করে; billable কিনা জানে না। নিয়ম বদলালে শুধু Metering বদলায়।
 
@@ -92,7 +92,7 @@ Static ও Dynamic-এর **রেট একই**; Metering দুটোকে �
 
 - প্রতি FI একটা **Rate card**: `generation_rate`, `validation_rate` (BDT প্রতি unit)।
 - Tier / slab / monthly fee / included units **নেই**।
-- রেট শুধু **কোনো মাসের ১ তারিখ থেকে** কার্যকর; শুধু **ভবিষ্যৎ মাসের** জন্য নতুন রেট যোগ করা যায় (ব্যতিক্রম: §১৫ C2)।
+- রেট শুধু **কোনো মাসের ১ তারিখ থেকে** কার্যকর; শুধু **ভবিষ্যৎ মাসের** জন্য নতুন রেট যোগ করা যায় (ব্যতিক্রম: অংশ ১৫ C2)।
 - **Billing period:** calendar month, **Asia/Dhaka (UTC+6, DST নেই)**। সময় UTC `timestamptz`-এ রাখা হয়; period-এর সীমা Dhaka-তে হিসাব করে UTC-তে query।
 - **কোন period-এ পড়বে:** `occurred_at` (business time — upstream row-এর সময়) ঠিক করে; Metering কখন রেকর্ড করল (`recorded_at`) তা নয়।
 - **টাকা:** C#-এ `decimal`, SQL-এ `numeric` — কখনো `float`/`double` নয়। Rate `numeric(18,4)`, amount `numeric(18,2)`।
@@ -175,7 +175,7 @@ Dispatcher (~১ সেকেন্ড পরে) → Metering.QrGeneratedHandle
   3. নতুন DI scope-এ `IPublisher.Publish`।
   4. সফল → `PROCESSED`। ব্যর্থ → backoff `min(2^attempts s, 300 s)`। `attempts ≥ 10` → `DEAD` + `LogCritical`।
   5. ব্যাচ ভরা থাকলে সাথে সাথে আবার, নইলে ১ সেকেন্ড অপেক্ষা। ঘণ্টায় একবার ৭ দিনের পুরনো `PROCESSED` মুছে ফেলা (outbox plumbing; আসল record `usage_events`)।
-- **Dead letter:** admin API দিয়ে তালিকা ও requeue (audited)। Dead letter থাকলে ওই period **finalize হয় না** (§৫)।
+- **Dead letter:** admin API দিয়ে তালিকা ও requeue (audited)। Dead letter থাকলে ওই period **finalize হয় না** (অংশ ৫)।
 - Config: `Outbox:PollIntervalMs`, `Outbox:BatchSize`, `Outbox:MaxAttempts`, `Outbox:RetentionDays`।
 
 > **প্রতিটি handler idempotent হতে হবে** — একই message একাধিকবার আসতে পারে।
@@ -211,7 +211,7 @@ Billing কোনো event প্রকাশ করে না (notification ন
 | `StreamUsageEvents(tenantId, fromUtc, toUtc, cursor)` | Raw usage extract (keyset-paged) |
 | `IsUsageComplete(untilUtc)` | `untilUtc`-এর আগের কোনো QR-event PENDING বা DEAD নেই → true |
 
-- **Daily rollup টেবিল নেই।** Covering index দিয়ে সরাসরি গোনা — মাসে কয়েক কোটি row পর্যন্ত যথেষ্ট। ধীর হলে তখন partition বা rollup (§১৫ F11)।
+- **Daily rollup টেবিল নেই।** Covering index দিয়ে সরাসরি গোনা — মাসে কয়েক কোটি row পর্যন্ত যথেষ্ট। ধীর হলে তখন partition বা rollup (অংশ ১৫ F11)।
 
 ### ৪.৭ Billing
 
@@ -220,6 +220,8 @@ Billing কোনো event প্রকাশ করে না (notification ন
 - **Period closer** (`BackgroundService`, ঘণ্টায় একবার): আগের মাস Open থাকলে এবং `now ≥ period_end + 2 ঘণ্টা` (grace) **ও** `IsUsageComplete(period_end)` true হলে → সব Billable FI-র Draft statement তৈরি, period → `DRAFT`। শর্ত পূরণ না হলে পরের ঘণ্টায় আবার চেষ্টা।
 
 ### ৪.৮ Data model
+
+> **চূড়ান্ত schema এখন migration file-এ (`rvl-secure-bqr-manager/db/migrations/010`–`012`), ব্যাখ্যা [database-design.md](database-design.md)-এ।** নিচের SQL-এর সাথে পার্থক্য থাকলে migration file-ই ঠিক (যেমন `billing_statements`-এ আর `status` নেই)।
 
 হাতে লেখা idempotent SQL, `public` schema, UUID v7 PK, UTC `timestamptz`। তিনটি migration।
 
@@ -363,7 +365,7 @@ CREATE TABLE IF NOT EXISTS public.billing_adjustments (
 
 ## ৫. মাস close ও সংশোধন
 
-1. **Draft** — Period closer (§৪.৭) grace + usage completeness নিশ্চিত হলে Draft তৈরি করে। Draft statement-এ সব Pending adjustment যুক্ত হয়।
+1. **Draft** — Period closer (অংশ ৪.৭) grace + usage completeness নিশ্চিত হলে Draft তৈরি করে। Draft statement-এ সব Pending adjustment যুক্ত হয়।
 2. **Recalculate** — `POST .../periods/{period}/recalculate`: Draft ফেলে নতুন করে তৈরি (যেমন নতুন adjustment বা dead letter requeue-র পরে)।
 3. **Finalize** — `POST .../periods/{period}/finalize`, body: `finalizedBy` (বাধ্যতামূলক), `expectedTotal` (Draft-এর সব statement-এর মোট)। এক transaction-এ:
    1. Period ইতিমধ্যে `FINALIZED` → আগের ফল ফেরত (idempotent)।
@@ -374,7 +376,7 @@ CREATE TABLE IF NOT EXISTS public.billing_adjustments (
 5. **Late usage** (finalize-এর পরে আসা, আগের period-এর usage) — completeness gate থাকায় প্রায় অসম্ভব; ঘটলে platform report-এ দেখায়, finance Adjustment দিয়ে ধরে। স্বয়ংক্রিয় নয়।
 6. **Dispute window:** finalize-এর পর ৩০ দিন; প্রমাণ = Raw usage extract।
 
-> **Known limitation:** Admin API-তে একটাই platform credential; `finalizedBy` / `createdBy` free-text + audit log। Four-eyes check (finalize ≠ calculate ব্যক্তি) আসল user identity আসার পরে (§১৫ F9)।
+> **Known limitation:** Admin API-তে একটাই platform credential; `finalizedBy` / `createdBy` free-text + audit log। Four-eyes check (finalize ≠ calculate ব্যক্তি) আসল user identity আসার পরে (অংশ ১৫ F9)।
 
 ---
 
@@ -416,7 +418,7 @@ HTML = server-rendered, JS-ছাড়া, print-friendly; browser-এ "Save as
 
 #### নমুনা: FI report-এর PDF layout
 
-HTML print page (`format=html` → browser-এ "Save as PDF") দেখতে যেমন হবে, তার ASCII নমুনা। A4 portrait, monospace, ৮০ column। সব নাম, ID ও সংখ্যা কাল্পনিক, তবে হিসাব মেলানো: §৩-এর সূত্রে যোগ করলে প্রতিটি মোট হুবহু আসে।
+HTML print page (`format=html` → browser-এ "Save as PDF") দেখতে যেমন হবে, তার ASCII নমুনা। A4 portrait, monospace, ৮০ column। সব নাম, ID ও সংখ্যা কাল্পনিক, তবে হিসাব মেলানো: অংশ ৩-এর সূত্রে যোগ করলে প্রতিটি মোট হুবহু আসে।
 
 ```text
 ================================================================================
@@ -515,7 +517,7 @@ HTML print page (`format=html` → browser-এ "Save as PDF") দেখতে �
 - **Status অনুযায়ী যা বদলায়:**
   - `PROVISIONAL` হলে ওপরে banner থাকে: `*** PROVISIONAL - figures may change until finalized ***`। তখন Statement ID ও Finalized লাইন থাকে না, আর দৈনিক টেবিল `As of`-এর দিন পর্যন্ত যায়।
   - `DRAFT` হলে banner থাকে: `*** DRAFT - under review, not final ***`।
-- **Line:** প্রতি meter-এ একটা USAGE line (static, dynamic, validation), যাতে §৭.৩-এর reconciliation invariant সরাসরি মেলানো যায়।
+- **Line:** প্রতি meter-এ একটা USAGE line (static, dynamic, validation), যাতে অংশ ৭.৩-এর reconciliation invariant সরাসরি মেলানো যায়।
 - **দৈনিক টেবিল:** নমুনায় মাঝের দিনগুলো `...` দিয়ে বাদ রাখা হয়েছে; আসল report-এ মাসের প্রতিটি দিন থাকে, usage না থাকলে 0। টাকা শুধু মাসিক line-এ থাকে, দৈনিক টেবিলে নয়, কারণ rounding হয় line-এ।
 - **Section বাদ পড়া:** Adjustment না থাকলে section 4-এ লেখা থাকে `None`। প্রথম মাসে section 5-এ লেখা থাকে `No previous statements`।
 
@@ -530,7 +532,7 @@ HTML print page (`format=html` → browser-এ "Save as PDF") দেখতে �
 
 #### নমুনা: Platform report-এর PDF layout
 
-§৭.১-এর নমুনার মতোই ASCII layout; সংখ্যা ওই নমুনার সাথে মেলানো (Example Bank PLC-র সারি = §৭.১-এর statement)।
+অংশ ৭.১-এর নমুনার মতোই ASCII layout; সংখ্যা ওই নমুনার সাথে মেলানো (Example Bank PLC-র সারি = অংশ ৭.১-এর statement)।
 
 ```text
 ================================================================================
@@ -700,7 +702,7 @@ Dead letter → `LogCritical` (EventId `OUTBOX_DEAD_LETTER`)।
 13. Finalize-এর পর দাম বদলালেও পুরনো statement অপরিবর্তিত।
 14. Adjustment পরের মাসের statement-এ line; total ঋণাত্মক হলে সেটাই দেখায়।
 15. চলতি/অতীত মাসের রেট যোগ → 400।
-16. Reconciliation invariant (§৭.৩) সব finalized statement-এ সত্য।
+16. Reconciliation invariant (অংশ ৭.৩) সব finalized statement-এ সত্য।
 17. FI credential দিয়ে যেকোনো billing/outbox endpoint → 403।
 18. একই statement JSON = CSV = HTML — একই সংখ্যা।
 
@@ -710,10 +712,10 @@ Dead letter → `LogCritical` (EventId `OUTBOX_DEAD_LETTER`)।
 
 - Plan / plan version / subscription, monthly fee, included units, tier
 - Invoice number, VAT, paid/void, payment tracking
-- FI-facing usage/invoice API, Customer Portal, Admin Portal (§১৫ F6, F7)
+- FI-facing usage/invoice API, Customer Portal, Admin Portal (অংশ ১৫ F6, F7)
 - Message broker (RabbitMQ / Kafka)
 - Daily rollup টেবিল
-- স্বয়ংক্রিয় বিল পাঠানো ও notification (email / SMS / `IBillingNotifier`) — §১৫ F8
+- স্বয়ংক্রিয় বিল পাঠানো ও notification (email / SMS / `IBillingNotifier`) — অংশ ১৫ F8
 - Chart
 - মাসের মাঝে রেট পরিবর্তন, credit carry-forward
 - Four-eyes check, user-ভিত্তিক login
@@ -722,6 +724,8 @@ Dead letter → `LogCritical` (EventId `OUTBOX_DEAD_LETTER`)।
 ---
 
 ## ১৪. Domain model
+
+> **এই অংশের বিস্তারিত রূপ এখন tactical doc-এ:** [Metering](metering-tactical-ddd-bn.md), [Billing](billing-tactical-ddd-bn.md)। দুটোর মধ্যে পার্থক্য থাকলে tactical doc-ই ঠিক (যেমন `Money` / `UnitRate` VO বাদ, `MeteredOperation` → `Meter`, `Period` → `BillingMonth`, Billing-এ Domain Event class নেই, শুধু audit action)।
 
 শব্দের সংজ্ঞা: `rvl-secure-bqr-manager/CONTEXT.md` → **Billing** অংশ।
 
@@ -755,7 +759,7 @@ Dead letter → `LogCritical` (EventId `OUTBOX_DEAD_LETTER`)।
 
 **UsageEvent** (immutable entity) — একটা metered operation ঘটেছে, এই fact। তৈরির পর কখনো বদলায় না; `(source_type, source_id)` দিয়ে unique।
 
-**Billability policy** — `(MeteredOperation, verdict) → billable?` (§২.২)।
+**Billability policy** — `(MeteredOperation, verdict) → billable?` (অংশ ২.২)।
 
 ### ১৪.৩ Billing aggregates
 
@@ -763,7 +767,7 @@ Dead letter → `LogCritical` (EventId `OUTBOX_DEAD_LETTER`)।
 | Invariant |
 |---|
 | `effectiveFrom` সবসময় কোনো billing period-এর প্রথম দিন |
-| শুধু ভবিষ্যৎ period-এর জন্য তৈরি (ব্যতিক্রম §১৫ C2) |
+| শুধু ভবিষ্যৎ period-এর জন্য তৈরি (ব্যতিক্রম অংশ ১৫ C2) |
 | তৈরির পর বদলায় না — নতুন দাম = নতুন RateCard |
 | প্রতি FI, প্রতি period-এ সর্বোচ্চ একটা; দুটো দামই ≥ 0 |
 
@@ -811,7 +815,7 @@ Pending ──(যুক্ত statement Finalize)──► Applied
 
 | Policy | মালিক | নিয়ম |
 |---|---|---|
-| **Billability** | Metering | §২.২ |
+| **Billability** | Metering | অংশ ২.২ |
 | **Attribution** | Metering | event-এর `TenantId` (requesting tenant) |
 | **Rating** | Billing | `round(count × unitRate, 2)`, AwayFromZero, শুধু line-এ |
 
@@ -854,7 +858,7 @@ Pending ──(যুক্ত statement Finalize)──► Applied
 | C13 | **Domain event raise হয় কিন্তু dispatch হয় না** (Tenancy, KeyCustody, IdentityAccess)। | বিদ্যমান dead code / ভুল ধারণা | Outbox আসার পর আলাদা কাজ হিসেবে দেখা; billing-এর scope নয় |
 | C14 | **Client-side pre-validation** — FI-র SDK / app / BFF যদি QR payload-এর গঠন (TLV) ও CRC (`63`) নিজেই যাচাই করে, তাহলে যেগুলো `STRUCTURAL_INVALID` হতো সেগুলো platform-এ আসবেই না। | এখন: platform-এর CPU, DB row, outbox event ও bandwidth অকারণে খরচ হয়; FI-ও অকারণে টাকা দেয়। করলে: SDK-তে logic দুই জায়গায় থাকে, SDK version-এ ভিন্নতা (drift) আসে; BFF "1:1 reverse proxy" নীতির সাথে সাংঘর্ষিক হতে পারে। | Platform-এর যাচাই **সবসময় থাকবে** (কখনো client-কে বিশ্বাস করা নয়); শুধু একটা **ঐচ্ছিক, হালকা pre-check** (TLV parse + CRC) SDK/app-এ — signature verify নয়। Billing নিয়ম অপরিবর্তিত: platform-এ যা আসবে তা নিয়ম অনুযায়ী বিল হবে। HoE-এর সিদ্ধান্ত লাগবে (প্রশ্ন ৩)। |
 
-| C15 | **Static ও Dynamic generation-এর রেট একই, কিন্তু meter ও report-এ আলাদা** — এটা এখনো HoE ও Product team confirm করেনি। দুটো line আলাদা rounding পায়, তাই §৩-এর যৌথ সূত্রের সাথে কখনো ১ পয়সা পার্থক্য হতে পারে। | ভুল pricing ধারণায় build; FI-র কাছে বিভ্রান্তিকর statement | HoE + Product-এর সাথে confirm (প্রশ্ন ১৬); confirm হলে §৩-এর সূত্র প্রতি meter-এ আলাদা line হিসেবে লেখা |
+| C15 | **Static ও Dynamic generation-এর রেট একই, কিন্তু meter ও report-এ আলাদা** — এটা এখনো HoE ও Product team confirm করেনি। দুটো line আলাদা rounding পায়, তাই অংশ ৩-এর যৌথ সূত্রের সাথে কখনো ১ পয়সা পার্থক্য হতে পারে। | ভুল pricing ধারণায় build; FI-র কাছে বিভ্রান্তিকর statement | HoE + Product-এর সাথে confirm (প্রশ্ন ১৬); confirm হলে অংশ ৩-এর সূত্র প্রতি meter-এ আলাদা line হিসেবে লেখা |
 
 **সমাধান হয়ে গেছে (v1.1):** module boundary পেরিয়ে read (পুরনো C6), upstream retention নির্ভরতা (পুরনো C7), দৈনিক recompute-এর scale (পুরনো C14)।
 
@@ -873,10 +877,10 @@ Pending ──(যুক্ত statement Finalize)──► Applied
 | F9 | User-ভিত্তিক login + four-eyes finalize | C5 সমাধানে |
 | F10 | Message broker (dispatcher → broker publish) | Metering আলাদা service হলে |
 | F11 | `usage_events` monthly partition বা daily rollup | Report ধীর হলে |
-| F12 | ~~ADR ০০০১~~ — **লেখা হয়েছে:** `rvl-secure-bqr-manager/docs/adr/0001-outbox-between-modules.md` | ✅ |
-| F13 | ~~ADR ০০০২~~ — **লেখা হয়েছে:** `rvl-secure-bqr-manager/docs/adr/0002-bill-conclusive-verdicts-to-verifying-fi.md` | ✅ |
+| F12 | ~~ADR ০০০১~~ — **লেখা হয়েছে:** [`adr/0001-outbox-between-modules.md`](adr/0001-outbox-between-modules.md) | ✅ |
+| F13 | ~~ADR ০০০২~~ — **লেখা হয়েছে:** [`adr/0002-bill-conclusive-verdicts-to-verifying-fi.md`](adr/0002-bill-conclusive-verdicts-to-verifying-fi.md) | ✅ |
 | F14 | Client-side pre-validation SDK / reference library (TLV + CRC) | C14-এ HoE হ্যাঁ বললে |
-| F15 | **Subscription type ও সবার জন্য একটা Price list** — এখনকার ব্যবসায়িক ধারণা: সব FI-র জন্য প্রতি unit একই দাম, আর প্রতি FI তিনটের একটা subscription type নেয় — `GENERATION_ONLY`, `VALIDATION_ONLY` বা `GENERATION_AND_VALIDATION`। নকশা: (ক) Subscription type-এর জন্য নতুন টেবিল নয় — Tenancy-র বিদ্যমান `is_qr_generation_allowed` / `is_qr_validation_allowed` flag-দুটোই subscription type (access ও token scope এখনই এগুলো দিয়ে চলে); Billing দরকার হলে Tenancy-র contract query দিয়ে জানবে, টেবিল পড়বে না। (খ) প্রতি FI-র rate card-এর বদলে platform-জুড়ে একটা **Price list** (দুটো দাম + কবে থেকে কার্যকর; মাসের ১ তারিখ, append-only), আর প্রতি FI-তে শুধু **Billing account** (কোন মাস থেকে বিল শুরু; না থাকলে non-billable, যেমন pilot/UAT)। (গ) মাসের মাঝে subscription type বদলালে আলাদা হিসাব লাগে না — per-unit দামে যা ব্যবহার, তাই বিল। (ঘ) Statement ও report-এ FI-র subscription type দেখানো, আর শুধু নেওয়া service-এর line। (ঙ) পরে কোনো FI-র আলাদা দাম লাগলে FI-ভিত্তিক override যোগ করা যাবে; subscription type-ভিত্তিক monthly fee (F1) এর ওপরেই বসবে। বদলাবে: §৩, §৪.৮ `012_billing.sql`, §৬, §৭, §১৪; CONTEXT.md glossary ("Rate card" → "Price list", "Subscription type", "Billing account"); ADR 0003। | HoE + Product প্রশ্ন ১৭-এ হ্যাঁ বললে |
+| F15 | **Subscription type ও সবার জন্য একটা Price list** — এখনকার ব্যবসায়িক ধারণা: সব FI-র জন্য প্রতি unit একই দাম, আর প্রতি FI তিনটের একটা subscription type নেয় — `GENERATION_ONLY`, `VALIDATION_ONLY` বা `GENERATION_AND_VALIDATION`। নকশা: (ক) Subscription type-এর জন্য নতুন টেবিল নয় — Tenancy-র বিদ্যমান `is_qr_generation_allowed` / `is_qr_validation_allowed` flag-দুটোই subscription type (access ও token scope এখনই এগুলো দিয়ে চলে); Billing দরকার হলে Tenancy-র contract query দিয়ে জানবে, টেবিল পড়বে না। (খ) প্রতি FI-র rate card-এর বদলে platform-জুড়ে একটা **Price list** (দুটো দাম + কবে থেকে কার্যকর; মাসের ১ তারিখ, append-only), আর প্রতি FI-তে শুধু **Billing account** (কোন মাস থেকে বিল শুরু; না থাকলে non-billable, যেমন pilot/UAT)। (গ) মাসের মাঝে subscription type বদলালে আলাদা হিসাব লাগে না — per-unit দামে যা ব্যবহার, তাই বিল। (ঘ) Statement ও report-এ FI-র subscription type দেখানো, আর শুধু নেওয়া service-এর line। (ঙ) পরে কোনো FI-র আলাদা দাম লাগলে FI-ভিত্তিক override যোগ করা যাবে; subscription type-ভিত্তিক monthly fee (F1) এর ওপরেই বসবে। বদলাবে: অংশ ৩, অংশ ৪.৮ `012_billing.sql`, অংশ ৬, অংশ ৭, অংশ ১৪; CONTEXT.md glossary ("Rate card" → "Price list", "Subscription type", "Billing account"); ADR 0003। | HoE + Product প্রশ্ন ১৭-এ হ্যাঁ বললে |
 
 ### ১৫.৩ HoE-এর কাছে প্রশ্ন
 
@@ -920,11 +924,11 @@ Pending ──(যুক্ত statement Finalize)──► Applied
 | Q5 | শুধু statement + টাকা; invoice/VAT/payment finance-এর |
 | Q6 / Q14 | Duplicate একবার; idempotency key বাধ্যতামূলক |
 | Q7 | BDT, decimal, line-এ AwayFromZero rounding |
-| Q8 / Q9 | FI ও platform report-এর বিষয়বস্তু (§৭) |
+| Q8 / Q9 | FI ও platform report-এর বিষয়বস্তু (অংশ ৭) |
 | Q10 | Auto draft → নাম সহ manual finalize |
 | Q11 | Adjustment, ৩০ দিনের dispute window, raw extract প্রমাণ |
 | Q12 / Q24 | Billing স্থায়ী; usage ≥ ১৩ মাস (**v1.1:** Metering-এর মালিকানায়) |
-| Q13 / Q-B | Billable verdict তালিকা (§২.২); `STRUCTURAL_INVALID` ও `NON_P2P` billable — নিশ্চিত |
+| Q13 / Q-B | Billable verdict তালিকা (অংশ ২.২); `STRUCTURAL_INVALID` ও `NON_P2P` billable — নিশ্চিত |
 | Q15 | প্রতি FI আলাদা gateway |
 | Q16 | Static = Dynamic রেট |
 | Q17 | Rate card নেই = non-billable |
