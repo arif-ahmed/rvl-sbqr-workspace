@@ -3,6 +3,7 @@
 - **তারিখ:** 2026-09-30
 - **কী:** Billing context-এর সবচেয়ে ছোট tactical model। শুধু সেটুকু, যা ছাড়া implementation সঠিক থাকে না।
 - **ভিত্তি:**
+  - Product requirement: [prd.md](prd.md)। Business নিয়মে বিরোধ হলে PRD ঠিক। PRD-র "Approve" = এখানকার Finalize, "Refresh drafts" = Recalculate ([traceability.md](traceability.md) অংশ ১)।
   - Design: [metering-billing-v1-bn.md](metering-billing-v1-bn.md) (v1.1)। এখানে "design ৪.৫"-এর মতো রেফারেন্স মানে এই doc-এর অংশ ৪.৫। বিরোধ হলে design-ই ঠিক; শুধু domain model-এর বেলায় (design ১৪) এই doc নতুন।
   - Strategic baseline: [bounded-context-discovery-bn.md](bounded-context-discovery-bn.md), Billing অংশ। Context-এর সীমানা বা নাম এখানে বদলানো হয়নি।
   - Code: `rvl-secure-bqr-manager/src`। বিশেষ করে `Tenant` aggregate, `ActivateTenantCommandHandler`, আর `SBQR.SharedKernel.Domain`।
@@ -33,7 +34,7 @@ Billing-এ তিন ধরনের জিনিস আছে, আর তি�
 | **Rate card মোছা** | শুধু যেটা এখনো কার্যকর হয়নি (ভুল ভবিষ্যৎ রেট সরাতে)। | একটা rate card কমে | এক row |
 | **মাস Draft করা** (Period closer, ঘণ্টায় একবার, স্বয়ংক্রিয়; design ৪.৭) | <ul><li>মাস শেষ + grace (২ ঘণ্টা) পেরোতে হবে।</li><li>`IsUsageComplete(period_end)` true হতে হবে।</li><li>Billable FI = যার ওই মাসে rate card কার্যকর। প্রতিটির জন্য একটা statement।</li><li>প্রতি line: সংখ্যা × সেই মাসের দাম, rounding line-এ একবার (design ৩)।</li><li>Statement-এ দামের **কপি** থাকে।</li><li>FI-র সব Pending adjustment line হয়ে আসে।</li><li>Metering থেকে শুধু billable সংখ্যা নেওয়া হয়; Billing নিজে billable কিনা বিচার করে না।</li></ul> | Period → Draft; সব statement তৈরি | **হ্যাঁ।** Period-এর অবস্থা আর সব statement একটা transaction-এ। |
 | **Recalculate** (design ৫ item 2) | শুধু Draft অবস্থায়। Draft statement ফেলে বর্তমান সংখ্যা আর Pending adjustment দিয়ে নতুন করে তৈরি। | সব Draft statement বদলায় | **হ্যাঁ** |
-| **মাস Finalize করা** (design ৫ item 3) | <ul><li>আগেই Finalized → আগের ফল ফেরত (idempotent), error নয়।</li><li>শুধু Draft থেকে।</li><li>Usage complete আবার যাচাই; না হলে 409 `USAGE_NOT_COMPLETE`।</li><li>সংখ্যা আবার হিসাব; মোট `expectedTotal`-এর সাথে না মিললে 409 `DRAFT_CHANGED`, আর Draft নতুন সংখ্যায় বদলে যায়।</li><li>`finalizedBy` বাধ্যতামূলক (v1-এ free-text, C5)।</li><li>সব statement Finalized; যুক্ত adjustment Applied; period Finalized।</li></ul> | Period, সব statement, যুক্ত adjustment | **হ্যাঁ।** সবকিছু একটা transaction-এ। |
+| **মাস Finalize করা** (design ৫ item 3) | <ul><li>আগেই Finalized → আগের ফল ফেরত (idempotent), error নয়।</li><li>শুধু Draft থেকে।</li><li>Usage complete আবার যাচাই; না হলে 409 `USAGE_NOT_COMPLETE`।</li><li>সংখ্যা আবার হিসাব; মোট `expectedTotal`-এর সাথে না মিললে 409 `DRAFT_CHANGED`, আর Draft নতুন সংখ্যায় বদলে যায়।</li><li>`finalizedBy` বাধ্যতামূলক (v1-এ free-text, C5)।</li><li>আগে যুক্ত adjustment Applied, তারপর period Finalized। Statement-এর আলাদা status নেই; মাসের অবস্থাই তার অবস্থা।</li></ul> | Period, সব statement, যুক্ত adjustment | **হ্যাঁ।** সবকিছু একটা transaction-এ। |
 | **Adjustment রেকর্ড** | <ul><li>FI, অঙ্ক (≠ 0; ঋণাত্মক = credit), `reason`, `createdBy` বাধ্যতামূলক।</li><li>Pending থাকে; পরের Draft-এ line হয়ে যায়, সেই statement Finalize হলে Applied।</li><li>বদলানো যায় না। ভুল হলে উল্টো অঙ্কের নতুন adjustment।</li><li>৩০ দিনের dispute window FI-র dispute তোলার সময়সীমা। Adjustment কোনো statement-এর সাথে বাঁধা নয়, তাই system এটা আটকায় না।</li></ul> | একটা নতুন adjustment | এক row। Period-এর কিছু বদলায় না। |
 | **Provisional figures / report** | <ul><li>চূড়ান্ত না হওয়া মাস: Metering × rate card দিয়ে তখনই হিসাব হয়, বদলাতে পারে।</li><li>চূড়ান্ত মাস: **শুধু** রাখা statement থেকে পড়া হয়, কখনো নতুন করে হিসাব হয় না।</li></ul> | কিছুই না (শুধু পড়া) | প্রযোজ্য নয় |
 
@@ -87,7 +88,7 @@ Billing-এ তিন ধরনের জিনিস আছে, আর তি�
 - **`Money` / `UnitRate` VO** (design ১৪.৪-এ ছিল): মুদ্রা একটাই (BDT), আর `decimal` যথেষ্ট। Rounding-এর নিয়ম শুধু `StatementLine`-এ, আর দাম ≥ 0 শুধু `RateCard`-এর factory-তে। আলাদা type-এ কিছু যোগ হয় না।
 - **Rating service:** সংখ্যা × দাম আর rounding `StatementLine`-এর factory-তেই হয়।
 
-আকার (শুধু বোঝানোর জন্য, চূড়ান্ত code নয়; column design ৪.৮ `012_billing.sql`-এ):
+আকার (শুধু বোঝানোর জন্য, চূড়ান্ত code নয়; column migration `012_billing.sql`-এ, ব্যাখ্যা [database-design.md](database-design.md)-এ):
 
 ```csharp
 public sealed class BillingPeriod : AggregateRoot<BillingMonth>
@@ -124,7 +125,7 @@ public sealed class BillingPeriod : AggregateRoot<BillingMonth>
 - **`BillingPeriod`:** repository লাগে (`IBillingPeriodRepository`: মাস দিয়ে খোঁজা, যোগ করা) আর `IUnitOfWork`, `Tenant`-এর মতো। Statement আর line সবসময় period-এর সাথে একসাথে load ও save হয়।
 - **`RateCard`, `Adjustment`:** repository নেই। Handler module-এর `DbContext` দিয়ে সরাসরি লেখে।
 - **Report আর provisional figures:** সরাসরি query। Aggregate load করতে হয় না।
-- **DB-র দায়িত্ব:** unique constraint আর immutability trigger (design ৪.৮-এ)। Finalized statement, line, rate card আর adjustment-এর invariant (৪, ৯, ১০) code-এর পাশাপাশি DB-ও রক্ষা করে।
+- **DB-র দায়িত্ব:** unique constraint, একই FI-র মধ্যে FK আর immutability trigger (migration `012_billing.sql`; ব্যাখ্যা [database-design.md](database-design.md))। Finalized statement, line, rate card আর adjustment-এর invariant (৪, ৯, ১০) code-এর পাশাপাশি DB-ও রক্ষা করে।
 
 ---
 
@@ -148,5 +149,5 @@ public sealed class BillingPeriod : AggregateRoot<BillingMonth>
 
 | # | প্রশ্ন | কেন আটকায় | প্রস্তাব |
 |---|---|---|---|
-| 1 | আগের মাস (M-1) Finalize হওয়ার আগেই M শেষ হলে Period closer কি M Draft করবে? | করলে একই Pending adjustment দুটো Draft-এ চলে যায়। M-1 Finalize-এ সেগুলো Applied হয়ে যায়, ফলে M-এর Draft ভুল থাকে আর M Finalize DB trigger-এ আটকে যায়। | না। M Draft হবে শুধু M-1 Finalized হওয়ার পরে। না হলে design ৮-এর `billing` health check তো Degraded দেখাচ্ছেই। |
+| 1 | আগের মাস (M-1) Finalize হওয়ার আগেই M শেষ হলে Period closer কি M Draft করবে? (PRD Q17) | করলে একই Pending adjustment দুটো Draft-এ চলে যায়। M-1 Finalize-এ সেগুলো Applied হয়ে যায়, ফলে M-এর Draft ভুল থাকে আর M Finalize DB trigger-এ আটকে যায়। | না। M Draft হবে শুধু M-1 Finalized হওয়ার পরে। না হলে design ৮-এর `billing` health check তো Degraded দেখাচ্ছেই। |
 | 2 | "Open" অবস্থার row কে বানায়? `billing_periods`-এ `OPEN` status আছে, কিন্তু কোনো কাজ সেই row তৈরি করে না। | Draft কি নতুন row insert করবে, নাকি আগে থেকে থাকা `OPEN` row update করবে, সেটা এর ওপর নির্ভর করে। | Row না থাকা মানেই Open। Draft প্রথমবার row insert করে; `OPEN` status বাদ দেওয়া যায়। এতে মাস আগে থেকে বানিয়ে রাখার কোনো job লাগে না। |

@@ -1,8 +1,9 @@
 # Metering ও Billing — v1.1 Design (Minimal, Production-grade)
 
 - **তারিখ:** 2026-09-30
-- **অবস্থা:** Design চূড়ান্ত; কিছু বিষয় HoE ও Product team-এর confirm বাকি (অংশ ১৫.৩); implementation বাকি
-- **Target repo:** `rvl-secure-bqr-manager` (branch `feature/mtls-server`)
+- **অবস্থা:** Design চূড়ান্ত; কিছু বিষয় HoE ও Product team-এর confirm বাকি (অংশ ১৫.৩); DB migration (`010`–`012`) লেখা, application code বাকি
+- **Target repo:** `rvl-secure-bqr-manager` (migration আছে `develop` branch-এ)
+- **Product requirement:** [prd.md](prd.md)। এই design PRD মেনে চলে; business নিয়মে বিরোধ হলে PRD ঠিক। কোন requirement কোথায়: [traceability.md](traceability.md)।
 - **নতুন module:** **Metering** ও **Billing** (+ shared **Outbox** infrastructure)
 - **মূলনীতি:** DDD mindset (পুরো ceremony নয়), Event-driven Modular Monolith, Clean Architecture। হিসাব নির্ভুল ও audit-যোগ্য; accounting system নয়।
 
@@ -355,8 +356,8 @@ CREATE TABLE IF NOT EXISTS public.billing_adjustments (
 | টেবিল | নিয়ম |
 |---|---|
 | `billing_rate_cards` | UPDATE নিষেধ; DELETE শুধু `effective_from > current_date` হলে (ভুল ভবিষ্যৎ রেট সরাতে) |
-| `billing_statements` | `DRAFT` অবস্থায় সব চলে; `FINALIZED` হলে UPDATE/DELETE নিষেধ |
-| `billing_statement_lines` | Parent `DRAFT` না হলে INSERT/UPDATE/DELETE নিষেধ |
+| `billing_statements` | মাস (`billing_periods`) `FINALIZED` হলে INSERT/UPDATE/DELETE নিষেধ। Statement-এর নিজের status নেই |
+| `billing_statement_lines` | UPDATE সবসময় নিষেধ; মাস `FINALIZED` হলে INSERT/DELETE নিষেধ |
 | `billing_adjustments` | UPDATE শুধু `applied_statement_id` NULL → মান (একবার); DELETE নিষেধ |
 
 **Grants:** `sbqr_app_runtime` non-owner convention অনুযায়ী — runtime role `usage_events`-এ শুধু `SELECT, INSERT`।
@@ -371,7 +372,7 @@ CREATE TABLE IF NOT EXISTS public.billing_adjustments (
    1. Period ইতিমধ্যে `FINALIZED` → আগের ফল ফেরত (idempotent)।
    2. `IsUsageComplete(period_end)` আবার যাচাই — false হলে 409 `USAGE_NOT_COMPLETE`।
    3. সংখ্যা আবার হিসাব; মোট `expectedTotal`-এর সাথে না মিললে 409 `DRAFT_CHANGED` (Draft নতুন সংখ্যায় replace হয়) — **যা review করা হয়েছে, ঠিক সেটাই finalize হয়।**
-   4. সব statement → `FINALIZED`; adjustment-গুলোর `applied_statement_id` set; period → `FINALIZED`; `audit_logs`-এ `billing.period.finalized`।
+   4. আগে adjustment-গুলোর `applied_statement_id` set, তারপর period → `FINALIZED` (এতেই মাসের সব statement Finalized; statement-এর আলাদা status নেই); `audit_logs`-এ `billing.period.finalized`।
 4. **Finalize-এর পর কিছুই বদলায় না** (DB trigger)। সংশোধন = নতুন **Adjustment** → পরের মাসের statement-এ `ADJUSTMENT` line।
 5. **Late usage** (finalize-এর পরে আসা, আগের period-এর usage) — completeness gate থাকায় প্রায় অসম্ভব; ঘটলে platform report-এ দেখায়, finance Adjustment দিয়ে ধরে। স্বয়ংক্রিয় নয়।
 6. **Dispute window:** finalize-এর পর ৩০ দিন; প্রমাণ = Raw usage extract।
@@ -883,6 +884,8 @@ Pending ──(যুক্ত statement Finalize)──► Applied
 | F15 | **Subscription type ও সবার জন্য একটা Price list** — এখনকার ব্যবসায়িক ধারণা: সব FI-র জন্য প্রতি unit একই দাম, আর প্রতি FI তিনটের একটা subscription type নেয় — `GENERATION_ONLY`, `VALIDATION_ONLY` বা `GENERATION_AND_VALIDATION`। নকশা: (ক) Subscription type-এর জন্য নতুন টেবিল নয় — Tenancy-র বিদ্যমান `is_qr_generation_allowed` / `is_qr_validation_allowed` flag-দুটোই subscription type (access ও token scope এখনই এগুলো দিয়ে চলে); Billing দরকার হলে Tenancy-র contract query দিয়ে জানবে, টেবিল পড়বে না। (খ) প্রতি FI-র rate card-এর বদলে platform-জুড়ে একটা **Price list** (দুটো দাম + কবে থেকে কার্যকর; মাসের ১ তারিখ, append-only), আর প্রতি FI-তে শুধু **Billing account** (কোন মাস থেকে বিল শুরু; না থাকলে non-billable, যেমন pilot/UAT)। (গ) মাসের মাঝে subscription type বদলালে আলাদা হিসাব লাগে না — per-unit দামে যা ব্যবহার, তাই বিল। (ঘ) Statement ও report-এ FI-র subscription type দেখানো, আর শুধু নেওয়া service-এর line। (ঙ) পরে কোনো FI-র আলাদা দাম লাগলে FI-ভিত্তিক override যোগ করা যাবে; subscription type-ভিত্তিক monthly fee (F1) এর ওপরেই বসবে। বদলাবে: অংশ ৩, অংশ ৪.৮ `012_billing.sql`, অংশ ৬, অংশ ৭, অংশ ১৪; CONTEXT.md glossary ("Rate card" → "Price list", "Subscription type", "Billing account"); ADR 0003। | HoE + Product প্রশ্ন ১৭-এ হ্যাঁ বললে |
 
 ### ১৫.৩ HoE-এর কাছে প্রশ্ন
+
+> Product ও commercial প্রশ্নগুলো এখন [PRD](prd.md)-র অংশ ১২-এ (Q1–Q17), BRD থেকে আসা দুটো নতুন প্রশ্নসহ। কোন প্রশ্ন কোনটার সাথে মেলে: [traceability.md](traceability.md) অংশ ৪। এখানে শুধু রেফারেন্সের জন্য রাখা।
 
 **Governance**
 1. Canonical repo কোনটা — `rvl-secure-bqr-manager` না `rvl-sbqr-api`? (C6)

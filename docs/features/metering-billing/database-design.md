@@ -3,7 +3,7 @@
 - **তারিখ:** 2026-09-30
 - **অবস্থা:** Migration লেখা হয়েছে ([`010_outbox.sql`](../../../rvl-secure-bqr-manager/db/migrations/010_outbox.sql), [`011_metering.sql`](../../../rvl-secure-bqr-manager/db/migrations/011_metering.sql), [`012_billing.sql`](../../../rvl-secure-bqr-manager/db/migrations/012_billing.sql)); কোনো code এখনো এগুলো ব্যবহার করে না। SQL file-ই source of truth; এই doc বোঝানোর জন্য।
 - **Target:** `rvl-secure-bqr-manager`, database `sbqr_app`, schema `public`। Migration `010`–`012`।
-- **ভিত্তি:** [metering-billing-v1-bn.md](metering-billing-v1-bn.md) অংশ ৪.৮, [Metering](metering-tactical-ddd-bn.md) ও [Billing](billing-tactical-ddd-bn.md) tactical model। Repo-তে একই schema: `rvl-secure-bqr-manager/docs/design/database-design.md` section 13।
+- **ভিত্তি:** [PRD](prd.md) (কোন requirement কোন constraint/trigger দিয়ে রক্ষিত: [traceability.md](traceability.md) অংশ ৩), [metering-billing-v1-bn.md](metering-billing-v1-bn.md) অংশ ৪.৮, [Metering](metering-tactical-ddd-bn.md) ও [Billing](billing-tactical-ddd-bn.md) tactical model। Repo-তে একই schema: `rvl-secure-bqr-manager/docs/design/database-design.md` section 13।
 - **কীভাবে পড়বেন:** প্রথমে "এক নজরে", তারপর প্রতিটি domain। Migration file কীভাবে লেখা, trigger আর grant শেষে পরিশিষ্টে।
 
 ---

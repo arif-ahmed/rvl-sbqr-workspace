@@ -3,6 +3,7 @@
 - **তারিখ:** 2026-09-30
 - **কী:** Metering context-এর সবচেয়ে ছোট tactical model। শুধু সেটুকু, যা ছাড়া implementation সঠিক থাকে না।
 - **ভিত্তি:**
+  - Product requirement: [prd.md](prd.md)। Business নিয়মে বিরোধ হলে PRD ঠিক। PRD-র শব্দ ↔ এখানকার শব্দ: [traceability.md](traceability.md) অংশ ১।
   - Design: [metering-billing-v1-bn.md](metering-billing-v1-bn.md) (v1.1)। এখানে "design ৪.৫"-এর মতো রেফারেন্স মানে এই doc-এর অংশ ৪.৫। বিরোধ হলে design-ই ঠিক; শুধু domain model-এর বেলায় (design ১৪) এই doc নতুন।
   - Strategic baseline: [bounded-context-discovery-bn.md](bounded-context-discovery-bn.md), Metering অংশ। Context-এর সীমানা বা নাম এখানে বদলানো হয়নি।
   - Code: `rvl-secure-bqr-manager/src`। বিশেষ করে producer-দের রেকর্ড (`QrGeneration.cs`, `QrValidation.cs`), `AuditLog.cs` আর `SBQR.SharedKernel.Domain`।
@@ -80,7 +81,7 @@ Metering-এর কাজ একটাই: **প্রতিটি কাজে�
 - `Verdict` type: এর মালিক QrVerification, Metering নয় (Open Question ১ দেখুন)।
 - `TenantId` wrapper: Tenancy-র `TenantId` Metering-এ আনলে module-এর মধ্যে অপ্রয়োজনীয় নির্ভরতা তৈরি হয়। Event যেমন দেয়, তেমনই `Guid` থাকবে।
 
-আকার (শুধু বোঝানোর জন্য, চূড়ান্ত code নয়; column-এর নাম design ৪.৮ `011_metering.sql`-এ):
+আকার (শুধু বোঝানোর জন্য, চূড়ান্ত code নয়; column-এর নাম migration `011_metering.sql`-এ, ব্যাখ্যা [database-design.md](database-design.md)-এ):
 
 ```csharp
 public sealed class UsageEvent
@@ -123,7 +124,7 @@ public sealed class UsageEvent
 - **Persist হয়:** শুধু `UsageEvent`। Insert আর read হয়; update বা delete হয় না।
 - **Repository নেই।** Code-এ যেভাবে `QrIssuancePipeline` আর `ValidateQrCommandHandler` তাদের রেকর্ড লেখে, Metering-এর consumer handler-ও সেভাবে নিজের module-এর `DbContext` দিয়ে সরাসরি insert করবে। Aggregate নেই বলে repository কোনো সীমানা রক্ষা করে না।
 - **পড়ার দিক:** `IMeteringQueries`-এর implementation সরাসরি query করে (EF বা Dapper, যেটা সুবিধা)। Domain object লোড করার দরকার নেই।
-- **DB-র দায়িত্ব** (design ৪.৮-এ; এখানে শুধু কোন invariant DB রক্ষা করে):
+- **DB-র দায়িত্ব** (migration `011_metering.sql`-এ; এখানে শুধু কোন invariant DB রক্ষা করে):
   - `(source_type, source_id)` unique (invariant ১)।
   - Update/delete আটকানো: trigger, আর runtime role-এর শুধু `SELECT, INSERT` (invariant ২)।
 

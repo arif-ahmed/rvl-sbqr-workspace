@@ -5,6 +5,7 @@
   - কোনো context নতুন করে বানানো, ভাঙা, জোড়া বা নাম বদলানো হয়নি।
   - Tactical DDD (aggregate, entity ইত্যাদি) এর বাইরে।
 - **ভিত্তি:**
+  - Product requirement: [prd.md](prd.md)। Business নিয়মে বিরোধ হলে PRD ঠিক।
   - Design: [metering-billing-v1-bn.md](metering-billing-v1-bn.md) (v1.1)। এখানে "design ৪.৫"-এর মতো রেফারেন্স মানে এই doc-এর অংশ ৪.৫।
   - Glossary: [`rvl-secure-bqr-manager/CONTEXT.md`](../../../rvl-secure-bqr-manager/CONTEXT.md)
   - ADR: [0002](adr/0002-bill-conclusive-verdicts-to-verifying-fi.md)
@@ -15,10 +16,10 @@
 |---|---|
 | QrGeneration | **Code-এ আছে** (`SBQR.Modules.QrGeneration`) |
 | QrVerification | **Code-এ আছে**, module-এর নাম `SBQR.Modules.Verification` |
-| Metering | **শুধু design-এ** (v1.1); code নেই |
-| Billing | **শুধু design-এ** (v1.1); code নেই |
+| Metering | **Design (v1.1) + DB migration `011`**; application code নেই |
+| Billing | **Design (v1.1) + DB migration `012`**; application code নেই |
 
-> **গুরুত্বপূর্ণ:** এখানকার কোনো integration event এখনো code-এ নেই। দুটো producer-এর `.Contracts` project খালি (শুধু `.csproj`), আর code-এ কোনো outbox নেই। নিচের event-গুলো **v1.1 design-এ ঠিক করা, এখনো implement হয়নি**।
+> **গুরুত্বপূর্ণ:** এখানকার কোনো integration event এখনো code-এ নেই। দুটো producer-এর `.Contracts` project খালি (শুধু `.csproj`)। Outbox টেবিল আছে (migration `010`), কিন্তু কেউ লেখে বা পড়ে না। নিচের event-গুলো **v1.1 design-এ ঠিক করা, এখনো implement হয়নি**।
 
 ---
 
@@ -120,7 +121,7 @@ FI-র পাঠানো QR payload spec-এর Annex B অনুযায়�
 
 ### `Metering`
 
-> শুধু design-এ আছে (design ৪.৬, ১৪.২)।
+> Design (৪.৬, ১৪.২) আর DB migration `011`; application code নেই।
 
 **Purpose:**
 Platform যত QR তৈরি ও যাচাই করে, প্রতিটি **ঠিক একবার, স্থায়ীভাবে** গুনে রাখা। প্রতিটি billable কিনা চিহ্ন দেওয়া, আর কোন FI-র নামে পড়বে তা রাখা। "কী ব্যবহার হয়েছে?" প্রশ্নের একমাত্র উৎস হওয়া।
@@ -177,7 +178,7 @@ Platform যত QR তৈরি ও যাচাই করে, প্রতি�
 
 ### `Billing`
 
-> শুধু design-এ আছে (design ৩, ৪.৭, ৫, ১৪.৩)।
+> Design (৩, ৪.৭, ৫, ১৪.৩) আর DB migration `012`; application code নেই।
 
 **Purpose:**
 মাসের billable ব্যবহারকে প্রতিটি Billable FI-র জন্য একটা **review করা, চূড়ান্ত Statement**-এ পরিণত করা। চূড়ান্ত হওয়ার পর ভুল শুধু Adjustment দিয়ে শোধরানো। FI আর platform team-কে ব্যবহার ও টাকার report দেওয়া। "এর দাম কত?" আর "FI-কে কত চার্জ করা হবে?" প্রশ্নের উত্তর দেওয়া।
