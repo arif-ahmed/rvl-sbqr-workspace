@@ -1,0 +1,1079 @@
+<!doctype html>
+<html lang="bn">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>মিটারিং ও বিলিং — প্ল্যান অনুমোদন · Secure BanglaQR Platform</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Bengali:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #f6f8f5;
+    --surface: #ffffff;
+    --surface-2: #eef2ec;
+    --border: #dde4dc;
+    --text: #16211a;
+    --text-muted: #57685c;
+    --accent: #0c6b4f;      /* BanglaQR green */
+    --accent-ink: #04382a;
+    --accent-soft: #e2f1e9;
+    --flag: #b8291d;        /* Bangladesh red — critical only */
+    --flag-soft: #fbe6e3;
+    --warn: #a3671b;
+    --warn-soft: #f7ecd9;
+    --mono-surface: #101913;
+    --mono-text: #d9ecdf;
+    --shadow: 0 1px 2px rgba(20,30,20,0.04), 0 8px 24px -12px rgba(20,30,20,0.10);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #0d1310;
+      --surface: #141c17;
+      --surface-2: #1a2420;
+      --border: #263029;
+      --text: #e7ede8;
+      --text-muted: #93a599;
+      --accent: #3fcb94;
+      --accent-ink: #d3f5e5;
+      --accent-soft: #172c22;
+      --flag: #ff7c6e;
+      --flag-soft: #2c1815;
+      --warn: #e0ac52;
+      --warn-soft: #2b2210;
+      --mono-surface: #0a100c;
+      --mono-text: #bfe6cd;
+      --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px -16px rgba(0,0,0,0.55);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #0d1310;
+    --surface: #141c17;
+    --surface-2: #1a2420;
+    --border: #263029;
+    --text: #e7ede8;
+    --text-muted: #93a599;
+    --accent: #3fcb94;
+    --accent-ink: #d3f5e5;
+    --accent-soft: #172c22;
+    --flag: #ff7c6e;
+    --flag-soft: #2c1815;
+    --warn: #e0ac52;
+    --warn-soft: #2b2210;
+    --mono-surface: #0a100c;
+    --mono-text: #bfe6cd;
+    --shadow: 0 1px 2px rgba(0,0,0,0.3), 0 12px 32px -16px rgba(0,0,0,0.55);
+  }
+
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: "IBM Plex Sans Bengali", "Noto Sans Bengali", system-ui, sans-serif;
+    font-size: 15.5px;
+    line-height: 1.8;
+    padding-inline: 16px;
+  }
+  h1, h2, h3, h4 { font-family: "IBM Plex Sans Bengali", "Noto Sans Bengali", sans-serif; text-wrap: balance; color: var(--text); }
+  code, pre, .mono, .field { font-family: "IBM Plex Mono", ui-monospace, monospace; }
+
+  a { color: var(--accent); }
+
+  .wrap { max-width: 960px; margin: 0 auto; padding-block: 28px 72px; }
+
+  /* ---- top bar ---- */
+  .topbar {
+    position: sticky; top: 0; z-index: 20;
+    background: color-mix(in srgb, var(--bg) 88%, transparent);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+    margin-inline: -16px; padding-inline: 16px;
+  }
+  .topbar-inner {
+    max-width: 960px; margin: 0 auto;
+    display: flex; align-items: center; gap: 14px;
+    padding-block: 10px;
+  }
+  .brandmark {
+    width: 30px; height: 30px; border-radius: 8px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-ink));
+    display: grid; place-items: center; flex: none;
+    box-shadow: var(--shadow);
+  }
+  .brandmark svg { width: 16px; height: 16px; }
+  .topbar-title { font-weight: 700; font-size: 0.92rem; white-space: nowrap; }
+  .topbar-nav { display: flex; gap: 4px; overflow-x: auto; flex: 1; scrollbar-width: none; }
+  .topbar-nav::-webkit-scrollbar { display: none; }
+  .topbar-nav a {
+    text-decoration: none; color: var(--text-muted); font-size: 0.82rem; font-weight: 500;
+    padding: 6px 10px; border-radius: 999px; white-space: nowrap; flex: none;
+  }
+  .topbar-nav a:hover { background: var(--surface-2); color: var(--text); }
+  .lang-link {
+    text-decoration: none; font-size: 0.82rem; font-weight: 600; color: var(--accent);
+    border: 1px solid var(--border); background: var(--surface);
+    padding: 6px 10px; border-radius: 999px; white-space: nowrap; flex: none;
+  }
+  .theme-toggle {
+    flex: none; border: 1px solid var(--border); background: var(--surface);
+    border-radius: 999px; width: 34px; height: 34px; display: grid; place-items: center;
+    cursor: pointer; color: var(--text);
+  }
+  .theme-toggle:focus-visible, a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .theme-toggle svg { width: 16px; height: 16px; }
+  .theme-toggle .moon { display: none; }
+  :root[data-theme="dark"] .theme-toggle .sun,
+  :root:not([data-theme="light"]) .theme-toggle .sun { display: none; }
+  :root[data-theme="dark"] .theme-toggle .moon,
+  :root:not([data-theme="light"]) .theme-toggle .moon { display: block; }
+  @media (prefers-color-scheme: light) {
+    :root:not([data-theme="dark"]) .theme-toggle .sun { display: block; }
+    :root:not([data-theme="dark"]) .theme-toggle .moon { display: none; }
+  }
+
+  /* ---- header ---- */
+  .doc-head { padding-block: 30px 8px; }
+  .eyebrow {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 0.74rem; font-weight: 600; letter-spacing: 0.04em;
+    color: var(--accent); background: var(--accent-soft);
+    padding: 4px 10px; border-radius: 999px; margin-bottom: 14px;
+  }
+  h1 { font-size: clamp(1.5rem, 4vw, 2.05rem); font-weight: 700; margin: 0 0 8px; line-height: 1.35; }
+  .subtitle { color: var(--text-muted); font-size: 1rem; max-width: 70ch; margin: 0 0 18px; }
+  .meta-row { display: flex; flex-wrap: wrap; gap: 10px; font-size: 0.82rem; color: var(--text-muted); }
+  .meta-row span { display: flex; align-items: center; gap: 6px; }
+  .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--accent); flex: none; }
+
+  section { padding-block: 34px; border-top: 1px solid var(--border); }
+  section:first-of-type { border-top: none; }
+  .section-kicker {
+    font-size: 0.74rem; font-weight: 700; letter-spacing: 0.04em;
+    color: var(--text-muted); margin: 0 0 6px;
+  }
+  h2 { font-size: 1.3rem; font-weight: 700; margin: 0 0 14px; }
+  h3 { font-size: 1.05rem; font-weight: 700; margin: 22px 0 10px; }
+  h4 { font-size: 0.98rem; font-weight: 700; margin: 18px 0 8px; }
+  p { margin: 0 0 12px; }
+  ul, ol { margin: 0 0 12px; padding-left: 22px; }
+  li { margin-block: 3px; }
+  .muted { color: var(--text-muted); }
+
+  /* ---- cards & chips ---- */
+  .card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 14px; padding: 18px 20px; box-shadow: var(--shadow); margin-block: 12px;
+  }
+  .card > :last-child { margin-bottom: 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-block: 10px; }
+  .chip {
+    font-size: 0.78rem; font-weight: 600; padding: 4px 11px; border-radius: 999px;
+    background: var(--surface-2); color: var(--text-muted); border: 1px solid var(--border);
+  }
+  .chip.ok   { background: var(--accent-soft); color: var(--accent); border-color: transparent; }
+  .chip.warn { background: var(--warn-soft); color: var(--warn); border-color: transparent; }
+  .chip.dead { background: var(--flag-soft); color: var(--flag); border-color: transparent; }
+
+  .pill {
+    display: inline-block; font-family: "IBM Plex Mono", monospace; font-size: 0.72rem; font-weight: 500;
+    padding: 1px 8px; border-radius: 6px; white-space: nowrap;
+    background: var(--surface-2); color: var(--text-muted);
+  }
+  .pill.ok   { background: var(--accent-soft); color: var(--accent); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .pill.dead { background: var(--flag-soft); color: var(--flag); }
+
+  .note {
+    border-left: 3px solid var(--accent); background: var(--accent-soft);
+    border-radius: 0 10px 10px 0; padding: 10px 14px; margin-block: 12px; font-size: 0.92rem;
+  }
+  .note.warn { border-left-color: var(--warn); background: var(--warn-soft); }
+
+  /* ---- tables ---- */
+  .tblwrap { overflow-x: auto; margin-block: 10px; border-radius: 10px; border: 1px solid var(--border); }
+  table.tbl {
+    border-collapse: collapse; width: 100%; min-width: 640px;
+    background: var(--surface); font-size: 0.85rem;
+  }
+  table.tbl th {
+    text-align: left; font-weight: 600; font-size: 0.74rem;
+    color: var(--text-muted);
+    background: var(--surface-2); padding: 8px 10px; border-bottom: 1px solid var(--border);
+    white-space: nowrap;
+  }
+  table.tbl td { padding: 7px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.tbl tr:last-child td { border-bottom: none; }
+  table.tbl td.mono, table.tbl th.mono { font-family: "IBM Plex Mono", monospace; font-size: 0.78rem; }
+  table.tbl .r { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  table.tbl .c { text-align: center; }
+  table.tbl tr.tot td { font-weight: 700; background: var(--surface-2); }
+  table.tbl tr.sub td { color: var(--text-muted); font-size: 0.8rem; }
+
+  /* ---- ERD / code blocks ---- */
+  pre.erd, pre.code {
+    background: var(--mono-surface); color: var(--mono-text);
+    border-radius: 12px; padding: 16px 18px; overflow-x: auto;
+    font-size: 0.78rem; line-height: 1.5; margin-block: 12px;
+  }
+
+  /* ---- sub-domain cards ---- */
+  .sd-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 14px; margin-block: 14px; }
+  @media (max-width: 520px) { .sd-grid { grid-template-columns: 1fr; } }
+  .sd-card { background: var(--surface); border: 1px solid var(--border); border-radius: 14px; padding: 16px 18px; box-shadow: var(--shadow); }
+  .sd-card h3 { margin: 0 0 4px; display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .sd-card p { font-size: 0.92rem; }
+  .sd-card ul { font-size: 0.9rem; margin-bottom: 10px; }
+  .sd-dep { border-top: 1px dashed var(--border); padding-top: 10px; font-size: 0.86rem; }
+  .sd-dep b { display: block; font-size: 0.72rem; color: var(--text-muted); margin-top: 6px; }
+  .sd-dep span { color: var(--text-muted); }
+
+  /* ---- sample report mock ---- */
+  .rpt {
+    background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+    padding: 20px 22px; box-shadow: var(--shadow); margin-block: 14px;
+  }
+  .rpt-head {
+    display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;
+    border-bottom: 2px solid var(--text); padding-bottom: 12px; margin-bottom: 14px;
+  }
+  .rpt-head .t { font-weight: 700; font-size: 1.02rem; }
+  .rpt-head .s { font-size: 0.78rem; color: var(--text-muted); }
+  .rpt table.tbl { min-width: 560px; }
+  .rpt h4 { margin: 18px 0 6px; font-size: 0.84rem; color: var(--text-muted); }
+
+  /* ---- sign-off ---- */
+  .signoff-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-block: 14px; }
+  .sign-box { border: 1.5px dashed var(--border); border-radius: 12px; padding: 14px 16px; min-height: 96px; }
+  .sign-box b { font-size: 0.76rem; color: var(--text-muted); display: block; margin-bottom: 8px; }
+
+  footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.82rem; color: var(--text-muted); }
+
+  @media print {
+    .topbar, .theme-toggle, .lang-link { display: none; }
+    body { background: #fff; padding-inline: 0; font-size: 11px; }
+    .wrap { max-width: none; }
+    section { padding-block: 18px; page-break-inside: avoid; }
+    pre.erd, pre.code { background: #101913; color: #d9ecdf; }
+  }
+</style>
+</head>
+<body>
+
+<div class="topbar">
+  <div class="topbar-inner">
+    <div class="brandmark" aria-hidden="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="#ffffff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/>
+        <rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM19 14h2M14 19h2M18 19h3v2"/>
+      </svg>
+    </div>
+    <div class="topbar-title">মিটারিং ও বিলিং · প্ল্যান অনুমোদন</div>
+    <nav class="topbar-nav" aria-label="অংশের নেভিগেশন">
+      <a href="#tldr">এক নজরে</a>
+      <a href="#summary">সারসংক্ষেপ</a>
+      <a href="#subdomains">সাব-ডোমেইন</a>
+      <a href="#schema">স্কিমা ও ডেটা</a>
+      <a href="#rel">সম্পর্ক</a>
+      <a href="#erd">ERD</a>
+      <a href="#reports">নমুনা রিপোর্ট</a>
+      <a href="#signoff">সাইন-অফ</a>
+    </nav>
+    <a class="lang-link" href="metering-billing-plan-signoff-report.html">English</a>
+    <button class="theme-toggle" id="themeToggle" type="button" aria-label="ডার্ক / লাইট মোড বদলান" title="ডার্ক / লাইট মোড বদলান">
+      <svg class="sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+      <svg class="moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8z"/></svg>
+    </button>
+  </div>
+</div>
+
+<div class="wrap">
+
+<header class="doc-head" id="top">
+  <span class="eyebrow">Secure BanglaQR Platform · অনুমোদনের অনুরোধ</span>
+  <h1>ইউসেজ মিটারিং ও বিলিং — ইমপ্লিমেন্টেশন প্ল্যান</h1>
+  <p class="subtitle">QR generation ও validation-এর জন্য ব্যবহার-ভিত্তিক চার্জ: প্রতিটি FI-র জন্য মাসিক statement, চূড়ান্ত হওয়া মাস কখনো বদলায় না, আর ভুল শুধরানো হয় শুধু adjustment দিয়ে। Head of Engineering-এর অনুমোদনের জন্য এই রিপোর্টে পুরো প্ল্যান ডাটাবেসের ভাষায় সাজানো হয়েছে।</p>
+  <div class="meta-row">
+    <span><span class="dot"></span>তারিখ: ০১ অক্টোবর ২০২৬</span>
+    <span><span class="dot"></span>টার্গেট: <span class="mono">rvl-secure-bqr-manager</span> · PostgreSQL 16</span>
+    <span><span class="dot"></span>পাঠক: Head of Engineering</span>
+    <span><span class="dot"></span>Design v1.1 · migration 010–012</span>
+  </div>
+</header>
+
+<!-- ============================================================ ১. এক নজরে -->
+<section id="tldr">
+  <p class="section-kicker">অংশ ১</p>
+  <h2>এক নজরে (TL;DR)</h2>
+  <div class="card">
+    <ul>
+      <li><b>যা বানানো হবে:</b> ব্যবহার-ভিত্তিক বিলিং — প্রতিটি QR generation ও validation-এর জন্য BDT, প্রতি FI-র জন্য একটি মাসিক statement (ঢাকা সময়ের ক্যালেন্ডার মাস)।</li>
+      <li><b>ডাটাবেসে যেভাবে নামছে:</b> <b>৩টি এলাকা, ৭টি নতুন টেবিল</b> — <span class="mono">outbox_messages</span>, <span class="mono">usage_events</span> এবং পাঁচটি <span class="mono">billing_*</span> টেবিল। SQL migration <span class="mono">010</span>–<span class="mono">012</span> ইতিমধ্যে লেখা ও দুবার চালিয়ে পরীক্ষিত; application code এখনো নেই।</li>
+      <li><b>পাইপলাইন:</b> প্রতিটি QR operation একই transaction-এ একটি event row লেখে (outbox) → dispatcher সেটা একবার, চিরস্থায়ীভাবে usage খাতায় লেখে → মাস শেষে Billing বিলযোগ্য row গুনে rate card-এর দামে statement বানায়, adjustment যোগ/বিয়োগ করে।</li>
+      <li><b>টাকার নিরাপত্তা DB-তেই, শুধু code-এর ভরসায় নয়:</b> <span class="mono">numeric</span> (কখনোই float নয়), composite FK — যাতে এক FI-র জিনিস অন্য FI-র বিলে ঢুকতে না পারে, আর trigger — যা usage অপরিবর্তনীয় রাখে এবং চূড়ান্ত মাসের বিল চিরকাল অপরিবর্তিত রাখে।</li>
+      <li><b>অনুমোদনে যা ঢাকা পড়ছে:</b> এই schema ও module কাঠামো, এতে বসানো বিলিং নিয়ম, আর দুই ধরনের রিপোর্ট — যাতে implementation (১৫টি user story, ৭টি ticket) শুরু করা যায়।</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ============================================================ ২. নির্বাহী সারসংক্ষেপ -->
+<section id="summary">
+  <p class="section-kicker">অংশ ২</p>
+  <h2>নির্বাহী সারসংক্ষেপ</h2>
+  <p>প্রতিষ্ঠান (FI) ব্যবহারের জন্যই টাকা দেবে: প্ল্যাটফর্ম যে QR তার জন্য তৈরি করে ও যে QR তার জন্য যাচাই করে। মাস শেষে প্রতিটি বিলযোগ্য FI-র জন্য একটি statement তৈরি হয়, billing টিম দেখে মাসটি finalize করে, আর চূড়ান্ত statement আর কখনো বদলায় না — ভুল হলে পরের statement-এ adjustment দিয়ে শোধরানো হয়। Finance অনুমোদিত statement থেকে invoice দেয়; প্ল্যাটফর্ম statement দেয়, tax invoice নয়।</p>
+
+  <div class="chips">
+    <span class="chip warn">PRD — draft, sign-off বাকি</span>
+    <span class="chip ok">টেকনিক্যাল ডিজাইন — v1.1 চূড়ান্ত</span>
+    <span class="chip ok">DB migration 010–012 — লেখা ও পরীক্ষিত</span>
+    <span class="chip warn">Application code — শুরু হয়নি</span>
+    <span class="chip">১৫টি user story · ৭টি ticket প্রস্তুত</span>
+  </div>
+
+  <h3>ডিজাইনে বসানো ব্যবসায়িক নিয়ম</h3>
+  <div class="tblwrap"><table class="tbl">
+    <thead><tr><th>নিয়ম</th><th>সিদ্ধান্ত</th><th>DB কোথায় রক্ষা করে</th></tr></thead>
+    <tbody>
+      <tr><td>কী চার্জ হবে</td><td>প্রতিটি সম্পন্ন generation; <i>নিশ্চিত</i> (conclusive) verdict-এর প্রতিটি validation — valid হোক বা না হোক। Protocol rejection (পুরনো / replay request) রেকর্ড হয় কিন্তু কখনো চার্জ হয় না।</td><td><span class="mono">usage_events.billable</span> লেখার সময়ই ঠিক; shape CHECK</td></tr>
+      <tr><td>কে টাকা দেবে</td><td>যে FI কাজটি চেয়েছে। Validation-এর বেলায় <i>যাচাইকারী</i> FI, QR-দাতা নয় (ADR 0002)।</td><td><span class="mono">usage_events.tenant_id</span></td></tr>
+      <tr><td>কে বিলযোগ্য</td><td>যে FI-র ওই মাসে কার্যকর rate card আছে। Rate card না থাকলে (যেমন pilot/UAT) ব্যবহার রেকর্ড হয়, চার্জ হয় না।</td><td>Rate card খোঁজা হয়; statement row-ই তৈরি হয় না</td></tr>
+      <tr><td>দাম</td><td>প্রতি ইউনিট, প্রতি FI, BDT, ভবিষ্যৎ মাসের ১ তারিখ থেকে কার্যকর। কার্যকর হওয়ার পর দাম বদলায় না — নতুন দাম মানে নতুন row।</td><td><span class="mono">UNIQUE(tenant_id, effective_from)</span>; UPDATE trigger-এ নিষিদ্ধ</td></tr>
+      <tr><td>মাস</td><td>ঢাকা সময়ের ক্যালেন্ডার মাস; কাজটি যে মাসে <i>ঘটেছে</i> সেই মাসের বিলে যায়, পরে রেকর্ড হলেও।</td><td><span class="mono">occurred_at</span>; <span class="mono">billing_periods</span>-এর PK <span class="mono">YYYY-MM</span></td></tr>
+      <tr><td>চূড়ান্ততা</td><td>Usage সম্পূর্ণ হলে স্বয়ংক্রিয় Draft; একজন নাম নথি operator পুরো মাস একসাথে finalize করেন, যা review হয়েছে ঠিক তাই। এরপর কিছুই বদলায় না।</td><td>চূড়ান্ত মাসে সব লেখা trigger-এ বন্ধ; <span class="mono">finalized_by/at</span> বাধ্যতামূলক</td></tr>
+      <tr><td>সংশোধন</td><td>শুধু adjustment: অঙ্ক ≠ 0, কারণ বাধ্যতামূলক, অপরিবর্তনীয়; একটি adjustment ঠিক একটি ভবিষ্যৎ statement-এ বসে।</td><td>সব বিল মিলিয়ে <span class="mono">UNIQUE(adjustment_id)</span>; composite FK একই FI-তে রাখে</td></tr>
+      <tr><td>টাকার হিসাব</td><td>প্রতি লাইনে একবার rounding, ২ দশমিক; মোট = rounded লাইনের যোগফল।</td><td>অঙ্ক <span class="mono">numeric(18,2)</span>, দাম <span class="mono">numeric(18,4)</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>DDD শব্দ → ডাটাবেস শব্দ</h3>
+  <p class="muted">ফিচারটি DDD দিয়ে পরিকল্পনা করা হয়েছে। Review-র সুবিধার জন্য প্রতিটি DDD ধারণার সরাসরি ডাটাবেস রূপ এখানে:</p>
+  <div class="tblwrap"><table class="tbl" style="min-width:560px">
+    <thead><tr><th>প্ল্যানে ব্যবহৃত DDD শব্দ</th><th>ডাটাবেসে এর রূপ</th></tr></thead>
+    <tbody>
+      <tr><td>Bounded context / সাব-ডোমেইন</td><td>টেবিল-মালিকানার সীমানা। কোনো FK module-এর সীমানা পার করে না (design ৪.১, ADR 0001) — module-এর বাইরে শুধু id reference।</td></tr>
+      <tr><td>Aggregate (<span class="mono">BillingPeriod</span>)</td><td>Transaction ও lock-এর সীমানা: একটি <span class="mono">billing_periods</span> row finalize হলে তার সব statement, line ও adjustment এক transaction-এ বদলায় (<span class="mono">FOR SHARE</span> lock)।</td></tr>
+      <tr><td>Integration event</td><td>একটি <span class="mono">outbox_messages</span> row, producer-এর নিজের transaction-এর ভেতরে লেখা (অন্তত একবার পৌঁছায়)।</td></tr>
+      <tr><td>Domain invariant</td><td>CHECK, UNIQUE, composite FK বা trigger — যেমন চূড়ান্ত মাসের অপরিবর্তনীয়তা trigger রক্ষা করে, কনভেনশন নয়।</td></tr>
+      <tr><td>Value object</td><td>লেখার সময় একবার কপি হয়ে আর বদলায় না এমন column — যেমন statement-এ দামের কপি।</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- ============================================================ ৩. সাব-ডোমেইন -->
+<section id="subdomains">
+  <p class="section-kicker">অংশ ৩</p>
+  <h2>সাব-ডোমেইন</h2>
+  <p>চারটি bounded context জড়িত। প্রথম দুটি আজকের code-এ আছে; <b>Metering</b> ও <b>Billing</b> — এই প্ল্যানে নতুন যোগ হচ্ছে। পাঁচম একটি ভাগাভাগি-করা জিনিস — <b>Outbox</b> টেবিল — সব module-এর ব্যবহারের infrastructure, কোনো সাব-ডোমেইন নয়।</p>
+
+  <div class="sd-grid">
+    <div class="sd-card">
+      <h3>QrGeneration <span class="chip">code-এ আছে</span></h3>
+      <p>FI-র অনুরোধে BanglaQR P2P QR (static / dynamic) তৈরি করে, FI-র key দিয়ে sign করে, আর প্রতিটি সফল তৈরির রেকর্ড রাখে।</p>
+      <ul>
+        <li>Spec অনুযায়ী static ও dynamic QR; শুধু tenant Active ও signing key ACTIVE হলে।</li>
+        <li>ডুপ্লিকেট সুরক্ষা: একই idempotency key ⇒ 409।</li>
+        <li>প্রতি সফলতায় এক row (tenant, type, key version) — QR string নিজে কখনো জমা থাকে না।</li>
+        <li><span class="mono">QrGenerated</span> event প্রকাশ করে (design-এ ঠিক; code-এ এখনো নেই)।</li>
+      </ul>
+      <div class="sd-dep">
+        <b>যার ওপর নির্ভর করে</b><span>Tenancy (অনুমতি) · KeyCustody (signing key)</span>
+        <b>যারা এর ওপর নির্ভর করে</b><span>Metering (<span class="mono">QrGenerated</span> গ্রহণ করে)</span>
+        <b>নিজের টেবিল</b><span class="mono">qr_generations</span> (বিদ্যমান)
+      </div>
+    </div>
+
+    <div class="sd-card">
+      <h3>QrVerification <span class="chip">code-ে আছে</span></h3>
+      <p>FI-র পাঠানো QR payload যাচাই করে (TLV/CRC গঠন, Bangladesh Bank trust store থেকে public key দিয়ে Ed25519 signature) verdict দেয়; প্রতিটি যাচাইয়ের এক row, যাচাইকারী FI-র নামে।</p>
+      <ul>
+        <li>Verdict-এর মালিক: <span class="mono">VALID</span>, <span class="mono">INVALID_SIGNATURE</span>, <span class="mono">KEY_NOT_FOUND</span>, <span class="mono">REQUEST_STALE</span> …</li>
+        <li>Replay window ±৫ মিনিট; request id একবারই চলে।</li>
+        <li><span class="mono">QrValidated</span> event প্রকাশ করে (design-এ ঠিক; code-এ এখনো নেই)।</li>
+        <li>শুধু business fact জানায় — কী billable, তা জানে না।</li>
+      </ul>
+      <div class="sd-dep">
+        <b>যার ওপর নির্ভর করে</b><span>Tenancy · InstitutionTrust (BB key directory) · KeyCustody · QrGeneration-এর সাথে ভাগাভাগি QR codec (Shared Kernel)</span>
+        <b>যারা এর ওপর নির্ভর করে</b><span>Metering (<span class="mono">QrValidated</span> গ্রহণ করে)</span>
+        <b>নিজের টেবিল</b><span class="mono">qr_validations</span> (বিদ্যমান)
+      </div>
+    </div>
+
+    <div class="sd-card">
+      <h3>Metering <span class="chip warn">নতুন — migration 011</span></h3>
+      <p>প্রতিটি QR operation <b>ঠিক একবার, চিরস্থায়ীভাবে</b> গোনে, লেখার সময়েই বিলযোগ্যতা ঠিক করে, আর ব্যবহার প্রদানকারী FI-র নামে লেখে। "কী ব্যবহার হয়েছে" — এর একমাত্র সত্যের উৎস।</p>
+      <ul>
+        <li>প্রতি operation-এ একটি অপরিবর্তনীয় row; ডুপ্লিকেট আসলে <span class="mono">UNIQUE(source_type, source_id)</span> বাদ দেয়।</li>
+        <li>বিলযোগ্যতা নীতি: নিশ্চিত verdict ⇒ billable; protocol rejection ⇒ নয় (ADR 0002)।</li>
+        <li><span class="mono">occurred_at</span> বিলিং মাস ঠিক করে — কখন এসেছে তা নয়।</li>
+        <li>সংখ্যা, ভাগ (দিন / meter / verdict / tenant), raw extract ও usage completeness-এর উত্তর দেয়। Retention ≥ ১৩ মাস।</li>
+      </ul>
+      <div class="sd-dep">
+        <b>যার ওপর নির্ভর করে</b><span>QrGeneration + QrVerification (Outbox দিয়ে event) · Tenancy (পরিচয়)</span>
+        <b>যারা এর ওপর নির্ভর করে</b><span>Billing (in-process query <span class="mono">IMeteringQueries</span> দিয়ে সংখ্যা নেয়) · reporting</span>
+        <b>নিজের টেবিল</b><span class="mono">usage_events</span>
+      </div>
+    </div>
+
+    <div class="sd-card">
+      <h3>Billing <span class="chip warn">নতুন — migration 012</span></h3>
+      <p>প্রতিটি মাসের বিলযোগ্য ব্যবহারকে প্রতি FI-র জন্য review-করা, চূড়ান্ত statement-এ পরিণত করে। চূড়ান্ত হওয়ার পর কিছুই বদলায় না; সংশোধন পরের statement-এর adjustment। FI ও platform রিপোর্ট বানায়।</p>
+      <ul>
+        <li>Rate card: প্রতি FI-র ইউনিট-দাম, ভবিষ্যৎ মাসের ১ তারিখ থেকে কার্যকর; append-only।</li>
+        <li>মাসের জীবনচক্র Open → Draft → Finalized; usage completeness ও finalize-র সময় <span class="mono">expectedTotal</span> পুনঃযাচাই।</li>
+        <li>Rating: সংখ্যা × দাম, প্রতি লাইনে একবার rounding; statement-এ ব্যবহৃত দামের কপি থাকে।</li>
+        <li>Adjustment (± credit/debit, কারণ বাধ্যতামূলক, অপরিবর্তনীয়, ঠিক একবার প্রয়োগ); ৩০ দিনের dispute window।</li>
+        <li>টাকা-সংক্রান্ত প্রতিটি write audit হয় (কে, কী, আগে/পরে মোট)।</li>
+      </ul>
+      <div class="sd-dep">
+        <b>যার ওপর নির্ভর করে</b><span>Metering (শুধু সংখ্যা — নিজে বিলযোগ্যতা বিচার করে না) · Tenancy</span>
+        <b>যারা এর ওপর নির্ভর করে</b><span>ভবিষ্যৎ Notification module (F8) · Finance সিস্টেমের বাইরে statement গ্রহণ করে</span>
+        <b>নিজের টেবিল</b><span class="mono">billing_rate_cards · billing_periods · billing_statements · billing_statement_lines · billing_adjustments</span>
+      </div>
+    </div>
+  </div>
+
+  <h3>Context map</h3>
+<pre class="code">QrGeneration   --event (QrGenerated)------->  Metering  --query (IMeteringQueries)-->  Billing
+QrVerification --event (QrValidated)----->    (upstream)      (Customer-Supplier)       (downstream)
+
+ইচ্ছাকৃতভাবে নেই:
+  QrGeneration / QrVerification --> Billing   (Billing শুধু Metering পড়ে)
+  Metering       --> QR moduleগুলো            (Metering তাদের টেবিল পড়ে না)
+  Module সীমানা পেরোনো কোনো FK               (শুধু id reference)</pre>
+</section>
+
+<!-- ============================================================ ৪. স্কিমা ও ডেটা -->
+<section id="schema">
+  <p class="section-kicker">অংশ ৪</p>
+  <h2>ডাটাবেস স্কিমা ও নমুনা ডেটা</h2>
+  <p>তিনটি domain, সাতটি টেবিল — সবই <span class="mono">rvl-secure-bqr-manager</span> · ডাটাবেস <span class="mono">sbqr_app</span> · schema <span class="mono">public</span>-এ। নিচে প্রতিটি টেবিলের সম্পূর্ণ column তালিকা, রক্ষাকারী নিয়ম, আর একই গল্পের নমুনা row — যাতে প্রতিটি id টেবিল থেকে টেবিলে খুঁজে মেলানো যায়। রীতি: UUID v7 PK application দেয়; সময় <span class="mono">timestamptz</span> (UTC); টাকা <span class="mono">numeric</span> — কখনোই float নয়।</p>
+
+<pre class="erd">QR MODULE (আছে)          OUTBOX (নতুন, ভাগাভাগি)        METERING (নতুন)                   BILLING (নতুন)
+=================        ==========================      ================                  ==============
+qr_generations --+
+                 |  একই DB transaction              dispatcher, at-least-once        মাস শেষে গণনা, শুধু billable row
+qr_validations --+-->  outbox_messages  ------------------------------------>  usage_events  ---------------------->  billing_statement_lines
+                       (১টি টেবিল)                                                 (১টি টেবিল)                    x  billing_rate_cards    (দাম)
+                                                                                                               +  billing_periods       (মাস)
+                                                                                                               =  billing_statements
+                                                                                                               +- billing_adjustments  (credit / debit)</pre>
+
+  <div class="note">নমুনা ডেটার গল্প — সব টেবিলে এক গল্প। <b>T-A</b> = Bank A · <b>T-B</b> = MFS B · <b>T-X</b> = emulator (rate card নেই ⇒ রেকর্ড হয়, বিল হয় না)। মাস = <b>অক্টোবর ২০২৬</b>; সংখ্যা ইচ্ছা করে ছোট, যাতে বিলের প্রতিটি লাইন usage row-র সাথে হাতে মেলানো যায়। ছোট id (<span class="mono">ob-6</span>, <span class="mono">ue-6</span>, <span class="mono">st-1</span> …) আসল UUID-এর বদলে পড়ার সুবিধা; <span class="mono">↳</span> column দেখায় row-টা এরপর কোথায় গেল — এটা DB-তে নেই।</div>
+
+  <h3>অক্টোবরের ঘটনা (ইনপুট)</h3>
+  <div class="tblwrap"><table class="tbl" style="min-width:560px">
+    <thead><tr><th>Op</th><th>FI</th><th>কী হয়েছে</th><th>Verdict</th><th>কখন (ঢাকা)</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">g-1</td><td class="mono">T-A</td><td>Static QR তৈরি</td><td>—</td><td>০৫ অক্টোবর</td></tr>
+      <tr><td class="mono">g-2</td><td class="mono">T-A</td><td>Dynamic QR তৈরি</td><td>—</td><td>৩১ অক্টোবর ২৩:৫৯:৫৯ <span class="muted">(মাসের শেষ সেকেন্ড)</span></td></tr>
+      <tr><td class="mono">g-3</td><td class="mono">T-B</td><td>Static QR তৈরি</td><td>—</td><td>১২ অক্টোবর</td></tr>
+      <tr><td class="mono">g-4</td><td class="mono">T-B</td><td>Dynamic QR তৈরি</td><td>—</td><td>১৩ অক্টোবর</td></tr>
+      <tr><td class="mono">g-5</td><td class="mono">T-X</td><td>Static QR তৈরি</td><td>—</td><td>২১ অক্টোবর</td></tr>
+      <tr><td class="mono">v-1</td><td class="mono">T-B</td><td>Bank A-র QR <span class="mono">g-1</span> যাচাই</td><td><span class="pill ok">VALID</span></td><td>১৫ অক্টোবর</td></tr>
+      <tr><td class="mono">v-2</td><td class="mono">T-B</td><td>যাচাই</td><td><span class="pill">REQUEST_STALE</span></td><td>১৫ অক্টোবর</td></tr>
+      <tr><td class="mono">v-3</td><td class="mono">T-B</td><td>যাচাই</td><td><span class="pill ok">INVALID_SIGNATURE</span></td><td>২০ অক্টোবর</td></tr>
+      <tr><td class="mono">v-4</td><td class="mono">T-B</td><td>যাচাই</td><td><span class="pill ok">VALID</span></td><td>২৫ অক্টোবর</td></tr>
+      <tr><td class="mono">v-5</td><td class="mono">T-A</td><td>যাচাই</td><td><span class="pill ok">VALID</span></td><td>২২ অক্টোবর</td></tr>
+      <tr><td class="mono">v-9</td><td class="mono">T-A</td><td>যাচাই</td><td><span class="pill dead">KEY_EXPIRED</span></td><td>০২ নভেম্বর <span class="muted">(অজানা verdict)</span></td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted"><span class="pill ok">সবুজ</span> = নিশ্চিত verdict — QR খারাপ হলেও চার্জ হয়। <span class="pill">REQUEST_STALE</span> = protocol rejection: রেকর্ড হয়, চার্জ হয় না। <span class="pill dead">KEY_EXPIRED</span> verdict তালিকায় নেই — outbox নমুনার DEAD letter দেখুন।</p>
+
+  <!-- ---------------- ৪.১ OUTBOX ---------------- -->
+  <h3>৪.১ · Outbox — <span class="mono">outbox_messages</span> <span class="chip">ভাগাভাগি infrastructure</span></h3>
+  <p>নির্ভরযোগ্যতার কবজা: QR module নিজের QR row এবং "QR হয়েছে" event <i>একই transaction-এ</i> লেখে, তাই commit হওয়া QR-এর খবর কখনো হারায় না। Dispatcher পরে event-টা Metering-এ পৌঁছে দেয়, backoff সহ retry করে; <span class="mono">PROCESSED</span> row ৭ দিন পর মুছে যায়।</p>
+
+  <div class="tblwrap"><table class="tbl">
+    <thead><tr><th>Column</th><th>Type</th><th>মানে</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">outbox_message_id</td><td class="mono">uuid</td><td><b>PK</b> — event-এর id</td></tr>
+      <tr><td class="mono">source_module</td><td class="mono">varchar(50)</td><td>কে পাঠাল: <span class="mono">qr-generation</span> / <span class="mono">verification</span></td></tr>
+      <tr><td class="mono">event_type</td><td class="mono">varchar(150)</td><td><span class="mono">QrGenerated</span> / <span class="mono">QrValidated</span></td></tr>
+      <tr><td class="mono">payload</td><td class="mono">jsonb</td><td>Event-এর ডেটা: QR id, tenant, verdict ইত্যাদি</td></tr>
+      <tr><td class="mono">occurred_at</td><td class="mono">timestamptz</td><td>ঘটনার সময়</td></tr>
+      <tr><td class="mono">status</td><td class="mono">varchar(15)</td><td><span class="pill">PENDING</span> → <span class="pill ok">PROCESSED</span>, বারবার ব্যর্থ হলে <span class="pill dead">DEAD</span></td></tr>
+      <tr><td class="mono">attempts</td><td class="mono">integer</td><td>কতবার চেষ্টা হলো</td></tr>
+      <tr><td class="mono">next_attempt_at</td><td class="mono">timestamptz</td><td>পরের চেষ্টা কখন</td></tr>
+      <tr><td class="mono">locked_until</td><td class="mono">timestamptz</td><td>Dispatcher-এর lease (দুজন একই row ধরতে পারে না)</td></tr>
+      <tr><td class="mono">last_error</td><td class="mono">varchar(2000)</td><td>শেষ error-এর টেক্সট (PII নয়)</td></tr>
+      <tr><td class="mono">processed_at</td><td class="mono">timestamptz</td><td>পৌঁছানো শেষ হওয়ার সময় (PROCESSED হলে লাগবে)</td></tr>
+      <tr><td class="mono">created_at</td><td class="mono">timestamptz</td><td>Row তৈরির সময়</td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>নমুনা row</h4>
+  <div class="tblwrap"><table class="tbl">
+    <thead><tr>
+      <th>outbox_​message_id</th><th>source_​module</th><th>event_type</th><th>payload (সংক্ষেপে)</th><th>occurred_at (UTC)</th><th>status</th><th class="r">attempts</th><th>next_​attempt_at</th><th>locked_​until</th><th>last_error</th><th>processed_at (UTC)</th><th>created_at (UTC)</th><th>↳ usage_event</th>
+    </tr></thead>
+    <tbody>
+      <tr><td class="mono">ob-1</td><td class="mono">qr-generation</td><td class="mono">QrGenerated</td><td class="mono">{g-1, T-A, STATIC}</td><td class="mono">10-05 04:00:00</td><td><span class="pill ok">PROCESSED</span></td><td class="r">1</td><td class="mono">—</td><td class="mono">—</td><td class="mono">—</td><td class="mono">10-05 04:00:01</td><td class="mono">10-05 04:00:00</td><td class="mono">ue-1</td></tr>
+      <tr><td class="mono">ob-2</td><td class="mono">qr-generation</td><td class="mono">QrGenerated</td><td class="mono">{g-2, T-A, DYNAMIC}</td><td class="mono">10-31 17:59:59</td><td><span class="pill ok">PROCESSED</span></td><td class="r">1</td><td class="mono">—</td><td class="mono">—</td><td class="mono">—</td><td class="mono">10-31 18:00:01</td><td class="mono">10-31 17:59:59</td><td class="mono">ue-2</td></tr>
+      <tr><td class="mono">ob-3</td><td class="mono">qr-generation</td><td class="mono">QrGenerated</td><td class="mono">{g-3, T-B, STATIC}</td><td class="mono">10-12 05:00:00</td><td><span class="pill ok">PROCESSED</span></td><td class="r">1</td><td class="mono">—</td><td class="mono">—</td><td class="mono">—</td><td class="mono">10-12 05:00:01</td><td class="mono">10-12 05:00:00</td><td class="mono">ue-3</td></tr>
+      <tr><td class="mono">ob-4</td><td class="mono">qr-generation</td><td class="mono">QrGenerated</td><td class="mono">{g-4, T-B, DYNAMIC}</td><td class="mono">10-13 05:00:00</td><td><span class="pill ok">PROCESSED</span></td><td class="r">1</td><td class="mono">—</td><td class="mono">—</td><td class="mono">—</td><td class="mono">10-13 05:00:01</td><td class="mono">10-13 05:00:00</td><td class="mono">ue-4</td></tr>
+      <tr><td class="mono">ob-5</td><td class="mono">qr-generation</td><td class="mono">QrGenerated</td><td class="mono">{g-5, T-X, STATIC}</td><td class="mono">10-21 03:00:00</td><td><span class="pill ok">PROCESSED</span></td><td class="r">1</td><td class="mono">—</td><td class="mono">—</td><td class="mono">—</td><td class="mono">10-21 03:00:01</td><td class="mono">10-21 03:00:00</td><td class="mono">ue-5</td></tr>
+      <tr><td class="mono">ob-6</td><td class="mono">verification</td><td class="mono">QrValidated</td><td class="mono">{v-1, T-B, VALID}</td><td class="mono">10-15 06:30:00</td><td><span class="pill ok">PROCESSED</span></td><td class="r">1</td><td class="mono">—</td><td class="mono">—</td><td class="mono">—</td><td class="mono">10-15 06:30:01</td><td class="mono">10-15 06:30:00</td><td class="mono">ue-6</td></tr>
+      <tr><td class="mono">ob-7</td><td class="mono">verification</td><td class="mono">QrValidated</td><td class="mono">{v-2, T-B, REQUEST_STALE}</td><td class="mono">10-15 06:31:00</td><td><span class="pill ok">PROCESSED</span></td><td class="r">1</td><td class="mono">—</td><td class="mono">—</td><td class="mono">—</td><td class="mono">10-15 06:31:01</td><td class="mono">10-15 06:31:00</td><td class="mono">ue-7</td></tr>
+      <tr><td class="mono">ob-8</td><td class="mono">verification</td><td class="mono">QrValidated</td><td class="mono">{v-3, T-B, INVALID_SIGNATURE}</td><td class="mono">10-20 10:05:00</td><td><span class="pill ok">PROCESSED</span></td><td class="r">1</td><td class="mono">—</td><td class="mono">—</td><td class="mono">—</td><td class="mono">10-20 10:05:01</td><td class="mono">10-20 10:05:00</td><td class="mono">ue-8</td></tr>
+      <tr><td class="mono">ob-9</td><td class="mono">verification</td><td class="mono">QrValidated</td><td class="mono">{v-4, T-B, VALID}</td><td class="mono">10-25 08:00:00</td><td><span class="pill ok">PROCESSED</span></td><td class="r">1</td><td class="mono">—</td><td class="mono">—</td><td class="mono">—</td><td class="mono">10-25 08:00:01</td><td class="mono">10-25 08:00:00</td><td class="mono">ue-9</td></tr>
+      <tr><td class="mono">ob-10</td><td class="mono">verification</td><td class="mono">QrValidated</td><td class="mono">{v-5, T-A, VALID}</td><td class="mono">10-22 09:00:00</td><td><span class="pill ok">PROCESSED</span></td><td class="r">1</td><td class="mono">—</td><td class="mono">—</td><td class="mono">—</td><td class="mono">10-22 09:00:01</td><td class="mono">10-22 09:00:00</td><td class="mono">ue-10</td></tr>
+      <tr><td class="mono">ob-11</td><td class="mono">verification</td><td class="mono">QrValidated</td><td class="mono">{v-9, T-A, KEY_EXPIRED}</td><td class="mono">11-02 09:00:00</td><td><span class="pill dead">DEAD</span></td><td class="r">10</td><td class="mono">—</td><td class="mono">—</td><td class="mono">Unmapped verdict KEY_EXPIRED — no metering rule</td><td class="mono">—</td><td class="mono">11-02 09:00:00</td><td class="mono">—</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted">সময়গুলো 2026 UTC। <span class="mono">ob-2</span>: ঢাকায় ৩১ অক্টোবর ২৩:৫৯:৫৯ = UTC 17:59:59, তাই অক্টোবরের ব্যবহার। <span class="mono">ob-11</span> ১০ বার চেষ্টার পর DEAD — কেউ requeue না করা পর্যন্ত নভেম্বর Draft হবে না এবং মাসটা স্পষ্টভাবে অসম্পূর্ণ দেখাবে। এটাই "ব্যবহার হারাবে না, মাস আগে বন্ধ হবে না" নিশ্চয়তার কাজ করা।</p>
+
+  <!-- ---------------- ৪.২ METERING ---------------- -->
+  <h3>৪.২ · Metering — <span class="mono">usage_events</span> <span class="chip warn">নতুন</span></h3>
+  <p>স্থায়ী খাতা: প্রতিটি QR operation-এর ঠিক একটি অপরিবর্তনীয় row। Row কখনো বদলায় বা মোছে না (trigger-এ <span class="mono">UPDATE</span>/<span class="mono">DELETE</span>/<span class="mono">TRUNCATE</span> বন্ধ); একই event দুবার এলে unique key-র জন্য চুপচাপ বাদ যায়।</p>
+
+  <div class="tblwrap"><table class="tbl" style="min-width:560px">
+    <thead><tr><th>Column</th><th>Type</th><th>মানে</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">usage_event_id</td><td class="mono">uuid</td><td><b>PK</b></td></tr>
+      <tr><td class="mono">tenant_id</td><td class="mono">uuid</td><td>যে FI-র বিলে গোনা হবে (যে অনুরোধ করেছে)</td></tr>
+      <tr><td class="mono">meter_code</td><td class="mono">varchar(40)</td><td><span class="mono">GENERATION_STATIC</span> / <span class="mono">GENERATION_DYNAMIC</span> / <span class="mono">VALIDATION</span></td></tr>
+      <tr><td class="mono">billable</td><td class="mono">boolean</td><td>বিলে গোনা হবে কি না — লেখার সময়েই ঠিক</td></tr>
+      <tr><td class="mono">detail</td><td class="mono">varchar(40)</td><td>Validation-এর verdict; generation-এ NULL</td></tr>
+      <tr><td class="mono">source_type</td><td class="mono">varchar(30)</td><td><span class="mono">qr_generation</span> / <span class="mono">qr_validation</span></td></tr>
+      <tr><td class="mono">source_id</td><td class="mono">uuid</td><td>কোন QR operation (<span class="mono">g-…</span> / <span class="mono">v-…</span>) — নিচের UNIQUE দেখুন</td></tr>
+      <tr><td class="mono">source_event_id</td><td class="mono">uuid</td><td>কোন outbox event থেকে (শুধু tracing)</td></tr>
+      <tr><td class="mono">client_reference</td><td class="mono">varchar(100)</td><td>FI-র নিজের reference (Idempotency key / request id)</td></tr>
+      <tr><td class="mono">occurred_at</td><td class="mono">timestamptz</td><td>কাজটি যখন ঘটেছি — <b>বিলিং মাস এটাই ঠিক করে</b></td></tr>
+      <tr><td class="mono">recorded_at</td><td class="mono">timestamptz</td><td>Metering যখন row লিখেছে</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted"><b>নিয়ম:</b> <span class="mono">UNIQUE(source_type, source_id)</span> — ঠিক একবারই গোনা। Shape CHECK: generation-এ verdict নেই ও সবসময় billable; validation-এ verdict থাকবেই। Index: <span class="mono">(tenant_id, occurred_at)</span> এক FI-র মাস; <span class="mono">(occurred_at)</span> platform রিপোর্ট।</p>
+
+  <h4>নমুনা row</h4>
+  <div class="tblwrap"><table class="tbl">
+    <thead><tr>
+      <th>usage_​event_id</th><th>tenant_​id</th><th>meter_code</th><th>billable</th><th>detail</th><th>source_​type</th><th>source_​id</th><th>source_​event_​id</th><th>client_reference</th><th>occurred_at (UTC)</th><th>recorded_at (UTC)</th><th>↳ বিলের লাইন</th>
+    </tr></thead>
+    <tbody>
+      <tr><td class="mono">ue-1</td><td class="mono">T-A</td><td class="mono">GENERATION_STATIC</td><td class="c">✔</td><td class="mono">—</td><td class="mono">qr_generation</td><td class="mono">g-1</td><td class="mono">ob-1</td><td class="mono">BANKA-IDEM-0510A</td><td class="mono">10-05 04:00:00</td><td class="mono">10-05 04:00:02</td><td class="mono">st-1 লাইন 1</td></tr>
+      <tr><td class="mono">ue-2</td><td class="mono">T-A</td><td class="mono">GENERATION_DYNAMIC</td><td class="c">✔</td><td class="mono">—</td><td class="mono">qr_generation</td><td class="mono">g-2</td><td class="mono">ob-2</td><td class="mono">BANKA-IDEM-3131Z</td><td class="mono">10-31 17:59:59</td><td class="mono">10-31 18:00:02</td><td class="mono">st-1 লাইন 2</td></tr>
+      <tr><td class="mono">ue-3</td><td class="mono">T-B</td><td class="mono">GENERATION_STATIC</td><td class="c">✔</td><td class="mono">—</td><td class="mono">qr_generation</td><td class="mono">g-3</td><td class="mono">ob-3</td><td class="mono">MFSB-IDEM-1288</td><td class="mono">10-12 05:00:00</td><td class="mono">10-12 05:00:03</td><td class="mono">st-2 লাইন 1</td></tr>
+      <tr><td class="mono">ue-4</td><td class="mono">T-B</td><td class="mono">GENERATION_DYNAMIC</td><td class="c">✔</td><td class="mono">—</td><td class="mono">qr_generation</td><td class="mono">g-4</td><td class="mono">ob-4</td><td class="mono">MFSB-IDEM-1319</td><td class="mono">10-13 05:00:00</td><td class="mono">10-13 05:00:01</td><td class="mono">st-2 লাইন 2</td></tr>
+      <tr><td class="mono">ue-5</td><td class="mono">T-X</td><td class="mono">GENERATION_STATIC</td><td class="c">✔</td><td class="mono">—</td><td class="mono">qr_generation</td><td class="mono">g-5</td><td class="mono">ob-5</td><td class="mono">EMU-TEST-0007</td><td class="mono">10-21 03:00:00</td><td class="mono">10-21 03:00:02</td><td class="mono">কোথাও না — rate card নেই</td></tr>
+      <tr><td class="mono">ue-6</td><td class="mono">T-B</td><td class="mono">VALIDATION</td><td class="c">✔</td><td class="mono">VALID</td><td class="mono">qr_validation</td><td class="mono">v-1</td><td class="mono">ob-6</td><td class="mono">MFSB-REQ-884501</td><td class="mono">10-15 06:30:00</td><td class="mono">10-15 06:30:01</td><td class="mono">st-2 লাইন 3</td></tr>
+      <tr><td class="mono">ue-7</td><td class="mono">T-B</td><td class="mono">VALIDATION</td><td class="c"><b>✘</b></td><td class="mono">REQUEST_STALE</td><td class="mono">qr_validation</td><td class="mono">v-2</td><td class="mono">ob-7</td><td class="mono">MFSB-REQ-884502</td><td class="mono">10-15 06:31:00</td><td class="mono">10-15 06:31:01</td><td class="mono">কোথাও না — billable নয়</td></tr>
+      <tr><td class="mono">ue-8</td><td class="mono">T-B</td><td class="mono">VALIDATION</td><td class="c">✔</td><td class="mono">INVALID_SIGNATURE</td><td class="mono">qr_validation</td><td class="mono">v-3</td><td class="mono">ob-8</td><td class="mono">MFSB-REQ-901133</td><td class="mono">10-20 10:05:00</td><td class="mono">10-20 10:05:02</td><td class="mono">st-2 লাইন 3</td></tr>
+      <tr><td class="mono">ue-9</td><td class="mono">T-B</td><td class="mono">VALIDATION</td><td class="c">✔</td><td class="mono">VALID</td><td class="mono">qr_validation</td><td class="mono">v-4</td><td class="mono">ob-9</td><td class="mono">MFSB-REQ-917764</td><td class="mono">10-25 08:00:00</td><td class="mono">10-25 08:00:01</td><td class="mono">st-2 লাইন 3</td></tr>
+      <tr><td class="mono">ue-10</td><td class="mono">T-A</td><td class="mono">VALIDATION</td><td class="c">✔</td><td class="mono">VALID</td><td class="mono">qr_validation</td><td class="mono">v-5</td><td class="mono">ob-10</td><td class="mono">BANKA-REQ-221095</td><td class="mono">10-22 09:00:00</td><td class="mono">10-22 09:00:03</td><td class="mono">st-1 লাইন 3</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted">তিনটি row আরেকবার দেখার মতো: <span class="mono">ue-2</span> <i>রেকর্ড হয়েছে</i> ঢাকার ১ নভেম্বরে, কিন্তু <i>ঘটেছে</i> ৩১ অক্টোবর ২৩:৫৯:৫৯-এ — তাই অক্টোবরের, কারণ <span class="mono">occurred_at</span> ঠিক করে। <span class="mono">ue-6</span>: QR-টা Bank A-র, কিন্তু যাচাই চেয়েছে MFS B, তাই বিল MFS B-র। <span class="mono">ue-7</span> রিপোর্টে দেখা যায়, কিন্তু কোনো বিলে নয়।</p>
+
+  <!-- ---------------- ৪.৩ BILLING ---------------- -->
+  <h3>৪.৩ · Billing — পাঁচটি টেবিল <span class="chip warn">নতুন</span></h3>
+  <p>কাগজের ইউটিলিটি বিলের কথা ভাবুন। প্রতিটি টেবিল একটি প্রশ্নের উত্তর দেয়: <b>দামের তালিকা</b> (এক ইউনিটের দাম কত, কবে থেকে), <b>মাসের রেজিস্টার</b> (মাসটি draft না final), <b>statement</b> (এক FI-র মাসিক মোট), তার <b>লাইন</b> (মোট কীভাবে এল), আর <b>adjustment</b> (হাতে দেওয়া credit/debit)। Statement-এর নিজের কোনো status column নেই — মাসের row-টিই তার সব statement-এর একমাত্র status, তাই পুরো মাস একসাথে draft ও finalize হয়।</p>
+
+  <div class="tblwrap"><table class="tbl" style="min-width:560px">
+    <thead><tr><th>টেবিল</th><th>কোন প্রশ্নের উত্তর</th><th>বাদ দিলে কী সমস্যা</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">billing_rate_cards</td><td>এই FI-র ইউনিটের দাম কত, কোন মাস থেকে?</td><td>দাম বদলালে পুরনো মাস নিঃশব্দে নতুন দামে হিসাব হতো</td></tr>
+      <tr><td class="mono">billing_periods</td><td>এই মাস Draft না Finalized?</td><td>"সব FI-র বিল একসাথে finalize" আর "দুজন একসাথে হিসাব" আটকানো কঠিন হতো</td></tr>
+      <tr><td class="mono">billing_statements</td><td>এক FI-র মাসের মোট কত?</td><td>প্রতি FI-র বিল বলে কিছুই থাকত না</td></tr>
+      <tr><td class="mono">billing_statement_lines</td><td>মোটটা কীভাবে এল?</td><td>FI জানত না কীসের জন্য কত দিচ্ছে</td></tr>
+      <tr><td class="mono">billing_adjustments</td><td>কোন credit/debit কোন বিলে বসল?</td><td>চূড়ান্ত বিল কোনোদিন শোধরানো যেত না</td></tr>
+    </tbody>
+  </table></div>
+
+  <h4><span class="mono">billing_rate_cards</span> — দামের তালিকা (append-only)</h4>
+  <div class="tblwrap"><table class="tbl" style="min-width:560px">
+    <thead><tr><th>Column</th><th>Type</th><th>মানে</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">rate_card_id</td><td class="mono">uuid</td><td><b>PK</b></td></tr>
+      <tr><td class="mono">tenant_id</td><td class="mono">uuid</td><td>কোন FI</td></tr>
+      <tr><td class="mono">effective_from</td><td class="mono">date</td><td>কোন মাস থেকে কার্যকর (সবসময় ১ তারিখ)</td></tr>
+      <tr><td class="mono">generation_rate</td><td class="mono">numeric(18,4)</td><td>প্রতি QR তৈরির দাম (BDT)</td></tr>
+      <tr><td class="mono">validation_rate</td><td class="mono">numeric(18,4)</td><td>প্রতি validation-এর দাম (BDT)</td></tr>
+      <tr><td class="mono">currency</td><td class="mono">char(3)</td><td><span class="mono">BDT</span></td></tr>
+      <tr><td class="mono">created_by / created_at</td><td class="mono">varchar / timestamptz</td><td>কে দাম দিল, কখন</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted"><b>নিয়ম:</b> <span class="mono">UNIQUE(tenant_id, effective_from)</span> — এক FI-র এক মাসে একটাই card শুরু; দাম ≥ 0; UPDATE নিষিদ্ধ — নতুন দাম মানে নতুন row; কার্যকর হওয়ার আগে পর্যন্ত মোছা যায়। কোনো মাসের দাম = <span class="mono">effective_from</span> ≤ সেই মাসের ১ তারিখ, এমন সবচেয়ে নতুন row।</p>
+  <div class="tblwrap"><table class="tbl" style="min-width:560px">
+    <thead><tr><th>rate_card_id</th><th>tenant_id</th><th>effective_from</th><th class="r">generation_rate</th><th class="r">validation_rate</th><th>currency</th><th>created_by</th><th>created_at (UTC)</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">rc-1</td><td class="mono">T-A</td><td class="mono">2026-08-01</td><td class="r mono">0.2500</td><td class="r mono">0.1000</td><td class="mono">BDT</td><td class="mono">ops.finance</td><td class="mono">2026-07-15 09:05:00</td></tr>
+      <tr><td class="mono">rc-2</td><td class="mono">T-A</td><td class="mono">2026-11-01</td><td class="r mono">0.2000</td><td class="r mono">0.1000</td><td class="mono">BDT</td><td class="mono">ops.finance</td><td class="mono">2026-10-20 11:20:00</td></tr>
+      <tr><td class="mono">rc-3</td><td class="mono">T-B</td><td class="mono">2026-10-01</td><td class="r mono">0.3000</td><td class="r mono">0.1250</td><td class="mono">BDT</td><td class="mono">ops.finance</td><td class="mono">2026-09-18 07:45:00</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted">অক্টোবরে Bank A-র দাম <span class="mono">rc-1</span> — <span class="mono">rc-2</span> শুরু ১ নভেম্বর থেকে। T-X-এর কোনো row নেই, তাই তার বিল হয় না।</p>
+
+  <h4><span class="mono">billing_periods</span> — মাসের রেজিস্টার</h4>
+  <div class="tblwrap"><table class="tbl" style="min-width:520px">
+    <thead><tr><th>Column</th><th>Type</th><th>মানে</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">period</td><td class="mono">char(7)</td><td><b>PK</b> — <span class="mono">YYYY-MM</span>, ঢাকা সময়ের ক্যালেন্ডার মাস</td></tr>
+      <tr><td class="mono">status</td><td class="mono">varchar(15)</td><td><span class="pill">DRAFT</span> → <span class="pill ok">FINALIZED</span> — মাসের <i>সব</i> statement-এর অবস্থা</td></tr>
+      <tr><td class="mono">drafted_at</td><td class="mono">timestamptz</td><td>কখন Draft হলো</td></tr>
+      <tr><td class="mono">finalized_at / finalized_by</td><td class="mono">timestamptz / varchar</td><td>কে, কখন finalize করল (FINALIZED হলে বাধ্যতামূলক)</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted"><b>নিয়ম:</b> মাসে একটাই row (PK); চূড়ান্ত row অপরিবর্তনীয়; recalculate ও finalize এই row lock করে — তাই একই মাসে দুটো কাজ একসাথে চলে না।</p>
+  <div class="tblwrap"><table class="tbl" style="min-width:520px">
+    <thead><tr><th>period</th><th>status</th><th>drafted_at (UTC)</th><th>finalized_at (UTC)</th><th>finalized_by</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">2026-09</td><td><span class="pill ok">FINALIZED</span></td><td class="mono">2026-09-30 20:00:00</td><td class="mono">2026-10-03 05:30:00</td><td class="mono">ops.finance</td></tr>
+      <tr><td class="mono">2026-10</td><td><span class="pill">DRAFT</span></td><td class="mono">2026-10-31 20:00:00</td><td class="mono">—</td><td class="mono">—</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted">নভেম্বরের row নেই — মাসটি এখনো চলছে। মাস শেষ + ২ ঘণ্টার grace পেরিয়ে usage সম্পূর্ণ হলে Draft স্বয়ংক্রিয়ভাবে হয়।</p>
+
+  <h4><span class="mono">billing_statements</span> — এক FI-র মাসিক বিল</h4>
+  <div class="tblwrap"><table class="tbl" style="min-width:560px">
+    <thead><tr><th>Column</th><th>Type</th><th>মানে</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">statement_id</td><td class="mono">uuid</td><td><b>PK</b></td></tr>
+      <tr><td class="mono">tenant_id</td><td class="mono">uuid</td><td>কোন FI</td></tr>
+      <tr><td class="mono">period</td><td class="mono">char(7)</td><td><b>FK</b> → <span class="mono">billing_periods</span></td></tr>
+      <tr><td class="mono">rate_card_id</td><td class="mono">uuid</td><td><b>FK</b> (tenant_id-র সাথে composite) → <span class="mono">billing_rate_cards</span> — শুধু একই FI-র card</td></tr>
+      <tr><td class="mono">generation_rate / validation_rate</td><td class="mono">numeric(18,4)</td><td>ব্যবহৃত দামের কপি — পরে দাম বদলালেও বিল বদলায় না</td></tr>
+      <tr><td class="mono">subtotal</td><td class="mono">numeric(18,2)</td><td>USAGE লাইনের যোগফল</td></tr>
+      <tr><td class="mono">adjustments_total</td><td class="mono">numeric(18,2)</td><td>ADJUSTMENT লাইনের যোগফল</td></tr>
+      <tr><td class="mono">total</td><td class="mono">numeric(18,2)</td><td><span class="mono">subtotal + adjustments_total</span> — ঋণাত্মক হতে পারে (credit)</td></tr>
+      <tr><td class="mono">currency / calculated_at</td><td class="mono">char(3) / timestamptz</td><td><span class="mono">BDT</span>; শেষ হিসাবের সময়</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted"><b>নিয়ম:</b> <span class="mono">UNIQUE(period, tenant_id)</span> — মাসে প্রতি FI-র একটাই বিল। মাস FINALIZED হলে insert/update/delete বন্ধ (trigger)। ইচ্ছাকৃতভাবে status column নেই — মাসের row-ই সত্য।</p>
+  <div class="tblwrap"><table class="tbl">
+    <thead><tr><th>statement_id</th><th>tenant_id</th><th>period</th><th>rate_card_id</th><th class="r">gen দাম</th><th class="r">val দাম</th><th class="r">subtotal</th><th class="r">adjustment</th><th class="r">total</th><th>currency</th><th>calculated_at (UTC)</th><th>↳ অবস্থা (মাস থেকে)</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">st-0</td><td class="mono">T-A</td><td class="mono">2026-09</td><td class="mono">rc-1</td><td class="r mono">0.2500</td><td class="r mono">0.1000</td><td class="r mono">1.00</td><td class="r mono">0.25</td><td class="r mono">1.25</td><td class="mono">BDT</td><td class="mono">2026-10-03 05:30:08</td><td><span class="pill ok">FINALIZED</span></td></tr>
+      <tr><td class="mono">st-1</td><td class="mono">T-A</td><td class="mono">2026-10</td><td class="mono">rc-1</td><td class="r mono">0.2500</td><td class="r mono">0.1000</td><td class="r mono">0.60</td><td class="r mono">-0.10</td><td class="r mono">0.50</td><td class="mono">BDT</td><td class="mono">2026-10-31 20:00:07</td><td><span class="pill">DRAFT</span></td></tr>
+      <tr><td class="mono">st-2</td><td class="mono">T-B</td><td class="mono">2026-10</td><td class="mono">rc-3</td><td class="r mono">0.3000</td><td class="r mono">0.1250</td><td class="r mono">0.98</td><td class="r mono">0.00</td><td class="r mono">0.98</td><td class="mono">BDT</td><td class="mono">2026-10-31 20:00:07</td><td><span class="pill">DRAFT</span></td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted">T-B-র <span class="mono">rc-3</span> যদি <span class="mono">st-1</span>-এ বসানো হয়, composite FK error দেবে — এক FI শুধু নিজের card-এই বিল হয়। T-X-এর কোনো statement নেই।</p>
+
+  <h4><span class="mono">billing_statement_lines</span> — মোট কীভাবে এল</h4>
+  <div class="tblwrap"><table class="tbl" style="min-width:560px">
+    <thead><tr><th>Column</th><th>Type</th><th>মানে</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">statement_id + line_no</td><td class="mono">uuid + int</td><td><b>Composite PK</b>; FK → statements, ON DELETE CASCADE</td></tr>
+      <tr><td class="mono">line_type</td><td class="mono">varchar(15)</td><td><span class="mono">USAGE</span> বা <span class="mono">ADJUSTMENT</span></td></tr>
+      <tr><td class="mono">meter_code</td><td class="mono">varchar(40)</td><td>USAGE লাইনে কোন meter</td></tr>
+      <tr><td class="mono">adjustment_id</td><td class="mono">uuid</td><td>ADJUSTMENT লাইনে: <b>FK</b> → adjustments; <i>সব</i> বিল মিলিয়ে unique</td></tr>
+      <tr><td class="mono">description</td><td class="mono">varchar(200)</td><td>বিলে যা ছাপা হবে</td></tr>
+      <tr><td class="mono">quantity</td><td class="mono">bigint</td><td>কয়টি (USAGE)</td></tr>
+      <tr><td class="mono">unit_rate</td><td class="mono">numeric(18,4)</td><td>প্রতিটির দাম (USAGE)</td></tr>
+      <tr><td class="mono">amount</td><td class="mono">numeric(18,2)</td><td><span class="mono">round(quantity × unit_rate, 2)</span>, বা adjustment-এর অঙ্ক</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted"><b>নিয়ম:</b> এক বিলে এক meter একবারই; UPDATE সবসময় নিষিদ্ধ — recalculate মানে সব লাইন মুছে নতুন লেখা; adjustment লাইন ও বিল একই FI-র হতে হবে (trigger)।</p>
+  <div class="tblwrap"><table class="tbl">
+    <thead><tr><th>statement_id</th><th class="r">লাইন</th><th>line_type</th><th>meter_code</th><th>adjustment_id</th><th>description</th><th class="r">quantity</th><th class="r">unit_rate</th><th class="r">amount</th><th>↳ কোথা থেকে</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">st-1</td><td class="r">1</td><td class="mono">USAGE</td><td class="mono">GENERATION_STATIC</td><td class="mono">—</td><td>QR generation — static</td><td class="r mono">1</td><td class="r mono">0.2500</td><td class="r mono">0.25</td><td class="mono">ue-1</td></tr>
+      <tr><td class="mono">st-1</td><td class="r">2</td><td class="mono">USAGE</td><td class="mono">GENERATION_DYNAMIC</td><td class="mono">—</td><td>QR generation — dynamic</td><td class="r mono">1</td><td class="r mono">0.2500</td><td class="r mono">0.25</td><td class="mono">ue-2</td></tr>
+      <tr><td class="mono">st-1</td><td class="r">3</td><td class="mono">USAGE</td><td class="mono">VALIDATION</td><td class="mono">—</td><td>QR validation — billable</td><td class="r mono">1</td><td class="r mono">0.1000</td><td class="r mono">0.10</td><td class="mono">ue-10</td></tr>
+      <tr><td class="mono">st-1</td><td class="r">4</td><td class="mono">ADJUSTMENT</td><td class="mono">—</td><td class="mono">adj-1</td><td>Credit: ১টি validation সেপ্টেম্বরে ভুলভাবে বিল হয়েছে</td><td class="r mono">0</td><td class="r mono">—</td><td class="r mono">-0.10</td><td class="mono">adj-1</td></tr>
+      <tr><td class="mono">st-2</td><td class="r">1</td><td class="mono">USAGE</td><td class="mono">GENERATION_STATIC</td><td class="mono">—</td><td>QR generation — static</td><td class="r mono">1</td><td class="r mono">0.3000</td><td class="r mono">0.30</td><td class="mono">ue-3</td></tr>
+      <tr><td class="mono">st-2</td><td class="r">2</td><td class="mono">USAGE</td><td class="mono">GENERATION_DYNAMIC</td><td class="mono">—</td><td>QR generation — dynamic</td><td class="r mono">1</td><td class="r mono">0.3000</td><td class="r mono">0.30</td><td class="mono">ue-4</td></tr>
+      <tr><td class="mono">st-2</td><td class="r">3</td><td class="mono">USAGE</td><td class="mono">VALIDATION</td><td class="mono">—</td><td>QR validation — billable</td><td class="r mono">3</td><td class="r mono">0.1250</td><td class="r mono">0.38</td><td class="mono">ue-6, ue-8, ue-9 <span class="muted">(ue-7 বাদ)</span></td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted">এক লাইনে rounding নিয়ম: 3 × 0.125 = 0.375 → <b>0.38</b> (প্রতি লাইনে একবার round, তারপর যোগ)। হাতে মেলান: <span class="mono">st-1</span> = 0.25 + 0.25 + 0.10 − 0.10 = <b>0.50</b>; <span class="mono">st-2</span> = 0.30 + 0.30 + 0.38 = <b>0.98</b>।</p>
+
+  <h4><span class="mono">billing_adjustments</span> — credit ও debit</h4>
+  <div class="tblwrap"><table class="tbl" style="min-width:560px">
+    <thead><tr><th>Column</th><th>Type</th><th>মানে</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">adjustment_id</td><td class="mono">uuid</td><td><b>PK</b></td></tr>
+      <tr><td class="mono">tenant_id</td><td class="mono">uuid</td><td>কোন FI</td></tr>
+      <tr><td class="mono">amount</td><td class="mono">numeric(18,2)</td><td>+ বাড়তি চার্জ / − credit; কখনো 0 নয়</td></tr>
+      <tr><td class="mono">reason</td><td class="mono">varchar(500)</td><td>বাধ্যতামূলক লিখিত কারণ</td></tr>
+      <tr><td class="mono">created_by / created_at</td><td class="mono">varchar / timestamptz</td><td>কে কখন লিখল</td></tr>
+      <tr><td class="mono">applied_statement_id</td><td class="mono">uuid</td><td><b>FK</b> (tenant_id-র সাথে composite) → statements। NULL = <span class="pill">Pending</span>; সেই statement-এর মাস finalize হলে একবার মান পায়</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted"><b>নিয়ম:</b> কখনো সম্পাদনা বা মুছে ফেলা যায় না — ভুল adjustment উল্টো অঙ্কের নতুন adjustment দিয়ে বাতিল; <span class="mono">applied_statement_id</span> ঠিক একবার NULL থেকে মান পায়, এবং শুধু একই FI-র সেই statement-এ, যেখানে এর লাইন আছে।</p>
+  <div class="tblwrap"><table class="tbl" style="min-width:560px">
+    <thead><tr><th>adjustment_id</th><th>tenant_id</th><th class="r">amount</th><th>reason</th><th>created_by</th><th>created_at (UTC)</th><th>applied_statement_id</th></tr></thead>
+    <tbody>
+      <tr><td class="mono">adj-0</td><td class="mono">T-A</td><td class="r mono">0.25</td><td>আগস্টের ১টি late generation (1 × 0.25), আগস্ট চূড়ান্ত হওয়ার পরে রেকর্ড হয়েছে</td><td class="mono">ops.finance</td><td class="mono">2026-09-18 10:12:00</td><td class="mono">st-0 <span class="pill ok">Applied</span></td></tr>
+      <tr><td class="mono">adj-1</td><td class="mono">T-A</td><td class="r mono">-0.10</td><td>Credit: সেপ্টেম্বরে ১টি validation ভুলভাবে বিল হয়েছে</td><td class="mono">ops.finance</td><td class="mono">2026-10-12 08:45:00</td><td class="mono">— <span class="pill">Pending</span></td></tr>
+    </tbody>
+  </table></div>
+
+  <h4>অক্টোবর finalize হলে যা হয় (এক transaction-এ)</h4>
+  <ol>
+    <li>Ops মোট নিশ্চিত করেন 0.50 + 0.98 = <b>1.48</b> (<span class="mono">expectedTotal</span>); নতুন হিসাব না মিললে finalize হয় না (409 <span class="mono">DRAFT_CHANGED</span>)।</li>
+    <li><span class="mono">adj-1.applied_statement_id</span> ← <span class="mono">st-1</span> (দুটোই T-A, তাই composite FK মেনে নেয়)।</li>
+    <li><span class="mono">billing_periods['2026-10'].status</span> ← <span class="mono">FINALIZED</span> — এক row বদলালেই <span class="mono">st-1</span>, <span class="mono">st-2</span> ও তাদের সব লাইন চূড়ান্ত।</li>
+    <li><span class="mono">billing.period.finalized</span> audit লেখা হয়। ক্রম জরুরি: আগে adjustment, পরে মাস। মাস চূড়ান্ত হওয়ার পর অক্টোবরের বিলে যেকোনো লেখা trigger-এ error দেয়।</li>
+  </ol>
+</section>
+
+<!-- ============================================================ ৫. সম্পর্ক -->
+<section id="rel">
+  <p class="section-kicker">অংশ ৫</p>
+  <h2>টেবিল-সম্পর্ক</h2>
+  <p>কঠোর নিশ্চয়তাগুলো Billing-এর <i>ভেতরে</i> আসল foreign key হিসেবে আছে। Module পেরোনো সংযোগ শুধু id reference — ইচ্ছাকৃতভাবে কোনো FK module সীমানা পার করে না (ADR 0001); এটাই module-গুলোকে আলাদাভাবে deploy-যোগ্য ও আলগাভাবে যুক্ত (loosely coupled) রাখে।</p>
+
+  <div class="tblwrap"><table class="tbl">
+    <thead><tr><th>#</th><th>কোথা থেকে</th><th>সম্পর্ক</th><th>কোথায়</th><th>Cardinality</th><th>যেভাবে রক্ষিত</th></tr></thead>
+    <tbody>
+      <tr><td class="c">১</td><td class="mono">qr_generations</td><td>একই txn-এ event লেখে</td><td class="mono">outbox_messages</td><td><b>1:1</b></td><td>শুধু payload id — FK নেই (module-এর বাইরে)</td></tr>
+      <tr><td class="c">২</td><td class="mono">qr_validations</td><td>একই txn-এ event লেখে</td><td class="mono">outbox_messages</td><td><b>1:1</b></td><td>শুধু payload id — FK নেই (module-এর বাইরে)</td></tr>
+      <tr><td class="c">৩</td><td class="mono">outbox_messages</td><td>খাতায় পৌঁছায়</td><td class="mono">usage_events</td><td><b>1:0..1</b></td><td><span class="mono">source_event_id</span> — FK নেই; শুধু tracing (PROCESSED row মুছে যায়)</td></tr>
+      <tr><td class="c">৪</td><td class="mono">qr_generations / qr_validations</td><td>ঠিক একবার গোনা</td><td class="mono">usage_events</td><td><b>1:1</b></td><td><span class="mono">UNIQUE(source_type, source_id)</span> — FK নেই (module-এর বাইরে)</td></tr>
+      <tr><td class="c">৫</td><td class="mono">tenants</td><td>ব্যবহার আছে</td><td class="mono">usage_events</td><td><b>1:M</b></td><td><span class="mono">tenant_id</span> — FK নেই (Tenancy module-এর টেবিল)</td></tr>
+      <tr><td class="c">৬</td><td class="mono">tenants</td><td>দাম আছে</td><td class="mono">billing_rate_cards</td><td><b>1:M</b></td><td><span class="mono">tenant_id</span> + <span class="mono">UNIQUE(tenant_id, effective_from)</span></td></tr>
+      <tr><td class="c">৭</td><td class="mono">tenants</td><td>বিল / adjustment আছে</td><td class="mono">billing_statements / billing_adjustments</td><td><b>1:M</b></td><td><span class="mono">tenant_id</span>; <span class="mono">UNIQUE(period, tenant_id)</span> মাসে এক বিল</td></tr>
+      <tr><td class="c">৮</td><td class="mono">billing_rate_cards</td><td>দাম</td><td class="mono">billing_statements</td><td><b>1:M</b></td><td><b>composite FK</b> <span class="mono">(rate_card_id, tenant_id)</span> — একই FI নিশ্চিত</td></tr>
+      <tr><td class="c">৯</td><td class="mono">billing_periods</td><td>মাস ও অবস্থা</td><td class="mono">billing_statements</td><td><b>1:M</b></td><td><b>FK</b> <span class="mono">period</span>; মাসের status-ই তার সব statement-এর অবস্থা</td></tr>
+      <tr><td class="c">১০</td><td class="mono">billing_statements</td><td>লাইন</td><td class="mono">billing_statement_lines</td><td><b>1:M</b></td><td><b>FK</b>, ON DELETE CASCADE (redraft = মুছে নতুন লেখা)</td></tr>
+      <tr><td class="c">১১</td><td class="mono">billing_adjustments</td><td>বসে</td><td class="mono">billing_statement_lines</td><td><b>1:0..1</b> <span class="muted">(জীবনে এক লাইন)</span></td><td><b>FK</b> <span class="mono">adjustment_id</span> + <i>সব</i> statement মিলিয়ে partial UNIQUE</td></tr>
+      <tr><td class="c">১২</td><td class="mono">billing_statements</td><td>নিষ্পত্তি</td><td class="mono">billing_adjustments</td><td><b>1:0..M</b></td><td><b>composite FK</b> <span class="mono">(applied_statement_id, tenant_id)</span>; NULL = Pending</td></tr>
+      <tr><td class="c">১৩</td><td class="mono">usage_events</td><td>গুনে লাইন হয়</td><td class="mono">billing_statement_lines (USAGE)</td><td><b>M:1 (উদ্ভূত)</b></td><td>মাস শেষের গণনা <span class="mono">quantity</span>-তে লেখা — FK বা junction টেবিল নেই</td></tr>
+    </tbody>
+  </table></div>
+
+  <div class="note">Domain-এ একমাত্র many-to-many — কাঁচা ব্যবহার operation ↔ statement — কখনো junction টেবিল হয় না। বিলিংয়ের সময় গুনে মিটিয়ে ফেলা হয়: এক (FI, meter, মাস)-এর সব billable row একটি USAGE লাইনের quantity হয়ে যায়। পরে প্রতিটি সংখ্যা raw usage extract দিয়ে প্রমাণযোগ্য — তার billable row-র যোগফল statement-এর সংখ্যার সাথে হুবহু মিলতে হবে।</div>
+</section>
+
+<!-- ============================================================ ৬. ERD -->
+<section id="erd">
+  <p class="section-kicker">অংশ ৬</p>
+  <h2>সাব-ডোমেইনভিত্তিক ERD (ASCII)</h2>
+
+  <h3>৬.১ · Outbox — ভাগাভাগি infrastructure</h3>
+<pre class="erd">+--------------------+    1:1 (payload id, no FK)     +--------------------------------------------------+
+|   qr_generations   |+-------------------------------&gt;                 outbox_messages                  |
+|--------------------|                                |--------------------------------------------------|
+| (QR module)        |                                |PK   outbox_message_id              uuid          |
++--------------------+                                |     source_module                 varchar(50)    |
++--------------------+    1:1 (payload id, no FK)     |     event_type                    varchar(150)   |
+|   qr_validations   |+-------------------------------&gt;     payload                       jsonb          |
+|--------------------|                                |     occurred_at                   timestamptz    |
+| (QR module)        |                                |     status                        PENDING /      |
++--------------------+                                |                                  PROCESSED / DEAD|
+                                                      |     attempts                      integer        |
+                                                      |     next_attempt_at               timestamptz    |
+                                                      |     locked_until                  timestamptz    |
+                                                      |     last_error                    varchar(2000)  |
+                                                      |     processed_at                  timestamptz    |
+                                                      |     created_at                    timestamptz    |
+                                                      +------------------------+-------------------------+
+                                                                               |
+                                                           1:0..1 (dispatcher) |
+                                                                               v
+                                                                usage_events  (Metering)
+↑ QR row-এর একই DB transaction-এ eventটি লেখা হয় — খবর হারায় না</pre>
+
+  <h3>৬.২ · Metering</h3>
+<pre class="erd">          tenants  (Tenancy module — শুধু tenant_id reference, FK নেই)
+                                           |
+                                           | 1:M
+                                           v
+        +----------------------------------------------------------------------+
+        |                             usage_events                             |
+        |----------------------------------------------------------------------|
+        | PK   usage_event_id                         uuid                     |
+        |      tenant_id                             uuid     -&gt; tenants       |
+        |      meter_code                            varchar(40)               |
+        |      billable                              boolean                   |
+        |      detail                                varchar(40) = verdict     |
+        |      source_type                          varchar(30)                |
+        |      source_id                            uuid                       |
+        |      source_event_id                      uuid     -&gt; outbox_msgs    |
+        |      client_reference                     varchar(100)               |
+        |      occurred_at                          timestamptz  ^ month       |
+        |      recorded_at                          timestamptz                |
+        | UNIQUE (source_type, source_id)   = exact-once counting              |
+        | append-only: UPDATE / DELETE / TRUNCATE blocked by triggers          |
+        +---+----------------------+-------------------------+-----------------+
+            |                      ^                         ^
+              M:1 derived            1:1 exact-once            1:0..1 (tracing only,
+              (aggregation,          UNIQUE(source_type,       PROCESSED rows purged
+               no FK)                 source_id)               after 7 days)
+            v                      |                         |
+  billing_statement        qr_generations /          outbox_messages
+     lines (USAGE,         qr_validations</pre>
+
+  <h3>৬.৩ · Billing</h3>
+<pre class="erd">+----------------------+                            +------------------------+
+|  billing_rate_cards  |                            |    billing_periods     |
+|----------------------|                            |------------------------|
+| PK  rate_card_id     |                            | PK  period  YYYY-MM    |
+|     tenant_id        |                            |     status             |
+|     effective_from   |                            |     drafted_at         |
+|     generation_rate  |                            |     finalized_at       |
+|     validation_rate  |                            |     finalized_by       |
+|     currency, audit  |                            +------------+-----------+
++----------+-----------+                                         | 1:M (FK period)
+           | 1:M  composite FK                                   | one row = status of ALL
+           | (rate_card_id + tenant_id,                          | statements in the month
+           |  same FI only)                                      |
+           |                                                     v
+           +-----------------&gt;+--------------------------------------------+
+                              |             billing_statements             |
+                              |--------------------------------------------|
+                              | PK   statement_id                          |
+                              |      tenant_id                             |
+                              |      period        -- FK --&gt; periods       |
+                              |      rate_card_id  -- FK --&gt; rate cards    |
+                              |      generation_rate / validation_rate     |
+                              |                     (copies, immutable)    |
+                              |      subtotal / adjustments_total / total  |
+                              |      currency / calculated_at              |
+                              | UNIQUE (period, tenant_id)                 |
+                              +-------+-----------------------------+------+
+                                      | 1:M (ON DELETE              | 1:0..M applied_statement_id
+                                      | CASCADE)                    | (composite FK, NULL = Pending)
+                                      v                             v
+                  +------------------------------+       +--------------------------------------+
+                  |   billing_statement_lines    |       |         billing_adjustments          |
+                  |------------------------------|       |--------------------------------------|
+                  | PK (statement_id, line_no)   |       | PK  adjustment_id                    |
+                  |     line_type  USAGE/ADJ.    |       |     tenant_id                        |
+                  |     meter_code               |       |     amount  (+/-, never 0)           |
+                  |     adjustment_id -- FK      +-------+&gt;    reason  (required)               |
+                  |     description              | 1:0..1|     created_by / created_at          |
+                  |     quantity / unit_rate     |       |     applied_statement_id             |
+                  |     amount                   |       +--------------------------------------+
+                  +------------------------------+
+                                                         1:0..1 = সব statement মিলিয়ে adjustment_id-তে partia
+                                                         UNIQUE — এক adjustment জীবনে ঠিক এক লাইনেই বসে</pre>
+</section>
+
+<!-- ============================================================ ৭. নমুনা রিপোর্ট -->
+<section id="reports">
+  <p class="section-kicker">অংশ ৭</p>
+  <h2>নমুনা রিপোর্ট</h2>
+  <p>দুটি রিপোর্টই শুধু চূড়ান্ত ডেটা থেকে তৈরি হয় (চলমান মাসে স্পষ্টভাবে চিহ্নিত provisional সংখ্যা দেখায়)। ফরম্যাট: print-friendly HTML পেজ (browser-এ "Save as PDF") এবং CSV — দুটোতেই একই সংখ্যা। নিচের সব নাম, id ও সংখ্যা কাল্পনিক, কিন্তু অভ্যন্তরীণভাবে মিলানো — প্রতিটি মোট তার লাইন থেকে আবার হিসাব করা যায়। (প্রোডাক্টের রিপোর্ট ইংরেজিতেই ছাপা হবে, তাই নমুনাগুলো মূল রূপে রাখা হয়েছে।)</p>
+
+  <h3>৭.১ · FI-র মাসিক বিল</h3>
+  <div class="rpt">
+    <div class="rpt-head">
+      <div>
+        <div class="t">SBQR PLATFORM — USAGE STATEMENT</div>
+        <div class="s">Example Bank PLC · Period 2026-08</div>
+      </div>
+      <div><span class="pill ok">FINALIZED</span> <span class="muted">2026-09-02 11:40 by ops.finance</span></div>
+    </div>
+    <div class="tblwrap"><table class="tbl" style="min-width:420px">
+      <tbody>
+        <tr><td class="muted">FI</td><td>Example Bank PLC</td><td class="muted">Statement ID</td><td class="mono">0d9b6e1a-52c7-4f38-a1d2-3e7c9b4f8a15</td></tr>
+        <tr><td class="muted">Tenant ID</td><td class="mono">7f3c9a2e-1b44-4d6a-9c0e-5a8b2d1e6f90</td><td class="muted">Rate card</td><td>in force from 2026-01-01</td></tr>
+        <tr><td class="muted">Period</td><td>2026-08 (01–31 Aug 2026, Asia/Dhaka)</td><td class="muted">As of / Currency</td><td>2026-09-30 14:00 (Asia/Dhaka) · BDT</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>1 · Monthly summary — মাসিক সারসংক্ষেপ</h4>
+    <div class="tblwrap"><table class="tbl">
+      <thead><tr><th class="r">Ln</th><th>Description</th><th class="r">Quantity</th><th class="r">Unit rate</th><th class="r">Amount</th></tr></thead>
+      <tbody>
+        <tr><td class="r">1</td><td>QR generation — static</td><td class="r mono">12,400</td><td class="r mono">0.5000</td><td class="r mono">6,200.00</td></tr>
+        <tr><td class="r">2</td><td>QR generation — dynamic</td><td class="r mono">30,850</td><td class="r mono">0.5000</td><td class="r mono">15,425.00</td></tr>
+        <tr><td class="r">3</td><td>QR validation — billable</td><td class="r mono">118,640</td><td class="r mono">0.2500</td><td class="r mono">29,660.00</td></tr>
+        <tr class="sub"><td></td><td>Subtotal</td><td class="r mono"></td><td class="r mono"></td><td class="r mono">51,285.00</td></tr>
+        <tr><td class="r">4</td><td>Adjustment <span class="mono">a41f2c07</span> (দেখুন অংশ 4)</td><td class="r mono"></td><td class="r mono"></td><td class="r mono">-1,250.00</td></tr>
+        <tr class="tot"><td></td><td>TOTAL (BDT)</td><td class="r mono"></td><td class="r mono"></td><td class="r mono">50,035.00</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>2 · Daily usage — দৈনিক ব্যবহার <span class="muted">(আসল রিপোর্টে মাসের প্রতিটি দিন থাকে — শূন্যসহ)</span></h4>
+    <div class="tblwrap"><table class="tbl">
+      <thead><tr><th>Date</th><th class="r">Gen static</th><th class="r">Gen dynamic</th><th class="r">Val billable</th><th class="r">Val non-billable *</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">2026-08-01</td><td class="r mono">402</td><td class="r mono">1,010</td><td class="r mono">3,820</td><td class="r mono">14</td></tr>
+        <tr><td class="mono">2026-08-02</td><td class="r mono">388</td><td class="r mono">978</td><td class="r mono">3,741</td><td class="r mono">12</td></tr>
+        <tr><td class="mono">2026-08-03</td><td class="r mono">415</td><td class="r mono">1,002</td><td class="r mono">3,905</td><td class="r mono">15</td></tr>
+        <tr class="sub"><td class="c" colspan="5">… দিন 04–29 সংক্ষেপে বাদ …</td></tr>
+        <tr><td class="mono">2026-08-30</td><td class="r mono">376</td><td class="r mono">941</td><td class="r mono">3,512</td><td class="r mono">11</td></tr>
+        <tr><td class="mono">2026-08-31</td><td class="r mono">420</td><td class="r mono">1,055</td><td class="r mono">4,020</td><td class="r mono">16</td></tr>
+        <tr class="tot"><td>TOTAL</td><td class="r mono">12,400</td><td class="r mono">30,850</td><td class="r mono">118,640</td><td class="r mono">448</td></tr>
+      </tbody>
+    </table></div>
+    <p class="muted" style="font-size:0.8rem">* REQUEST_STALE / REQUEST_REPLAYED — রেকর্ড হয়, কখনো চার্জ হয় না।</p>
+
+    <h4>3 · Validations by verdict — verdict অনুযায়ী ভাগ</h4>
+    <div class="tblwrap"><table class="tbl" style="min-width:420px">
+      <thead><tr><th>Verdict</th><th>Billable</th><th class="r">Count</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">VALID</td><td>Yes</td><td class="r mono">112,900</td></tr>
+        <tr><td class="mono">INVALID_SIGNATURE</td><td>Yes</td><td class="r mono">1,210</td></tr>
+        <tr><td class="mono">STRUCTURAL_INVALID</td><td>Yes</td><td class="r mono">2,340</td></tr>
+        <tr><td class="mono">KEY_NOT_FOUND</td><td>Yes</td><td class="r mono">1,480</td></tr>
+        <tr><td class="mono">KEY_SUSPENDED</td><td>Yes</td><td class="r mono">95</td></tr>
+        <tr><td class="mono">KEY_REVOKED</td><td>Yes</td><td class="r mono">60</td></tr>
+        <tr><td class="mono">KEY_NOT_ACTIVE</td><td>Yes</td><td class="r mono">25</td></tr>
+        <tr><td class="mono">NON_P2P</td><td>Yes</td><td class="r mono">530</td></tr>
+        <tr class="sub"><td>Billable</td><td></td><td class="r mono">118,640</td></tr>
+        <tr><td class="mono">REQUEST_STALE</td><td>No</td><td class="r mono">410</td></tr>
+        <tr><td class="mono">REQUEST_REPLAYED</td><td>No</td><td class="r mono">38</td></tr>
+        <tr class="sub"><td>Not billed</td><td></td><td class="r mono">448</td></tr>
+        <tr class="tot"><td>ALL</td><td></td><td class="r mono">119,088</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>4 · Adjustments applied to this statement — এই বিলে বসা adjustment</h4>
+    <div class="tblwrap"><table class="tbl" style="min-width:420px">
+      <thead><tr><th>Adjustment</th><th>Created</th><th class="r">Amount</th><th>Reason</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">a41f2c07</td><td class="mono">2026-08-19</td><td class="r mono">-1,250.00</td><td>Refund: 5,000 KEY_NOT_FOUND verdicts on 2026-07-14 (trust-store sync delay)</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>5 · Previous finalised statements — আগের চূড়ান্ত বিল</h4>
+    <div class="tblwrap"><table class="tbl" style="min-width:480px">
+      <thead><tr><th>Period</th><th class="r">Generations</th><th class="r">Validations</th><th class="r">Adjustments</th><th class="r">Total</th><th>Finalised</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">2026-07</td><td class="r mono">40,110</td><td class="r mono">110,920</td><td class="r mono">0.00</td><td class="r mono">47,785.00</td><td class="mono">2026-08-03</td></tr>
+        <tr><td class="mono">2026-06</td><td class="r mono">38,920</td><td class="r mono">104,300</td><td class="r mono">0.00</td><td class="r mono">45,535.00</td><td class="mono">2026-07-02</td></tr>
+        <tr><td class="mono">2026-05</td><td class="r mono">36,480</td><td class="r mono">99,860</td><td class="r mono">0.00</td><td class="r mono">43,205.00</td><td class="mono">2026-06-03</td></tr>
+      </tbody>
+    </table></div>
+
+    <p class="muted" style="font-size:0.82rem;margin-top:14px"><b>টীকা।</b> 2026-08-এর dispute window খোলা থাকবে 2026-10-02 পর্যন্ত (চূড়ান্ত হওয়ার ৩০ দিন); প্রমাণ = platform টিমের raw usage extract (CSV)। ওপরের প্রতিটি সংখ্যা সেই extract-এর billable row-এর সমান। এটি usage statement, tax invoice নয় — invoicing ও VAT Finance-এর। গোপনীয় — শুধু Example Bank PLC-র জন্য তৈরি।</p>
+  </div>
+
+  <h3>৭.২ · Admin Portal রিপোর্ট — মাসিক platform রিপোর্ট</h3>
+  <p class="muted">আজ admin API দিয়ে পাওয়া যায়; ভবিষ্যতে Admin Portal-এর billing স্ক্রিন হবে (F6)। অভ্যন্তরীণ — শুধু platform টিমের জন্য।</p>
+  <div class="rpt">
+    <div class="rpt-head">
+      <div>
+        <div class="t">SBQR PLATFORM — MONTHLY PLATFORM REPORT</div>
+        <div class="s">Internal · Period 2026-08</div>
+      </div>
+      <div><span class="pill ok">FINALIZED</span> <span class="muted">2026-09-02 11:40 by ops.finance</span></div>
+    </div>
+
+    <h4>1 · Volume and revenue by FI (largest first) — FI অনুযায়ী পরিমাণ ও আয়</h4>
+    <div class="tblwrap"><table class="tbl">
+      <thead><tr><th>FI</th><th class="r">Generations</th><th class="r">Validations</th><th class="r">Adjust.</th><th class="r">Total</th><th class="r">Share</th></tr></thead>
+      <tbody>
+        <tr><td>Sample MFS Ltd</td><td class="r mono">85,500</td><td class="r mono">210,300</td><td class="r mono">0.00</td><td class="r mono">76,260.00</td><td class="r mono">53.02%</td></tr>
+        <tr><td>Example Bank PLC</td><td class="r mono">43,250</td><td class="r mono">118,640</td><td class="r mono">-1,250.00</td><td class="r mono">50,035.00</td><td class="r mono">34.78%</td></tr>
+        <tr><td>Demo Bank Ltd</td><td class="r mono">15,000</td><td class="r mono">40,200</td><td class="r mono">0.00</td><td class="r mono">17,550.00</td><td class="r mono">12.20%</td></tr>
+        <tr class="tot"><td>TOTAL (3 FIs)</td><td class="r mono">143,750</td><td class="r mono">369,140</td><td class="r mono">-1,250.00</td><td class="r mono">143,845.00</td><td class="r mono">100.00%</td></tr>
+      </tbody>
+    </table></div>
+    <div class="tblwrap"><table class="tbl" style="min-width:420px">
+      <tbody>
+        <tr><td>Generation amount</td><td class="r mono">63,325.00</td><td class="muted">(static 37,500 + dynamic 106,250)</td></tr>
+        <tr><td>Validation amount</td><td class="r mono">81,770.00</td><td></td></tr>
+        <tr class="sub"><td>Subtotal</td><td class="r mono">145,095.00</td><td></td></tr>
+        <tr class="sub"><td>Adjustments</td><td class="r mono">-1,250.00</td><td></td></tr>
+        <tr class="tot"><td>TOTAL (BDT)</td><td class="r mono">143,845.00</td><td></td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>2 · Change vs previous month — আগের মাসের তুলনা</h4>
+    <div class="tblwrap"><table class="tbl" style="min-width:440px">
+      <thead><tr><th>Metric</th><th class="r">2026-07</th><th class="r">2026-08</th><th class="r">Change</th></tr></thead>
+      <tbody>
+        <tr><td>Billable generations</td><td class="r mono">131,200</td><td class="r mono">143,750</td><td class="r mono">+9.57%</td></tr>
+        <tr><td>Billable validations</td><td class="r mono">342,500</td><td class="r mono">369,140</td><td class="r mono">+7.78%</td></tr>
+        <tr><td>Total (BDT)</td><td class="r mono">132,410.00</td><td class="r mono">143,845.00</td><td class="r mono">+8.64%</td></tr>
+        <tr><td>Billable FIs</td><td class="r mono">3</td><td class="r mono">3</td><td class="r mono">—</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>3 · Daily totals (সব billable FI) <span class="muted">— উপরের মতোই সংক্ষেপে</span></h4>
+    <div class="tblwrap"><table class="tbl" style="min-width:420px">
+      <thead><tr><th>Date</th><th class="r">Generations</th><th class="r">Val billable</th><th class="r">Val non-billable</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">2026-08-01</td><td class="r mono">4,610</td><td class="r mono">11,820</td><td class="r mono">51</td></tr>
+        <tr><td class="mono">2026-08-02</td><td class="r mono">4,488</td><td class="r mono">11,602</td><td class="r mono">49</td></tr>
+        <tr class="sub"><td class="c" colspan="4">… বাদ …</td></tr>
+        <tr><td class="mono">2026-08-31</td><td class="r mono">4,815</td><td class="r mono">12,380</td><td class="r mono">60</td></tr>
+        <tr class="tot"><td>TOTAL</td><td class="r mono">143,750</td><td class="r mono">369,140</td><td class="r mono">1,680</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>4 · Period status — মাসের অবস্থা ও পাইপলাইন স্বাস্থ্য</h4>
+    <div class="tblwrap"><table class="tbl" style="min-width:480px">
+      <thead><tr><th>Period</th><th>Status</th><th>Drafted</th><th>Finalised</th><th>By</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">2026-09</td><td><span class="pill">OPEN</span></td><td class="mono">—</td><td class="mono">—</td><td class="mono">—</td></tr>
+        <tr><td class="mono">2026-08</td><td><span class="pill ok">FINALIZED</span></td><td class="mono">2026-09-01 02:00</td><td class="mono">2026-09-02 11:40</td><td class="mono">ops.finance</td></tr>
+        <tr><td class="mono">2026-07</td><td><span class="pill ok">FINALIZED</span></td><td class="mono">2026-08-01 02:00</td><td class="mono">2026-08-03 10:05</td><td class="mono">ops.finance</td></tr>
+      </tbody>
+    </table></div>
+    <p class="muted" style="font-size:0.82rem">Usage complete up to 2026-09-30 13:59:58 (Asia/Dhaka) · Outbox: 0 dead letters, oldest pending 2 s।</p>
+
+    <h4>5 · Usage of non-billable tenants — বিল-হয়-না tenant-দের ব্যবহার (রেকর্ড হয়, চার্জ হয় না)</h4>
+    <div class="tblwrap"><table class="tbl" style="min-width:420px">
+      <thead><tr><th>Tenant</th><th>Reason</th><th class="r">Generations</th><th class="r">Validations</th></tr></thead>
+      <tbody>
+        <tr><td>Pilot FI (UAT)</td><td>No rate card in force</td><td class="r mono">1,240</td><td class="r mono">3,980</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>6 · Pending adjustments &amp; late usage — অপেক্ষমাণ adjustment ও দেরিতে আসা ব্যবহার</h4>
+    <div class="tblwrap"><table class="tbl" style="min-width:480px">
+      <thead><tr><th>FI</th><th>Adjustment</th><th>Created</th><th class="r">Amount</th><th>Reason</th></tr></thead>
+      <tbody>
+        <tr><td>Demo Bank Ltd</td><td class="mono">c19e7b3d</td><td class="mono">2026-09-12</td><td class="r mono">+500.00</td><td>2,000 late validations of 2026-07 (× 0.2500)</td></tr>
+      </tbody>
+    </table></div>
+    <div class="tblwrap"><table class="tbl" style="min-width:420px">
+      <thead><tr><th>Period</th><th>FI</th><th class="r">Late events</th><th>Covered by</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">2026-08</td><td>—</td><td class="r mono">0</td><td>—</td></tr>
+        <tr><td class="mono">2026-07</td><td>Demo Bank Ltd</td><td class="r mono">2,000</td><td class="mono">c19e7b3d</td></tr>
+      </tbody>
+    </table></div>
+  </div>
+</section>
+
+<!-- ============================================================ ৮. সাইন-অফ -->
+<section id="signoff">
+  <p class="section-kicker">অংশ ৮</p>
+  <h2>যে অনুমোদন চাওয়া হচ্ছে</h2>
+  <p>এই প্ল্যানের অনুমোদন — constraint ও trigger-সহ তিন-domain, সাত-টেবিলের schema, তার চারপাশের module সীমানা, আর ওপরের রিপোর্ট ফরম্যাট — যাতে <span class="mono">rvl-secure-bqr-manager</span>-এ ১৫টি user story (৭টি build ticket)-এর implementation শুরু করা যায়।</p>
+
+  <h3>যেসব বিষয়ে আপনার মত বিশেষভাবে চাওয়া হচ্ছে</h3>
+  <ul>
+    <li><b>Schema ও নিশ্চয়তা</b> — trigger-এ রক্ষিত অপরিবর্তনীয়তা, একই-FI composite FK এবং মাস-স্তরের finalization মডেল কি production ডিজাইন হিসেবে টেকে?</li>
+    <li><b>Invalid outcome-এও চার্জ</b> (নিশ্চিত verdict হলে QR খারাপ হলেও বিল) — commercial নিশ্চিতকরণ PRD Q3।</li>
+    <li><b>Static = dynamic দাম</b>, আলাদা meter ও আলাদা লাইনে দেখানো — Product-এর সাথে যৌথ নিশ্চিতকরণ দরকার (C15 / PRD Q9)।</li>
+    <li><b>সবার জন্য এক price list</b>, প্রতি FI-র subscription type-সহ — হলে <span class="mono">billing_rate_cards</span> বদলাবে; প্রস্তাব F15, PRD Q5/Q17।</li>
+    <li><b>FI-র SDK-তে client-side pre-validation</b> (শুধু TLV + CRC) — যাতে FI-রা ভাঙা QR-এর জন্য অকারণে টাকা না দেয় — C14, আপনার সিদ্ধান্ত দরকার।</li>
+    <li><b>Canonical repo</b> — <span class="mono">rvl-secure-bqr-manager</span> নাকি <span class="mono">rvl-sbqr-api</span> (C6)। সম্পূর্ণ খোলা-প্রশ্ন তালিকা: PRD অংশ ১২ (Q1–Q17)।</li>
+  </ul>
+
+  <div class="signoff-grid">
+    <div class="sign-box"><b>অনুমোদনকারী (Head of Engineering)</b></div>
+    <div class="sign-box"><b>সিদ্ধান্ত &nbsp; ☐ অনুমোদন &nbsp; ☐ শর্তসহ অনুমোদন &nbsp; ☐ নাকচ</b></div>
+    <div class="sign-box"><b>শর্ত (থাকলে)</b></div>
+    <div class="sign-box"><b>তারিখ</b></div>
+  </div>
+</section>
+
+<footer>
+  উৎস: <a href="prd.md">PRD</a> · <a href="database-design.md">database design</a> (SQL migration <span class="mono">010</span>–<span class="mono">012</span>-ই source of truth) · <a href="metering-billing-v1-bn.md">v1.1 ডিজাইন</a> · <a href="bounded-context-discovery-bn.md">bounded context</a> · <a href="traceability.md">traceability</a> · <a href="tickets/README.md">build ticket</a>। ইংরেজি সংস্করণ: <a href="metering-billing-plan-signoff-report.html">metering-billing-plan-signoff-report.html</a>।<br>
+  Secure BanglaQR Platform · মিটারিং ও বিলিং প্ল্যান সাইন-অফ রিপোর্ট · ০১ অক্টোবর ২০২৬।
+</footer>
+
+</div>
+
+<script>
+(function () {
+  var saved = null;
+  try { saved = localStorage.getItem('theme'); } catch (e) {}
+  if (saved === 'light' || saved === 'dark') {
+    document.documentElement.setAttribute('data-theme', saved);
+  }
+  var btn = document.getElementById('themeToggle');
+  if (btn) {
+    btn.addEventListener('click', function () {
+      var root = document.documentElement;
+      var current = root.getAttribute('data-theme');
+      var isDark = current ? current === 'dark'
+                             : window.matchMedia('(prefers-color-scheme: dark)').matches;
+      var next = isDark ? 'light' : 'dark';
+      root.setAttribute('data-theme', next);
+      try { localStorage.setItem('theme', next); } catch (e) {}
+    });
+  }
+})();
+</script>
+</body>
+</html>
