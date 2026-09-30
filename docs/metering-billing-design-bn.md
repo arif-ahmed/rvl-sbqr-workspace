@@ -406,6 +406,85 @@ COMMIT;
 | Invoice list by status (admin) | `ix_invoices_status` |
 | এক usage row → fact trace | `ix_usage_records_source` |
 
+### 4.6 Module ↔ Table ম্যাপিং — কে কী owns করে
+
+পুরো স্কিমাটা এক নজরে — কোন module কোন টেবিল লেখে/পড়ে:
+
+| Module | টেবিল | এক লাইনে |
+|---|---|---|
+| Tenancy (বিদ্যমান) | `tenants` | প্রতি FI এক row |
+| QrGeneration (বিদ্যমান) | `qr_generations` | প্রতি **সফল** generate এক row |
+| Verification (বিদ্যমান) | `qr_validations` | প্রতি validate attempt এক row, verdict সহ |
+| SharedKernel / Host (নতুন) | `integration_outbox` | পাঠানোর অপেক্ষায় থাকা event |
+| Metering (নতুন) | `usage_records` | প্রতি **বিলযোগ্য** অপারেশন এক row |
+| Billing (নতুন) | `plans`, `plan_prices`, `subscriptions`, `invoices`, `invoice_lines` | দাম-স্কিম + মাসিক হিসাব |
+
+> **`integration_outbox` নামটা owner-neutral কেন:** টেবিলের মালিক কোনো business module নয় — QrGeneration, Verification, Billing তিনজনেই এখানে event লেখে, আর host-এর worker পাঠায়। কোনো এক module-এর নাম দিলে (যেমন `metering_outbox`) ভুল মালিকানার ইঙ্গিত হতো। আর "integration event" হলো DDD-র নির্দিষ্ট টার্ম — এক bounded context থেকে **অন্য context-এর জন্য** প্রকাশিত event — টেবিলে শুধু সেই ধরনের event-ই থাকে।
+
+### 4.7 Sample Data দিয়ে পুরো ছবি
+
+স্কিমা বোঝার সবচেয়ে সহজ উপায় — একটা কংক্রিট গল্প। চরিত্র: **Prime Bank** (tenant), সেপ্টেম্বর ২০২৬, আর মাসের মাঝখানে (১৫ তারিখে) dynamic QR-এর দাম বৃদ্ধি।
+
+Billing-এর ৫টা টেবিল আসলে একটাই গল্প — **"কে, কোন প্যাকেজে, কোন দামে, কোন মাসে কত খরচ করল"**:
+
+```
+plans ──1:N── plan_prices          (এক plan-এ, প্রতি meter-এ, একাধিক দাম-সংস্করণ)
+  │
+  └──1:N── subscriptions ──N:1── tenants    (কোন FI কোন plan কবে থেকে ধরেছে)
+              │
+              └──1:N── invoices ──1:N── invoice_lines ──N:1── plan_prices
+                       (মাসিক হিসাব)     (হিসাবের খাত)          (খাতে যে দাম প্রযোজ্য হয়েছিল)
+```
+
+**`plans`** — শুধু প্যাকেজের নাম:
+
+| plan_id | code | name | status |
+|---|---|---|---|
+| `PLAN-1` | STD-2026 | SBQR Standard 2026 | ACTIVE |
+
+**`plan_prices`** — দাম বদলালে নতুন row (পুরনো row ছুঁয়ে না):
+
+| price_id | plan_id | meter | unit_amount_minor | effective_from | effective_to |
+|---|---|---|---|---|---|
+| `PRICE-1` | `PLAN-1` | QR_DYNAMIC_GENERATE | 2500 (৳25) | 2026-01-01 | 2026-09-14 |
+| `PRICE-2` | `PLAN-1` | QR_DYNAMIC_GENERATE | 3000 (৳30) | 2026-09-15 | NULL (চলমান) |
+| `PRICE-3` | `PLAN-1` | QR_VALIDATE | 500 (৳5) | 2026-01-01 | NULL |
+
+**`subscriptions`** — Prime Bank আগস্ট থেকে এই plan-এ:
+
+| subscription_id | tenant_id | plan_id | billing_contact_email | valid_from | status |
+|---|---|---|---|---|---|
+| `SUB-1` | `TENANT-1` | `PLAN-1` | billing@primebank.example | 2026-08-01 | ACTIVE |
+
+**`invoices`** — সেপ্টেম্বর শেষে তৈরি হওয়া হিসাবের খাম:
+
+| invoice_id | tenant_id | subscription_id | period_from | period_to | status | total_minor | invoice_number |
+|---|---|---|---|---|---|---|---|
+| `INV-1` | `TENANT-1` | `SUB-1` | 2026-09-01 | 2026-09-30 | FINALIZED | 1,209,620,500 | SBQR-202609-000001 |
+
+**`invoice_lines`** — খামের ভেতরের খাত। দাম মাসের মাঝে বদলেছিল, তাই একই meter-এর **দুইটা line** — প্রতিটা নিজের দাম-সংস্করণ সহ:
+
+| invoice_line_id | invoice_id | meter | quantity | unit_amount_minor | amount_minor | price_id |
+|---|---|---|---|---|---|---|
+| `LINE-1` | `INV-1` | QR_DYNAMIC_GENERATE | 210,000 | 2500 | 525,000,000 | `PRICE-1` ← ১–১৪ তারিখের usage |
+| `LINE-2` | `INV-1` | QR_DYNAMIC_GENERATE | 114,521 | 3000 | 343,563,000 | `PRICE-2` ← ১৫–৩০ তারিখের usage |
+| `LINE-3` | `INV-1` | QR_VALIDATE | 682,115 | 500 | 341,057,500 | `PRICE-3` |
+
+Total = 1,209,620,500 poisha = **৳12,096,205.00**। Dynamic-এর মোট quantity = 210,000 + 114,521 = 324,521। `price_id` কলামটাই "historical pricing" চাহিদার চাবি — invoice দাগানোর **সেই মুহূর্তের** দাম পাকা হয়ে যায়; আজ দাম বদলালেও এই line আর বদলাবে না।
+
+আর একটি generate-এর পূর্ণ যাত্রা — তিন টেবিলে একই ঘটনার তিন দৃশ্য:
+
+**`qr_generations`** (QrGeneration module): `GEN-1 | TENANT-1 | DYNAMIC | 2026-09-03 08:22:11 UTC`
+**`integration_outbox`** (একই transaction-এ লেখা): `MSG-1 | QrGenerated | {...} | DISPATCHED`
+**`usage_records`** (Metering, event পেয়ে লিখল):
+
+| usage_id | tenant_id | meter | quantity | source_type | source_id | event_id | occurred_at (UTC) | occurred_date |
+|---|---|---|---|---|---|---|---|---|
+| `USAGE-1` | `TENANT-1` | QR_DYNAMIC_GENERATE | 1 | QR_GENERATION | `GEN-1` | `MSG-1` | 2026-09-03 08:22:11 | 2026-09-03 |
+| `USAGE-2` | `TENANT-1` | QR_VALIDATE | 1 | QR_VALIDATION | `VAL-9` | `MSG-2` | 2026-09-20 15:01:44 | 2026-09-20 |
+
+`source_id` দিয়ে যেকোনো usage row থেকে মূল fact-এ ফেরা যায়; `event_id` বলে দেয় কোন outbox message এটা বানিয়েছে।
+
 ---
 
 ## 5. Commands / Queries (Application layer)
@@ -425,7 +504,7 @@ COMMIT;
 | Type | Name | Trigger | কাজ |
 |---|---|---|---|
 | Command | `CreatePlan` | admin POST | নতুন plan |
-| Command | `AddPlanPrice` | admin POST | **নতুন price version** row (overlap check সহ, §11.2) |
+| Command | `AddPlanPrice` | admin POST | **নতুন price version** row (overlap check সহ, §5.4) |
 | Command | `CreateSubscription` | admin POST | tenant-কে plan-এ রাখা |
 | Command | `CalculateInvoice` | admin POST (পরে scheduler) | period-এর usage থেকে DRAFT invoice + lines বানানো/রিফ্রেশ |
 | Command | `FinalizeInvoice` | admin POST | DRAFT → FINALIZED (নম্বর, timestamp, event) |
@@ -436,6 +515,48 @@ COMMIT;
 ### 5.3 QrGeneration / Verification-এ যা বদলাবে
 
 নতুন command নেই — শুধু `QrIssuancePipeline` (generate) এবং `ValidateQrCommandHandler` (validate)-এ fact insert-এর **ঠিক পাশে** outbox row insert যোগ হবে (§7.1)। এটাই এই দুই module-এর একমাত্র পরিবর্তন।
+
+### 5.4 AggregateRoot ক্যাটালগ — actions, business constraints, raised events
+
+Command-গুলোর ভেতরে আসলে কী হয়? প্রতিটি command handler তার aggregate-এর action ডাকে (controller → command → aggregate action)। নতুন দুই module-এর aggregate-গুলো:
+
+**Metering BC — `UsageRecord`**
+
+ছোট, জন্মের পর আর কিছু বদলায় না এমন aggregate — একটি বিলযোগ্য অপারেশন = এক instance।
+
+| Action | Business constraints | Event raised |
+|---|---|---|
+| `RecordUsage(tenantId, meter, sourceType, sourceId, eventId, occurredAt)` | এক `(sourceType, sourceId)` জোড়া সারা জীবনে একবারই (DB `UNIQUE` — duplicate এলে silent no-op, অর্থাৎ success); meter অবশ্যই স্বীকৃত তিনটার একটা; `occurred_date` অ্যাপ হিসেব করে বসায় (Dhaka) | কোনোটা নয় — এখন কোনো consumer নেই, তাই বাদ (§6.2) |
+
+**Billing BC — `Plan`** (বাণিজ্যিক প্যাকেজ)
+
+| Action | Business constraints | Event raised |
+|---|---|---|
+| `Create(code, name)` | `code` unique | — |
+| `Retire()` | এই plan-এ কোনো ACTIVE subscription না থাকলে তবেই | — |
+
+**Billing BC — `PlanPrice`** (একটি দাম-সংস্করণ; append-only মনে করো)
+
+| Action | Business constraints | Event raised |
+|---|---|---|
+| `AddPriceVersion(planId, meter, unitAmount, effectiveFrom)` | দাম ≥ 0; নতুন `effective_from` আগের version-এর পরে; এক `(plan, meter)`-এ উইন্ডো overlap নিষেধ; আগের open-ended version-এর `effective_to` এখানে বসে যায়; **invoice-এ ব্যবহৃত version আর কখনো বদলানো যাবে না** (DB FK RESTRICT জামিন) | — |
+
+**Billing BC — `Subscription`** (tenant আর plan-এর সম্পর্ক)
+
+| Action | Business constraints | Event raised |
+|---|---|---|
+| `Subscribe(tenantId, planId, validFrom)` | প্রতি tenant-এ সর্বোচ্চ **একটা** ACTIVE (partial unique index) | — |
+| `Suspend()` / `End(validTo)` | ইতিহাস মুছে না — row থাকে, status বদলায় | — |
+
+**Billing BC — `Invoice`** (মূল আচরণ এখানেই)
+
+| Action | Business constraints | Event raised |
+|---|---|---|
+| `Calculate(period, usage, prices)` | শুধু `DRAFT` অবস্থায়; subscription পুরো period জুড়ে কার্যকর; usage থাকা প্রতিটি (meter, দাম-উইন্ডো)-এর জন্য কভারিং price থাকতেই হবে — নইলে **ব্যর্থ, চুপচাপ 0 দাম নয়**; প্রতিটি line = qty × unit (DB CHECK); আগের DRAFT থাকলে lines মুছে নতুন করে জোড়া | `InvoiceCalculated` (domain, audit-এর জন্য) |
+| `Finalize()` | শুধু `DRAFT` থেকে; শর্ত — outbox-এ period-এর কোনো PENDING message নেই; নম্বর পায়, এর পরে **অপরিবর্তনীয়** | `InvoiceFinalized` (domain → integration event হয়ে outbox-এ) |
+| `Void()` | শুধু `DRAFT`-এ; FINALIZED নয় — সংশোধনের পথ credit note (§10.4) | — |
+
+মনে রাখার মন্ত্র: `CalculateInvoice` / `FinalizeInvoice` / `VoidInvoice` command handler-গুলো এই `Invoice` aggregate-এর `Calculate` / `Finalize` / `Void` action-ই ডাকে — business rule aggregate-এর ভেতরে, HTTP/transaction-এর কথা handler-এ।
 
 ---
 
@@ -493,7 +614,21 @@ public sealed record InvoiceFinalized(
 Minimal রাখতে আলাদা Notifications module **হবে না**। দুটি notification touchpoint:
 
 1. **Invoice ready (tenant-facing)** — `InvoiceFinalizedHandler` → `IInvoiceNotificationSender` port (Billing.Application) → dev-এ `LoggedInvoiceNotificationSender` (log + audit), production-এ SMTP adapter। ঠিকানা: `subscriptions.billing_contact_email`।
-2. **Outbox poison (ops-facing)** — worker-এর DEAD detection → critical structured log + metric; দেখা হবে §9-এর admin outbox endpoint দিয়ে।
+2. **Outbox poison (ops-facing)** — worker-এর DEAD detection → critical structured log + metric; দেখা হবে §7.3-এর admin outbox endpoint দিয়ে।
+
+### 6.5 `mediator.Publish` শোনে কে? (wiring-এর যান্ত্রিকতা)
+
+Worker কাউকে নাম ধরে ডাকে না। Host-এর `Program.cs` যখন প্রতিটি module-এর Application assembly scan করে MediatR handler register করে, তখন `Publish(QrGenerated)` করলেই যেসব class `INotificationHandler<QrGenerated>` implement করেছে তাদের সবার `Handle` চলে যায়। "কে শুনবে" সেটা প্রতিটি consumer module নিজেই নিজের ভেতরে নিয়ে থাকে — worker-এর কাছে সেই তথ্য নেই।
+
+Publisher → Consumer পূর্ণ তালিকা, BC context-mapping চোখে রেখে — **Metering হলো QrGeneration ও Verification-এর downstream consumer**; producer-দের `Contracts` project-এর record-গুলোই মিলিয়ে নেওয়া published language:
+
+| Integration Event | Publisher (BC) | Consumer (BC) | Handler class | Handler-এর কাজ |
+|---|---|---|---|---|
+| `QrGenerated` | QrGeneration | Metering | `QrGeneratedHandler` | `RecordUsage` (meter: `QR_STATIC_GENERATE` / `QR_DYNAMIC_GENERATE`) |
+| `QrValidationCompleted` | Verification | Metering | `QrValidationCompletedHandler` | verdict `BillableVerdicts`-এ থাকলে `RecordUsage` (meter: `QR_VALIDATE`) |
+| `InvoiceFinalized` | Billing | Billing-ই (in-process) | `InvoiceFinalizedHandler` | `IInvoiceNotificationSender` → FI-র billing email |
+
+ভবিষ্যতে Metering আলাদা service হলে worker-এর `mediator.Publish` লাইনটাই একমাত্র বদলাবে — broker-এ publish করবে; handler, টেবিল, endpoint সব অপরিবর্তিত (§2.3-এর extraction path)।
 
 ---
 
@@ -529,7 +664,7 @@ await _db.SaveChangesAsync(ct);   // fact + outbox: একই transaction, এ�
 
 ### 7.2 `OutboxDispatcherWorker` (Host-এ নতুন `BackgroundService`)
 
-Repo-তে ইতিমধ্যে দুটি BackgroundService প্রচলিত (`DailyTrustSyncService`, `TenantCertificateThumbprintSyncService`) — একই ধাঁচে `rvl-secure-bqr-manager/src/Host/SBQR.Api/`-তে (বা SharedKernel থেকে register):
+Repo-তে ইতিমধ্যে দুটি BackgroundService প্রচলিত (`DailyTrustSyncService`, `TenantCertificateThumbprintSyncService`) — একই ধাঁচে `rvl-secure-bqr-manager/src/Host/SBQR.Api/`-তে (বা SharedKernel থেকে register)। নামকরণের নিয়ম: **[কী প্রসেস করে] + [কী করে] + `Worker`** — ভবিষ্যতের অন্য worker-রা নিজেদের কাজের নাম পাবে (যেমন `MonthlyInvoiceCalculationWorker`), তাই নাম-সংঘর্ষের শঙ্কা নেই:
 
 ```
 loop (প্রতি ২ সেকেণ্ড, configurable):
@@ -852,3 +987,7 @@ docker compose -f docker/docker-compose.yml exec sbqr.postgres \
 | কোন রেকর্ড immutable হয়? | §10.4-এর টেবিল |
 | Tenant রিপোর্ট ↔ invoice মিলবে কীভাবে? | §10.5 — reconciliation |
 | কোন query-র জন্য কোন index? | §4.5 |
+| কোন module কোন টেবিলের মালিক? | §4.6 |
+| টেবিলগুলো একসাথে কেমন দেখায় (sample data)? | §4.7 |
+| Aggregate-গুলোর action ও business constraints? | §5.4 |
+| `mediator.Publish` কারা শোনে? | §6.5 |
