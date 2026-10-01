@@ -154,16 +154,33 @@
   table.tbl tr.tot td { font-weight: 700; background: var(--surface-2); }
   table.tbl tr.sub td { color: var(--text-muted); font-size: 0.8rem; }
 
-  pre.erd, pre.code {
+  pre.code {
     background: var(--mono-surface); color: var(--mono-text);
     border-radius: 12px; padding: 16px 18px; overflow-x: auto;
     font-size: 0.78rem; line-height: 1.5; margin-block: 12px;
+  }
+
+  .mermaid { margin: 18px 0 6px; overflow-x: auto; text-align: center; }
+  .mermaid svg { max-width: 100%; height: auto; }
+  .mermaid:not([data-processed]) {
+    font-family: "IBM Plex Mono", Consolas, monospace; font-size: 0.78rem;
+    color: var(--text-muted); text-align: left; white-space: pre;
   }
 
   .scenario {
     background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
     padding: 4px 22px 18px; box-shadow: var(--shadow); margin-block: 14px;
   }
+
+  .rpt { background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+         padding: 20px 22px; box-shadow: var(--shadow); margin-block: 14px; }
+  .rpt-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;
+              border-bottom: 2px solid var(--text); padding-bottom: 12px; margin-bottom: 14px; }
+  .rpt-head .t { font-family: "Manrope", sans-serif; font-weight: 800; font-size: 1.02rem; letter-spacing: 0.02em; }
+  .rpt-head .s { font-size: 0.76rem; color: var(--text-muted); letter-spacing: 0.06em; text-transform: uppercase; }
+  .rpt h4 { margin: 16px 0 6px; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.07em; color: var(--text-muted); }
+  .rpt .notes { font-size: 0.84rem; color: var(--text-muted); margin-top: 14px; }
+  .rpt .notes li { margin-block: 2px; }
 
   footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.8rem; color: var(--text-muted); }
 
@@ -172,7 +189,7 @@
     body { background: #fff; padding-inline: 0; font-size: 11px; }
     .wrap { max-width: none; }
     section { padding-block: 18px; page-break-inside: avoid; }
-    pre.erd, pre.code { background: #101913; color: #d9ecdf; }
+    pre.code { background: #101913; color: #d9ecdf; }
   }
 </style>
 </head>
@@ -193,6 +210,7 @@
       <a href="#rel">Relationships</a>
       <a href="#erd">ERD</a>
       <a href="#scenario">Dhaka Bank scenario</a>
+      <a href="#reports">Report samples</a>
     </nav>
     <a class="lang-link" href="metering-billing-db-design-bn.html">বাংলা</a>
     <button class="theme-toggle" id="themeToggle" type="button" aria-label="Toggle dark / light theme" title="Toggle dark / light theme">
@@ -207,7 +225,7 @@
 <header class="doc-head" id="top">
   <span class="eyebrow">Secure BanglaQR Platform · Database design note</span>
   <h1>Metering &amp; Billing — Schema Design</h1>
-    <div class="meta-row">
+  <div class="meta-row">
     <span><span class="dot"></span>Date: 01 Oct 2026</span>
     <span><span class="dot"></span>Scope: Metering + Billing tables only</span>
     <span><span class="dot"></span>SQL source of truth: <span class="mono">011_metering.sql</span>, <span class="mono">012_billing.sql</span></span>
@@ -354,84 +372,31 @@ billing_periods  (month + status)  -------------------------------->  =  billing
 <!-- ============================================================ 4. ERD -->
 <section id="erd">
   <p class="section-kicker">Section 4</p>
-  <h2>ERD (ASCII)</h2>
+  <h2>ERD — tables and relationships</h2>
 
   <h3>Metering — <span class="mono">usage_events</span></h3>
-<pre class="erd">          tenants  (Tenancy module -- tenant_id reference only, no FK)
-                                           |
-                                           | 1:M
-                                           v
-        +----------------------------------------------------------------------+
-        |                             usage_events                             |
-        |----------------------------------------------------------------------|
-        | PK   usage_event_id                         uuid                     |
-        |      tenant_id                             uuid     -> tenants       |
-        |      meter_code                            varchar(40)               |
-        |      billable                              boolean                   |
-        |      detail                                varchar(40) = verdict     |
-        |      source_type                          varchar(30)                |
-        |      source_id                            uuid                       |
-        |      source_event_id                      uuid     -> outbox_msgs    |
-        |      client_reference                     varchar(100)               |
-        |      occurred_at                          timestamptz  ^ month       |
-        |      recorded_at                          timestamptz                |
-        | UNIQUE (source_type, source_id)   = exact-once counting              |
-        | append-only: UPDATE / DELETE / TRUNCATE blocked by triggers          |
-        +---+----------------------+-------------------------+-----------------+
-            |                      ^                         ^
-              M:1 derived            1:1 exact-once            1:0..1 (tracing only,
-              (aggregation,          UNIQUE(source_type,       PROCESSED rows purged
-               no FK)                 source_id)               after 7 days)
-            v                      |                         |
-  billing_statement        qr_generations /          outbox_messages
-     lines (USAGE,         qr_validations</pre>
+  <div class="mermaid">
+erDiagram
+    TENANTS["tenants — Tenancy module"]
+    QR_OPS["qr_generations / qr_validations"]
+    OUTBOX_MESSAGES["outbox_messages"]
+
+    TENANTS ||..o{ usage_events : "1 : N · attribute reference, no FK"
+    QR_OPS ||..|| usage_events : "1 : 1 · exact-once, UNIQUE(source_type, source_id)"
+    OUTBOX_MESSAGES ||..o| usage_events : "1 : 0..1 · tracing only, purged after 7 days"
+    usage_events }o..o| billing_statement_lines : "N : 1 · counted into one line at month end"
+  </div>
 
   <h3>Billing — five tables</h3>
-<pre class="erd">+----------------------+                            +------------------------+
-|  billing_rate_cards  |                            |    billing_periods     |
-|----------------------|                            |------------------------|
-| PK  rate_card_id     |                            | PK  period  YYYY-MM    |
-|     tenant_id        |                            |     status             |
-|     effective_from   |                            |     drafted_at         |
-|     generation_rate  |                            |     finalized_at       |
-|     validation_rate  |                            |     finalized_by       |
-|     currency, audit  |                            +------------+-----------+
-+----------+-----------+                                         | 1:M (FK period)
-           | 1:M  composite FK                                   | one row = status of ALL
-           | (rate_card_id + tenant_id,                          | statements in the month
-           |  same FI only)                                      |
-           |                                                     v
-           |       +----------------->+--------------------------------------------+
-           |                          |             billing_statements             |
-           |                          |--------------------------------------------|
-           |                          | PK   statement_id                          |
-           |                          |      tenant_id                             |
-           |                          |      period        -- FK --&gt; periods       |
-           |                          |      rate_card_id  -- FK --&gt; rate cards    |
-           |                          |      generation_rate / validation_rate     |
-           |                          |                     (copies, immutable)    |
-           |                          |      subtotal / adjustments_total / total  |
-           |                          |      currency / calculated_at              |
-           |                          | UNIQUE (period, tenant_id)                 |
-           |                          +-------+-----------------------------+------+
-           |                                  | 1:M (ON DELETE              | 1:0..M
-           |                                  |      CASCADE)               | applied_statement_id
-           |                                  |                             | (composite FK, NULL = Pending)
-           |                                  v                             v
-           |          +------------------------------+       +--------------------------------------+
-           |          |   billing_statement_lines    |       |         billing_adjustments          |
-           |          |------------------------------|       |--------------------------------------|
-           |          | PK (statement_id, line_no)   |       | PK  adjustment_id                    |
-           |          |     line_type  USAGE/ADJ.    |       |     tenant_id                        |
-           |          |     meter_code               |       |     amount  (+/-, never 0)           |
-           |          |     adjustment_id -- FK      +-------+&gt;    reason  (required)               |
-           |          |     description              | 1:0..1|     created_by / created_at          |
-           |          |     quantity / unit_rate     |       |     applied_statement_id             |
-           |          |     amount                   |       +--------------------------------------+
-           |          +------------------------------+
-           |                                                         1:0..1 = partial UNIQUE on adjustment_id across ALL
-           |                                                         statements: one adjustment ever lands on one line</pre>
-  <p class="muted">Relationships drawn inside the boxes are real foreign keys; the metering diagram's outgoing arrows are id references and the derived aggregation.</p>
+  <div class="mermaid">
+erDiagram
+    billing_periods ||--o{ billing_statements : "1 : N · one statement per FI per month"
+    billing_rate_cards ||--o{ billing_statements : "1 : N · effective prices copied at draft"
+    billing_statements ||--|{ billing_statement_lines : "1 : N · USAGE and ADJUSTMENT lines"
+    billing_statements |o--o{ billing_adjustments : "0..1 : 0..N · applied_statement_id, NULL = Pending"
+    billing_adjustments |o--o| billing_statement_lines : "0..1 : 0..1 · applied at most once (partial UNIQUE)"
+  </div>
+  <p class="muted">Solid edges are real foreign keys; dashed edges have no FK (cross-module reference or derived rollup). Column-level detail lives in Section 2.</p>
 </section>
 
 <!-- ============================================================ 5. SCENARIO -->
@@ -519,6 +484,92 @@ billing_periods  (month + status)  -------------------------------->  =  billing
   </div>
 </section>
 
+<!-- ============================================================ 6. REPORT SAMPLES -->
+<section id="reports">
+  <p class="section-kicker">Section 6</p>
+  <h2>Output samples — statement PDF &amp; admin report</h2>
+  <p>Both outputs are generated from finalised data only; a running month is clearly marked PROVISIONAL or DRAFT. Formats: print-friendly HTML (browser "Save as PDF") and CSV, with identical figures. The November statement continues the Dhaka Bank PLC scenario — October (BDT 1.45) appears in its history.</p>
+
+  <h3>6.1 · FI statement (PDF)</h3>
+  <div class="rpt">
+    <div class="rpt-head">
+      <div>
+        <div class="t">SBQR PLATFORM — USAGE STATEMENT</div>
+        <div class="s">Dhaka Bank PLC · Period 2026-11</div>
+      </div>
+      <div><span class="pill ok">FINALIZED</span> <span class="muted">02 Dec 2026</span></div>
+    </div>
+
+    <div class="tblwrap"><table class="tbl">
+      <tbody>
+        <tr><td class="muted">Statement no.</td><td class="mono">DBPLC-202611-001</td></tr>
+        <tr><td class="muted">Bill to</td><td>Dhaka Bank PLC</td></tr>
+        <tr><td class="muted">Billing period</td><td>01–30 November 2026 (Asia/Dhaka)</td></tr>
+        <tr><td class="muted">Issued</td><td>05 December 2026 · Currency: BDT</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>1 · Charges</h4>
+    <div class="tblwrap"><table class="tbl">
+      <thead><tr><th class="r">Ln</th><th>Description</th><th class="r">Quantity</th><th class="r">Unit rate</th><th class="r">Amount</th></tr></thead>
+      <tbody>
+        <tr><td class="r">1</td><td>QR generation — static</td><td class="r mono">41,220</td><td class="r mono">0.2000</td><td class="r mono">8,244.00</td></tr>
+        <tr><td class="r">2</td><td>QR generation — dynamic</td><td class="r mono">96,540</td><td class="r mono">0.2000</td><td class="r mono">19,308.00</td></tr>
+        <tr><td class="r">3</td><td>QR validation — billable</td><td class="r mono">372,850</td><td class="r mono">0.1000</td><td class="r mono">37,285.00</td></tr>
+        <tr class="sub"><td></td><td>Subtotal</td><td class="r mono"></td><td class="r mono"></td><td class="r mono">64,837.00</td></tr>
+        <tr><td class="r">4</td><td>Adjustments — none this period</td><td class="r mono"></td><td class="r mono"></td><td class="r mono">0.00</td></tr>
+        <tr class="tot"><td></td><td>TOTAL (BDT)</td><td class="r mono"></td><td class="r mono"></td><td class="r mono">64,837.00</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>2 · Previous finalised statements</h4>
+    <div class="tblwrap"><table class="tbl" style="min-width:480px">
+      <thead><tr><th>Period</th><th class="r">Generations</th><th class="r">Validations</th><th class="r">Adjustments</th><th class="r">Total</th><th>Finalised</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">2026-10</td><td class="r mono">5</td><td class="r mono">4</td><td class="r mono">-0.20</td><td class="r mono">1.45</td><td class="mono">2026-11-03</td></tr>
+      </tbody>
+    </table></div>
+
+    <ul class="notes">
+      <li>Dispute window for 2026-11 is open until 2027-01-01 (30 days after finalisation). Evidence: raw usage extract (CSV).</li>
+      <li>This is a usage statement, not a tax invoice. Invoicing and VAT remain with Finance.</li>
+      <li>Confidential — prepared for Dhaka Bank PLC only.</li>
+    </ul>
+  </div>
+
+  <h3>6.2 · Admin report — monthly platform report</h3>
+  <div class="rpt">
+    <div class="rpt-head">
+      <div>
+        <div class="t">SBQR PLATFORM — MONTHLY PLATFORM REPORT</div>
+        <div class="s">Internal · Period 2026-11</div>
+      </div>
+      <div><span class="pill ok">FINALIZED</span> <span class="muted">2026-12-02 11:40 by ops.finance</span></div>
+    </div>
+
+    <h4>1 · Volume and revenue by FI (largest first)</h4>
+    <div class="tblwrap"><table class="tbl">
+      <thead><tr><th>FI</th><th class="r">Generations</th><th class="r">Validations</th><th class="r">Adjustments</th><th class="r">Total</th><th class="r">Share</th></tr></thead>
+      <tbody>
+        <tr><td>Sample MFS Ltd</td><td class="r mono">152,400</td><td class="r mono">410,200</td><td class="r mono">0.00</td><td class="r mono">81,755.00</td><td class="r mono">47.89%</td></tr>
+        <tr><td>Dhaka Bank PLC</td><td class="r mono">137,760</td><td class="r mono">372,850</td><td class="r mono">0.00</td><td class="r mono">64,837.00</td><td class="r mono">37.97%</td></tr>
+        <tr><td>Demo Bank Ltd</td><td class="r mono">48,300</td><td class="r mono">120,600</td><td class="r mono">0.00</td><td class="r mono">24,135.00</td><td class="r mono">14.14%</td></tr>
+        <tr class="tot"><td>TOTAL (3 FIs)</td><td class="r mono">338,460</td><td class="r mono">903,650</td><td class="r mono">0.00</td><td class="r mono">170,727.00</td><td class="r mono">100.00%</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>2 · Period status</h4>
+    <div class="tblwrap"><table class="tbl" style="min-width:480px">
+      <thead><tr><th>Period</th><th>Status</th><th>Drafted</th><th>Finalised</th><th>By</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">2026-12</td><td><span class="pill">OPEN</span></td><td class="mono">—</td><td class="mono">—</td><td class="mono">—</td></tr>
+        <tr><td class="mono">2026-11</td><td><span class="pill ok">FINALIZED</span></td><td class="mono">2026-12-01 02:00</td><td class="mono">2026-12-02 11:40</td><td class="mono">ops.finance</td></tr>
+        <tr><td class="mono">2026-10</td><td><span class="pill ok">FINALIZED</span></td><td class="mono">2026-10-31 20:00</td><td class="mono">2026-11-03 05:30</td><td class="mono">ops.finance</td></tr>
+      </tbody>
+    </table></div>
+    <p class="notes">All figures from the finalised 2026-11 period · Generated 2026-12-05 10:00 (Asia/Dhaka).</p>
+  </div>
+</section>
 
 </div>
 
@@ -541,6 +592,46 @@ billing_periods  (month + status)  -------------------------------->  =  billing
       try { localStorage.setItem('theme', next); } catch (e) {}
     });
   }
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+(function () {
+  var defs = [];
+  function cfg(dark) {
+    return {
+      startOnLoad: false, theme: 'base',
+      themeVariables: {
+        background: 'transparent',
+        primaryColor: dark ? '#141c17' : '#ffffff',
+        primaryBorderColor: dark ? '#3fcb94' : '#0c6b4f',
+        primaryTextColor: dark ? '#e8f0ea' : '#1f2a24',
+        lineColor: dark ? '#7f938a' : '#5b6b62',
+        fontSize: '14px',
+        fontFamily: '"IBM Plex Sans", "Manrope", sans-serif'
+      },
+      er: { diagramPadding: 18 }
+    };
+  }
+  function isDark() {
+    var t = document.documentElement.getAttribute('data-theme');
+    return t ? t === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  function render() {
+    if (!window.mermaid) return;
+    var nodes = [];
+    document.querySelectorAll('.mermaid').forEach(function (el, i) {
+      if (typeof defs[i] !== 'string') defs[i] = el.textContent;
+      el.removeAttribute('data-processed');
+      el.innerHTML = defs[i];
+      nodes.push(el);
+    });
+    mermaid.initialize(cfg(isDark()));
+    mermaid.run({ nodes: nodes })['catch'](function () {});
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render);
+  else render();
+  new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 })();
 </script>
 </body>

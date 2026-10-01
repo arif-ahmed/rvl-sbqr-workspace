@@ -148,16 +148,33 @@
   table.tbl .c { text-align: center; }
   table.tbl tr.tot td { font-weight: 700; background: var(--surface-2); }
 
-  pre.erd, pre.code {
+  pre.code {
     background: var(--mono-surface); color: var(--mono-text);
     border-radius: 12px; padding: 16px 18px; overflow-x: auto;
     font-size: 0.78rem; line-height: 1.5; margin-block: 12px;
+  }
+
+  .mermaid { margin: 18px 0 6px; overflow-x: auto; text-align: center; }
+  .mermaid svg { max-width: 100%; height: auto; }
+  .mermaid:not([data-processed]) {
+    font-family: "IBM Plex Mono", Consolas, monospace; font-size: 0.78rem;
+    color: var(--text-muted); text-align: left; white-space: pre;
   }
 
   .scenario {
     background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
     padding: 4px 22px 18px; box-shadow: var(--shadow); margin-block: 14px;
   }
+
+  .rpt { background: var(--surface); border: 1px solid var(--border); border-radius: 14px;
+         padding: 20px 22px; box-shadow: var(--shadow); margin-block: 14px; }
+  .rpt-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; flex-wrap: wrap;
+              border-bottom: 2px solid var(--text); padding-bottom: 12px; margin-bottom: 14px; }
+  .rpt-head .t { font-weight: 700; font-size: 1.0rem; }
+  .rpt-head .s { font-size: 0.78rem; color: var(--text-muted); }
+  .rpt h4 { margin: 16px 0 6px; font-size: 0.84rem; color: var(--text-muted); }
+  .rpt .notes { font-size: 0.86rem; color: var(--text-muted); margin-top: 14px; }
+  .rpt .notes li { margin-block: 2px; }
 
   footer { margin-top: 40px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 0.82rem; color: var(--text-muted); }
 
@@ -166,7 +183,7 @@
     body { background: #fff; padding-inline: 0; font-size: 11px; }
     .wrap { max-width: none; }
     section { padding-block: 18px; page-break-inside: avoid; }
-    pre.erd, pre.code { background: #101913; color: #d9ecdf; }
+    pre.code { background: #101913; color: #d9ecdf; }
   }
 </style>
 </head>
@@ -187,6 +204,7 @@
       <a href="#rel">সম্পর্ক</a>
       <a href="#erd">ERD</a>
       <a href="#scenario">ঢাকা ব্যাংক উদাহরণ</a>
+      <a href="#reports">রিপোর্ট নমুনা</a>
     </nav>
     <a class="lang-link" href="metering-billing-db-design.html">English</a>
     <button class="theme-toggle" id="themeToggle" type="button" aria-label="ডার্ক / লাইট মোড বদলান" title="ডার্ক / লাইট মোড বদলান">
@@ -201,7 +219,7 @@
 <header class="doc-head" id="top">
   <span class="eyebrow">Secure BanglaQR Platform · ডাটাবেস ডিজাইন নোট</span>
   <h1>মিটারিং ও বিলিং — স্কিমা ডিজাইন</h1>
-    <div class="meta-row">
+  <div class="meta-row">
     <span><span class="dot"></span>তারিখ: ০১ অক্টোবর ২০২৬</span>
     <span><span class="dot"></span>স্কোপ: শুধু Metering + Billing টেবিল</span>
     <span><span class="dot"></span>SQL source of truth: <span class="mono">011_metering.sql</span>, <span class="mono">012_billing.sql</span></span>
@@ -348,85 +366,31 @@ billing_periods  (মাস + status)  ----------------------->  =  billing_stat
 <!-- ============================================================ ৪ -->
 <section id="erd">
   <p class="section-kicker">অংশ ৪</p>
-  <h2>ERD (ASCII)</h2>
+  <h2>ERD — টেবিল ও সম্পর্ক</h2>
 
   <h3>Metering — <span class="mono">usage_events</span></h3>
-<pre class="erd">          tenants  (Tenancy module -- tenant_id reference only, no FK)
-                                           |
-                                           | 1:M
-                                           v
-        +----------------------------------------------------------------------+
-        |                             usage_events                             |
-        |----------------------------------------------------------------------|
-        | PK   usage_event_id                         uuid                     |
-        |      tenant_id                             uuid     -&gt; tenants       |
-        |      meter_code                            varchar(40)               |
-        |      billable                              boolean                   |
-        |      detail                                varchar(40) = verdict     |
-        |      source_type                          varchar(30)                |
-        |      source_id                            uuid                       |
-        |      source_event_id                      uuid     -&gt; outbox_msgs    |
-        |      client_reference                     varchar(100)               |
-        |      occurred_at                          timestamptz  ^ month       |
-        |      recorded_at                          timestamptz                |
-        | UNIQUE (source_type, source_id)   = exact-once counting              |
-        | append-only: UPDATE / DELETE / TRUNCATE blocked by triggers          |
-        +---+----------------------+-------------------------+-----------------+
-            |                      ^                         ^
-              M:1 derived            1:1 exact-once            1:0..1 (tracing only,
-              (aggregation,          UNIQUE(source_type,       PROCESSED rows purged
-               no FK)                 source_id)               after 7 days)
-            v                      |                         |
-  billing_statement        qr_generations /          outbox_messages
-     lines (USAGE,         qr_validations</pre>
-  <p class="muted">উপরের বাক্সের ভেতরের লেখা ইংরেজি রাখা হয়েছে — এগুলো আসল column নাম, আর monospace font-এ বাংলা লিখলে বক্সের সারিবদ্ধতা ভেঙে যায়।</p>
+  <div class="mermaid">
+erDiagram
+    TENANTS["tenants — Tenancy module"]
+    QR_OPS["qr_generations / qr_validations"]
+    OUTBOX_MESSAGES["outbox_messages"]
+
+    TENANTS ||..o{ usage_events : "1 : N · শুধু id রেফারেন্স, FK নেই"
+    QR_OPS ||..|| usage_events : "1 : 1 · exact-once — UNIQUE(source_type, source_id)"
+    OUTBOX_MESSAGES ||..o| usage_events : "1 : 0..1 · শুধু tracing, ৭ দিন পরে purge"
+    usage_events }o..o| billing_statement_lines : "N : 1 · মাস শেষে এক লাইনে গোনা (শুধু billable)"
+  </div>
 
   <h3>Billing — পাঁচটি টেবিল</h3>
-<pre class="erd">+----------------------+                            +------------------------+
-|  billing_rate_cards  |                            |    billing_periods     |
-|----------------------|                            |------------------------|
-| PK  rate_card_id     |                            | PK  period  YYYY-MM    |
-|     tenant_id        |                            |     status             |
-|     effective_from   |                            |     drafted_at         |
-|     generation_rate  |                            |     finalized_at       |
-|     validation_rate  |                            |     finalized_by       |
-|     currency, audit  |                            +------------+-----------+
-+----------+-----------+                                         | 1:M (FK period)
-           | 1:M  composite FK                                   | one row = status of ALL
-           | (rate_card_id + tenant_id,                          | statements in the month
-           |  same FI only)                                      |
-           |                                                     v
-           |       +-----------------&gt;+--------------------------------------------+
-           |                          |             billing_statements             |
-           |                          |--------------------------------------------|
-           |                          | PK   statement_id                          |
-           |                          |      tenant_id                             |
-           |                          |      period        -- FK --&gt; periods       |
-           |                          |      rate_card_id  -- FK --&gt; rate cards    |
-           |                          |      generation_rate / validation_rate     |
-           |                          |                     (copies, immutable)    |
-           |                          |      subtotal / adjustments_total / total  |
-           |                          |      currency / calculated_at              |
-           |                          | UNIQUE (period, tenant_id)                 |
-           |                          +-------+-----------------------------+------+
-           |                                  | 1:M (ON DELETE              | 1:0..M
-           |                                  |      CASCADE)               | applied_statement_id
-           |                                  |                             | (composite FK, NULL = Pending)
-           |                                  v                             v
-           |          +------------------------------+       +--------------------------------------+
-           |          |   billing_statement_lines    |       |         billing_adjustments          |
-           |          |------------------------------|       |--------------------------------------|
-           |          | PK (statement_id, line_no)   |       | PK  adjustment_id                    |
-           |          |     line_type  USAGE/ADJ.    |       |     tenant_id                        |
-           |          |     meter_code               |       |     amount  (+/-, never 0)           |
-           |          |     adjustment_id -- FK      +-------+&gt;    reason  (required)               |
-           |          |     description              | 1:0..1|     created_by / created_at          |
-           |          |     quantity / unit_rate     |       |     applied_statement_id             |
-           |          |     amount                   |       +--------------------------------------+
-           |          +------------------------------+
-           |                                                         1:0..1 = partial UNIQUE on adjustment_id across ALL
-           |                                                         statements: one adjustment ever lands on one line</pre>
-  <p class="muted">বক্সের ভেতরের সম্পর্কগুলো আসল FK; Metering ডায়াগ্রামের বাইরের তীরগুলো id reference ও উদ্ভূত গণনা।</p>
+  <div class="mermaid">
+erDiagram
+    billing_periods ||--o{ billing_statements : "1 : N · প্রতি মাসে প্রতি FI-র একটি statement"
+    billing_rate_cards ||--o{ billing_statements : "1 : N · কার্যকর দাম draft-এ কপি"
+    billing_statements ||--|{ billing_statement_lines : "1 : N · USAGE ও ADJUSTMENT লাইন"
+    billing_statements |o--o{ billing_adjustments : "0..1 : 0..N · applied_statement_id — NULL মানে Pending"
+    billing_adjustments |o--o| billing_statement_lines : "0..1 : 0..1 · এক adjustment সর্বোচ্চ এক লাইনে (partial UNIQUE)"
+  </div>
+  <p class="muted">সলিড ধারা আসল FK; ড্যাশ ধারার FK নেই (ক্রস-module রেফারেন্স বা উদ্ভূত গণনা)। প্রতিটি টেবিলের column-এর বিবরণ অংশ ২-তে।</p>
 </section>
 
 <!-- ============================================================ ৫ -->
@@ -514,6 +478,92 @@ billing_periods  (মাস + status)  ----------------------->  =  billing_stat
   </div>
 </section>
 
+<!-- ============================================================ ৬. রিপোর্ট নমুনা -->
+<section id="reports">
+  <p class="section-kicker">অংশ ৬</p>
+  <h2>আউটপুট নমুনা — statement PDF ও admin রিপোর্ট</h2>
+  <p>দুটি আউটপুটই শুধু চূড়ান্ত ডেটা থেকে তৈরি হয়; চলমান মাস স্পষ্টভাবে PROVISIONAL বা DRAFT চিহ্নিত থাকে। ফরম্যাট: print-friendly HTML (browser-এ "Save as PDF") এবং CSV — দুটোতেই একই সংখ্যা। নিচের নভেম্বরের statement-টি ঢাকা ব্যাংক PLC উদাহরণেরই ধারাবাহিকতা — অক্টোবর (BDT 1.45) এর ইতিহাসের তালিকায় দেখা যাচ্ছে। (প্রোডাক্টের আউটপুট ইংরেজিতে ছাপা হয়, তাই নমুনার ভেতরের লেখা মূল রূপে রাখা হয়েছে।)</p>
+
+  <h3>৬.১ · FI statement (PDF)</h3>
+  <div class="rpt">
+    <div class="rpt-head">
+      <div>
+        <div class="t">SBQR PLATFORM — USAGE STATEMENT</div>
+        <div class="s">Dhaka Bank PLC · Period 2026-11</div>
+      </div>
+      <div><span class="pill ok">FINALIZED</span> <span class="muted">02 Dec 2026</span></div>
+    </div>
+
+    <div class="tblwrap"><table class="tbl">
+      <tbody>
+        <tr><td class="muted">Statement no.</td><td class="mono">DBPLC-202611-001</td></tr>
+        <tr><td class="muted">Bill to</td><td>Dhaka Bank PLC</td></tr>
+        <tr><td class="muted">Billing period</td><td>01–30 November 2026 (Asia/Dhaka)</td></tr>
+        <tr><td class="muted">Issued</td><td>05 December 2026 · Currency: BDT</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>1 · Charges</h4>
+    <div class="tblwrap"><table class="tbl">
+      <thead><tr><th class="r">Ln</th><th>Description</th><th class="r">Quantity</th><th class="r">Unit rate</th><th class="r">Amount</th></tr></thead>
+      <tbody>
+        <tr><td class="r">1</td><td>QR generation — static</td><td class="r mono">41,220</td><td class="r mono">0.2000</td><td class="r mono">8,244.00</td></tr>
+        <tr><td class="r">2</td><td>QR generation — dynamic</td><td class="r mono">96,540</td><td class="r mono">0.2000</td><td class="r mono">19,308.00</td></tr>
+        <tr><td class="r">3</td><td>QR validation — billable</td><td class="r mono">372,850</td><td class="r mono">0.1000</td><td class="r mono">37,285.00</td></tr>
+        <tr class="sub"><td></td><td>Subtotal</td><td class="r mono"></td><td class="r mono"></td><td class="r mono">64,837.00</td></tr>
+        <tr><td class="r">4</td><td>Adjustments — none this period</td><td class="r mono"></td><td class="r mono"></td><td class="r mono">0.00</td></tr>
+        <tr class="tot"><td></td><td>TOTAL (BDT)</td><td class="r mono"></td><td class="r mono"></td><td class="r mono">64,837.00</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>2 · Previous finalised statements</h4>
+    <div class="tblwrap"><table class="tbl" style="min-width:480px">
+      <thead><tr><th>Period</th><th class="r">Generations</th><th class="r">Validations</th><th class="r">Adjustments</th><th class="r">Total</th><th>Finalised</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">2026-10</td><td class="r mono">5</td><td class="r mono">4</td><td class="r mono">-0.20</td><td class="r mono">1.45</td><td class="mono">2026-11-03</td></tr>
+      </tbody>
+    </table></div>
+
+    <ul class="notes">
+      <li>2026-11-এর dispute window খোলা থাকবে 2027-01-01 পর্যন্ত (চূড়ান্ত হওয়ার ৩০ দিন)। প্রমাণ: raw usage extract (CSV)।</li>
+      <li>এটি usage statement, tax invoice নয় — invoicing ও VAT Finance-এর দায়িত্বে।</li>
+      <li>গোপনীয় — শুধুমাত্র Dhaka Bank PLC-র জন্য প্রস্তুত।</li>
+    </ul>
+  </div>
+
+  <h3>৬.২ · Admin রিপোর্ট — মাসিক platform রিপোর্ট</h3>
+  <div class="rpt">
+    <div class="rpt-head">
+      <div>
+        <div class="t">SBQR PLATFORM — MONTHLY PLATFORM REPORT</div>
+        <div class="s">Internal · Period 2026-11</div>
+      </div>
+      <div><span class="pill ok">FINALIZED</span> <span class="muted">2026-12-02 11:40 by ops.finance</span></div>
+    </div>
+
+    <h4>1 · Volume and revenue by FI (largest first)</h4>
+    <div class="tblwrap"><table class="tbl">
+      <thead><tr><th>FI</th><th class="r">Generations</th><th class="r">Validations</th><th class="r">Adjustments</th><th class="r">Total</th><th class="r">Share</th></tr></thead>
+      <tbody>
+        <tr><td>Sample MFS Ltd</td><td class="r mono">152,400</td><td class="r mono">410,200</td><td class="r mono">0.00</td><td class="r mono">81,755.00</td><td class="r mono">47.89%</td></tr>
+        <tr><td>Dhaka Bank PLC</td><td class="r mono">137,760</td><td class="r mono">372,850</td><td class="r mono">0.00</td><td class="r mono">64,837.00</td><td class="r mono">37.97%</td></tr>
+        <tr><td>Demo Bank Ltd</td><td class="r mono">48,300</td><td class="r mono">120,600</td><td class="r mono">0.00</td><td class="r mono">24,135.00</td><td class="r mono">14.14%</td></tr>
+        <tr class="tot"><td>TOTAL (3 FIs)</td><td class="r mono">338,460</td><td class="r mono">903,650</td><td class="r mono">0.00</td><td class="r mono">170,727.00</td><td class="r mono">100.00%</td></tr>
+      </tbody>
+    </table></div>
+
+    <h4>2 · Period status</h4>
+    <div class="tblwrap"><table class="tbl" style="min-width:480px">
+      <thead><tr><th>Period</th><th>Status</th><th>Drafted</th><th>Finalised</th><th>By</th></tr></thead>
+      <tbody>
+        <tr><td class="mono">2026-12</td><td><span class="pill">OPEN</span></td><td class="mono">—</td><td class="mono">—</td><td class="mono">—</td></tr>
+        <tr><td class="mono">2026-11</td><td><span class="pill ok">FINALIZED</span></td><td class="mono">2026-12-01 02:00</td><td class="mono">2026-12-02 11:40</td><td class="mono">ops.finance</td></tr>
+        <tr><td class="mono">2026-10</td><td><span class="pill ok">FINALIZED</span></td><td class="mono">2026-10-31 20:00</td><td class="mono">2026-11-03 05:30</td><td class="mono">ops.finance</td></tr>
+      </tbody>
+    </table></div>
+    <p class="notes">All figures from the finalised 2026-11 period · Generated 2026-12-05 10:00 (Asia/Dhaka).</p>
+  </div>
+</section>
 
 </div>
 
@@ -536,6 +586,46 @@ billing_periods  (মাস + status)  ----------------------->  =  billing_stat
       try { localStorage.setItem('theme', next); } catch (e) {}
     });
   }
+})();
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mermaid@11/dist/mermaid.min.js"></script>
+<script>
+(function () {
+  var defs = [];
+  function cfg(dark) {
+    return {
+      startOnLoad: false, theme: 'base',
+      themeVariables: {
+        background: 'transparent',
+        primaryColor: dark ? '#141c17' : '#ffffff',
+        primaryBorderColor: dark ? '#3fcb94' : '#0c6b4f',
+        primaryTextColor: dark ? '#e8f0ea' : '#1f2a24',
+        lineColor: dark ? '#7f938a' : '#5b6b62',
+        fontSize: '14px',
+        fontFamily: '"IBM Plex Sans Bengali", "IBM Plex Sans", "Manrope", sans-serif'
+      },
+      er: { diagramPadding: 18 }
+    };
+  }
+  function isDark() {
+    var t = document.documentElement.getAttribute('data-theme');
+    return t ? t === 'dark' : window.matchMedia('(prefers-color-scheme: dark)').matches;
+  }
+  function render() {
+    if (!window.mermaid) return;
+    var nodes = [];
+    document.querySelectorAll('.mermaid').forEach(function (el, i) {
+      if (typeof defs[i] !== 'string') defs[i] = el.textContent;
+      el.removeAttribute('data-processed');
+      el.innerHTML = defs[i];
+      nodes.push(el);
+    });
+    mermaid.initialize(cfg(isDark()));
+    mermaid.run({ nodes: nodes })['catch'](function () {});
+  }
+  if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', render);
+  else render();
+  new MutationObserver(render).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme'] });
 })();
 </script>
 </body>
