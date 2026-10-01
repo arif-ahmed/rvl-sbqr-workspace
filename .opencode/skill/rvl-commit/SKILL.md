@@ -80,7 +80,7 @@ No report, or the report doesn't cover the plan's scope → HARD STOP.
 
 ## Phase 4 — Commit draft
 
-1. **Jira ref.** `git -C <repo> branch --show-current`, parse `([A-Z][A-Z0-9]+-\d+)` (e.g. `feature/SBQR-123-mtls` → `SBQR-123`). No match → ask the user once; if unresolved → HARD STOP.
+1. **Jira ref.** `git -C <repo> branch --show-current`, parse case-insensitively `(?i)([A-Z][A-Z0-9]+-\d+)` (e.g. `feature/sbqr-123-mtls` → `SBQR-123`; uppercase the match for the message). No match → ask the user once; if unresolved → HARD STOP.
 2. **Gitmoji** — first match wins, judged from plan type + diff:
    - 🔒 `:lock:` security work (mTLS, key custody, VAPT remediation, hardening)
    - 🐛 `:bug:` bugfix
