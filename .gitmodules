@@ -26,3 +26,7 @@
 	path = rvl-secure-bqr-manager
 	url = https://github.com/Relief-Validation/rvl-secure-bqr-manager.git
 	branch = feature/mtls-server
+[submodule "rvl-sbqr-portal"]
+	path = rvl-sbqr-portal
+	url = https://github.com/arif-ahmed/rvl-sbqr-portal.git
+	branch = main

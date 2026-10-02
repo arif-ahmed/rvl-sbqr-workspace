@@ -436,3 +436,4 @@ FodyWeavers.xsd
 
 # Local CLI tool settings (puku-cli per-machine permissions)
 /.puku-cli/
+.gstack/

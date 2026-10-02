@@ -8,6 +8,7 @@ Central **orchestrator repo** for the RVL SBQR system. All application code live
 |---|---|---|
 | `rvl-sbqr-api/` | .NET backend API (Verification, KeyCustody, Tenancy, InstitutionTrust) | `main` |
 | `rvl-sbqr-admin-portal/` | Admin portal UI | `main` |
+| `rvl-sbqr-portal/` | Web portal for RVL staff (Admin, Finance) and financial institutions | `main` |
 | `rvl-sbqr-fi-gateway/` | Financial-institution gateway service | `main` |
 | `rvl-secure-bqr-manager/` | Secure BQR manager | `feature/mtls-server` |
 | `rvl-bb-trust-store/` | Bangladesh Bank trust store service | `main` |
