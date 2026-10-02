@@ -2,9 +2,98 @@
 
 Audience: a .NET developer new to this codebase who will run, debug and test Metering and Billing on a laptop (Visual Studio, local PostgreSQL, PowerShell) as part of knowledge transfer, and then start working on them.
 
+**How this guide is organised:** it starts with the business story (*Start here*), so you know what real problem each feature solves. Then comes the technical map and local setup. Each hands-on chapter then opens with a short **🧭 scenario** from the story (Alpha Bank, Beta Bank, Nadia in billing, Karim in Finance) that tells you which business promise you are about to test. If you only have ten minutes, read *Start here* and the scenarios.
+
 Target repo: `rvl-secure-bqr-manager` (branch `feature/metering-billing`, HEAD `472ec2e` when this was written, 2026-10-02).
 
 > **How accurate are the sample responses?** Every request shape, route, status code, error code and SQL statement below was read from the code and the migrations. The sample **responses** are built from the response records in the code. GUIDs, timestamps and tokens are made up, and a decimal's trailing zeros (`0.5000` vs `0.5`) follow .NET `decimal` scale. The guide was not executed end to end when written, so if your output differs, trust your output, then check the code reference next to the step. A real end-to-end run of the same feature is in `rvl-secure-bqr-manager/docs/metering-billing-e2e-outcome.md` (107 checks).
+
+---
+
+## Start here — the business in plain words
+
+Before any code: **why does this feature exist, and what does a month of it look like for real people?** Every hands-on chapter later in this guide opens with a short scenario from this story, so when you run a command you know which business promise you are testing.
+
+### The idea in one paragraph
+
+The Bangla QR platform does two jobs for banks and mobile-money providers (we call them *institutions*, or FIs): it **creates** signed QR codes for them, and it **checks** QR codes for them. Institutions **pay per use**. Think of an electricity meter: the platform counts every QR created and every QR checked, multiplies by the agreed price, and once a month prepares a **statement** per institution. A person on the billing team reviews the month and **approves** it. After approval a statement never changes; if something was wrong, a **credit or charge is added to the next statement**. Finance turns approved statements into invoices (invoicing, VAT and payment collection are *not* part of this feature).
+
+### The cast (used in every scenario)
+
+| Who | Who they are | What they do in this story |
+|---|---|---|
+| **Alpha Bank** (institution code `031101`) | A bank whose customers include small shop owners such as **Arif Mahmood** | Asks the platform to create QR codes for Arif's shop. **Pays for generations.** |
+| **Beta Bank** (`031102`) | Another bank; its customers scan QR codes to pay | Asks the platform "is this QR genuine?" before letting a payment through. **Pays for validations.** |
+| **Nadia**, platform billing team | The operator who runs billing for RVL | Sets prices, reviews and approves each month, adds credits. Uses the **admin** token and the `/v1/admin/billing/*` APIs. |
+| **Karim**, Finance | Finance at RVL | Takes Nadia's approved statements and invoices the banks. |
+| **You** (the new developer) | Keeps all of the above working | Plays all roles in your local lab. |
+
+### One month in the life (September 2026)
+
+> **1 Sept** — Alpha Bank's contract says: **BDT 0.50 per QR created, BDT 0.30 per QR checked**. Nadia entered those prices back in August (prices can only be set for a *future* month, so Alpha could not be re-priced mid-month).
+>
+> **During September** — Arif's shop needs a QR for the till (a *static* QR) and one for a one-off 150 BDT invoice (a *dynamic* QR). Alpha's server asks the platform for each. The platform creates the QR and, in the same instant, writes a small note: "Alpha Bank used 1 generation". Beta Bank's app checks Alpha's QR when a customer scans it; the note goes on **Beta's** tab ("Beta used 1 validation"), not Alpha's. Even a check that ends in "this QR is fake" is a real answer, so it is charged; a request that is a duplicate or too old is free.
+>
+> **12 Sept** — the platform has an outage. Alpha is promised a **BDT 1.00 credit**. Nadia records it as an *adjustment*. It waits in a queue ("Pending").
+>
+> **1 Oct, 02:00 Dhaka time** — September is over, plus a **two-hour grace** for stragglers. The platform checks that *every* usage note for September has been counted (if one is stuck, September cannot be closed). Then Nadia opens September: **Alpha: 4 static + 2 dynamic generations, 5 validations → 4.50 BDT, minus the 1.00 credit = 3.50 BDT**.
+>
+> **While Nadia reviews** — two late notes arrive (a straggler validation, then another). The total becomes 3.80, then 4.10. Nadia tries to approve "3.50 / 3.80" — the platform **refuses**, because what she reviewed is no longer what is true. She looks again, and approves **4.10**, signing her name.
+>
+> **Approved** — September is now frozen for good. Karim downloads the statement as a spreadsheet and invoices Alpha. Later, if Alpha disputes something, the fix is a **new credit on October's statement**; September never changes.
+
+That story is the whole feature. The rest of the guide is: how each sentence of it is implemented, and how you can prove it works on your laptop.
+
+### Business words ↔ the words you will see in code
+
+The product/PRD vocabulary and the technical vocabulary differ. This table is your decoder ring.
+
+| Business word (PRD) | Technical word | Where you meet it |
+|---|---|---|
+| Institution / paying institution | Tenant, FI | `tenants`, `tenant_id` |
+| Chargeable operation | Usage event (one row in the ledger) | `usage_events` |
+| Meter (what is counted) | `meter_code`: `GENERATION_STATIC`, `GENERATION_DYNAMIC`, `VALIDATION` | `UsageEvent.cs` |
+| "The platform writes a note when a QR is made" | Integration event + transactional outbox | `outbox_messages`, `QrGenerated`, `QrValidated` |
+| Price | Rate card | `billing_rate_cards`, `/billing/rate-cards` |
+| Billing month | Period (`YYYY-MM`, Dhaka calendar month) | `billing_periods`, `BillingMonth` |
+| Provisional / Draft / **Approved** | `PROVISIONAL` / `DRAFT` / **`FINALIZED`** | `BillingPeriodResponse.Status` |
+| Approve (the month) | **Finalize** | `POST …/finalize` |
+| Prepare drafts / refresh | Draft / Recalculate | `POST …/draft`, `…/recalculate` |
+| Statement and its lines | Statement, StatementLine (`USAGE`, `ADJUSTMENT`) | `billing_statements`, `billing_statement_lines` |
+| Credit / extra charge | Adjustment (negative / positive) | `billing_adjustments` |
+| Usage detail (evidence) | Usage export (CSV) | `…/usage.csv` |
+| "Recorded, not charged" | `billable = false` | `usage_events.billable` |
+| Grace period | 2 hours after month end | `BillingMonth.Grace` |
+| "The month cannot close until counting catches up" | Usage-complete check (no PENDING/DEAD outbox rows) | `IsUsageCompleteAsync` |
+
+### The business chapters and where to find them
+
+| # | Business chapter | The plain question it answers | Business promises (PRD) | Hands-on |
+|---|---|---|---|---|
+| 1 | **Counting what is used** | "Did we count every QR exactly once, and charge the right bank?" | R1–R9 | Walkthrough A, steps 1–6 |
+| 2 | **Setting prices** | "What does each bank pay per QR, and from when?" | R10–R14 | Walkthrough B, step 7 |
+| 3 | **Corrections** | "What if we owe a bank a credit?" | R25–R26 | Walkthrough B, step 8 and §5.7 |
+| 4 | **Closing the month** | "How do we turn a month of counts into a bill, safely?" | R15–R21, R16 rounding | Walkthrough C, §5.1–5.6 |
+| 5 | **Evidence, reports and audit** | "Can we prove every charge, and who did what?" | R23, R28–R31 | Walkthrough C, §5.8–5.10 |
+
+### What each business promise is proven by
+
+Use this as a checklist while you test — if you can tick every row, you understand the feature.
+
+| Business promise | You prove it by… | Expected result |
+|---|---|---|
+| A created QR is charged once to the requester (R1, R4, R7) | Step 3, then re-send with the same `Idempotency-Key` (step 4) | 1 usage row; the repeat is `409` and adds nothing |
+| The checking bank pays, not the issuing bank (R8) | Step 5 extra exercise with Beta Bank | The `VALIDATION` row carries Beta's tenant id |
+| A real answer is charged even if "invalid"; protocol rejections are free (R2, R3) | Step 5 (`STRUCTURAL_INVALID` vs `REQUEST_REPLAYED`) | Invalid is billable; a replay creates no charge |
+| Nothing is lost; a month cannot close on incomplete counting (R6) | Step 6, then §5.3 | `409 USAGE_NOT_COMPLETE` until the stuck message is fixed |
+| Usage belongs to the Dhaka month it happened in (R5) | §5.1 boundary rows (23:59:30 vs 00:00:00) | The 23:59:30 row is in September; the 00:00:00 row is not |
+| Prices only for a future 1st-of-month, never edited (R11, R12) | Step 7 | Past/mid-month → `400`; delete after effect → `409` |
+| Amount = quantity × price, rounded once (R16) | §5.2 and the `StatementTests` | 4 × 0.50 = 2.00; 3 × 0.125 = 0.38 |
+| Free usage is not charged (R3, R28) | §5.1 free `REQUEST_STALE` row | Not in the quantities; appears only with `all=true` in the export |
+| Approval confirms exactly what was reviewed (R20) | §5.6 | Stale total → `409 DRAFT_CHANGED`; right total → approved; repeat is harmless |
+| Approved statements never change (R21) | §5.7 | `409 PERIOD_FINALIZED`; SQL edit is rejected by a trigger |
+| Corrections go on the next statement (R25, R26) | §5.7 | A new adjustment stays Pending; the approved statement is unchanged |
+| Everything is traceable (R31) | §5.10 | An `audit_logs` row for each action |
 
 ---
 
@@ -220,6 +309,16 @@ function Psql { param([string]$Sql) docker exec -i sbqr.postgres psql -U postgre
 
 ## 3. Walkthrough A — live metering (QR traffic → usage rows)
 
+> ### 🧭 Business chapter 1 — Counting what is used
+>
+> **Scenario.** It is mid-September. **Arif Mahmood** runs a shop and banks with **Alpha Bank**. Alpha's server asks the platform for a *static* QR for his till and later a *dynamic* QR for a 150 BDT invoice. Each time, the platform creates the QR **and** leaves a small note: "Alpha used 1 generation." When one of **Beta Bank's** customers scans the till QR, Beta's app asks the platform to *check* it, and the note goes on **Beta's** tab: "Beta used 1 validation." Alpha, who issued the QR, pays nothing for Beta's check.
+>
+> Three fairness rules apply: (1) **count once** — if Alpha's server times out and re-sends the same request, it is still one charge; (2) **charge only completed work** — a refused or invalid *request* costs nothing; (3) a **real answer is charged even when the answer is "fake QR"**, but "duplicate request" and "request too old" are free.
+>
+> **What you test here:** steps 2–3 are "the QR is created and the note is written"; step 4 is rule (2); step 5 is rule (3) and "the checking bank pays". *(PRD R1–R4, R7–R8.)*
+>
+> **Why a background "note" instead of counting inside the QR call?** The note is saved in the **same database transaction** as the QR record (that is the *outbox*), and a background worker turns it into a usage row. This way a crash can never create a QR without a note, or a note without a QR — the "nothing lost, nothing double" promise.
+
 ### Step 1. Get the admin token
 
 ```powershell
@@ -368,6 +467,8 @@ What to notice:
 
 ### Step 6. Make the outbox fail on purpose (dead letters)
 
+> **🧭 Scenario — "the counting slips."** Imagine one of September's usage notes cannot be turned into a charge (a bug, an unknown QR type). The platform retries a few times with growing pauses and then parks the note in a *dead-letter* pile and shouts in the log. Why does the business care? On 1 October Nadia is about to bill September. If a note is stuck, **the bill would be too low and Alpha would be under-charged** — so the platform refuses to prepare the draft until an engineer has fixed and re-queued the note. *(PRD R6: "no usage may be lost; the month cannot close until it catches up.")* This step makes that happen on purpose so you see the alarm and the cure.
+
 Failures are never swallowed: they retry with back-off `min(2^attempts s, 300 s)` and, after `Outbox:MaxAttempts` (default 10, ~8 minutes in total), the row becomes `DEAD`. For a quick demo add `Outbox__MaxAttempts=2` to `.env` and restart the API.
 
 Insert a poison message that Metering will reject (the QR type is unknown). Use a **random, non-existent tenant id** so that it never affects Alpha's invoice later, and put its `occurred_at` in **last month** (use the month you will draft in section 5):
@@ -403,6 +504,14 @@ Requeueing resets `attempts` to 0 and sets the row `PENDING`; the dispatcher the
 ---
 
 ## 4. Walkthrough B — rate cards and adjustments
+
+> ### 🧭 Business chapters 2 and 3 — Setting prices, and corrections
+>
+> **Scenario — prices.** Alpha Bank signs its contract in August: **0.50 BDT per QR created, 0.30 BDT per QR checked, from 1 September.** Nadia enters this as a *price list* (rate card) that starts on 1 September. The rules protect both sides: a price can only start on the **1st of a future month** (nobody can quietly re-price a month that is under way), it can be **withdrawn until it takes effect**, and after that it can **never be edited** — a new price can only start from a later month. A bank with **no price list is simply not charged** (a pilot or test bank): its usage is still recorded, but no statement is made.
+>
+> **Scenario — corrections.** On 12 September the platform has an outage. Alpha is promised **BDT 1.00 back**. Nadia does not edit any statement; she records an *adjustment* of **−1.00** with the reason and her name. It waits as **Pending** and is picked up by the **next statement prepared for Alpha**. If Nadia ever gets one wrong, she doesn't delete it; she records an opposite one (+1.00). A positive adjustment is an extra charge.
+>
+> **What you test here:** step 7 is the price rules (PRD R10–R14); step 8 is adjustments (R25–R26). Remember the numbers — September's 4.50 − 1.00 = 3.50 comes from this credit.
 
 ### Step 7. Rate cards
 
@@ -451,6 +560,21 @@ Rules: `amount` ≠ 0 with at most 2 decimals, `reason` ≤ 500 characters, `cre
 ---
 
 ## 5. Walkthrough C — a full billing month (draft → recalculate → finalize → export)
+
+> ### 🧭 Business chapter 4 — Closing the month
+>
+> **Scenario.** It is **2 October**. Nadia has to turn September's thousands of usage notes into one clear bill per bank, and she must be able to defend every figure to an auditor. The platform gives her a safe path with four gates:
+>
+> 1. **Look, don't touch** — while a month is still running she can see a *Provisional* figure. Nothing is saved.
+> 2. **Open the books** — only after the month ends (plus a 2-hour grace) **and** all usage has been counted, she can open a *Draft*. Before that the platform says "not yet".
+> 3. **Review and refresh** — the draft can be rebuilt any number of times as late usage or credits arrive.
+> 4. **Approve once** — she signs with her name **and the total she reviewed**. If the truth moved since, the platform refuses; otherwise the month is frozen forever.
+>
+> Two other rules come along: a month can only be drafted if the **previous month is already approved** (no skipping around), and all banks for a month are approved **together**.
+>
+> **Money maths in business terms.** Each line = quantity × price, **rounded once to 2 decimals** (so 3 × 0.125 = 0.375 shows as 0.38). The statement total = lines + credits/charges, and can be negative (a net credit to the bank).
+>
+> **What you test here:** §5.1 seeds September; §5.2–5.4 are gates 1–2; §5.5 is gate 3; §5.6 is gate 4; §5.7 is "frozen forever". *(PRD R5–R6, R15–R21.)*
 
 ### 5.1 Seed last month (the only way to test history)
 
@@ -506,6 +630,8 @@ Expected September bill for Alpha (rates 0.50 generation, 0.30 validation, adjus
 
 ### 5.2 Read it before it exists: the PROVISIONAL view
 
+> **🧭 Scenario.** Mid-month, the head of billing asks Nadia, "roughly what will Alpha owe for September?" She opens the month and sees a figure labelled **Provisional**. It is a live calculation, clearly marked as not final, and *nothing is stored*. Good for curiosity; never to be invoiced.
+
 ```powershell
 Api GET /v1/admin/billing/periods/2026-09 $null $ADMIN
 ```
@@ -528,6 +654,8 @@ Nothing is stored (`SELECT count(*) FROM billing_periods;` → 0). If the number
 **Debug here:** `StatementCalculator.BuildAsync` (`StatementCalculator.cs:28`) → `IMeteringQueries.GetBillableQuantitiesAsync` (raw SQL in `MeteringQueries.cs`) → `Statement.Create`.
 
 ### 5.3 Draft refusals worth seeing
+
+> **🧭 Scenario.** Nadia gets impatient and tries to open **October** on 2 October. The platform says no: **"the month isn't over yet, plus two hours' grace."** The grace exists because a few QR operations at 23:59 on the 30th may be recorded a little later, and Nadia must not bill before they land. Next she tries September while one note is stuck in the dead-letter pile (step 6): **"usage is not complete."** And if she tried to open October before September is approved, she would hear **"approve the previous month first."** Each refusal protects the bank from being billed on incomplete or out-of-order data.
 
 ```powershell
 Api POST /v1/admin/billing/periods/2026-10/draft $null $ADMIN      # the current month has not ended
@@ -554,6 +682,8 @@ That is the guard that stops an operator billing on an incomplete ledger. Fix an
 
 ### 5.4 Draft
 
+> **🧭 Scenario.** At 02:00 on 1 October the gates are open and the month is opened for review. For every bank with a price list, the platform builds one statement from the price, the counted usage and any waiting credits. **Alpha: 2.00 + 1.00 + 1.50 = 4.50, minus the 1.00 credit = 3.50.** Nobody has to press anything in production (the optional *period closer* can do this automatically), and pressing it twice is harmless. Notice that the credit is *shown* on the draft but is **not yet settled** — it only becomes final on approval.
+
 ```powershell
 Api POST /v1/admin/billing/periods/2026-09/draft $null $ADMIN
 ```
@@ -564,6 +694,8 @@ Rows now exist: `SELECT * FROM billing_periods; SELECT tenant_id,total FROM bill
 **Debug:** `DraftPeriodCommandHandler.Handle` (`DraftPeriodCommandHandler.cs:37`) shows the check order: exists → previous month → grace → usage complete → build → `BillingPeriod.Draft` → store.
 
 ### 5.5 Late usage arrives while the draft is open
+
+> **🧭 Scenario.** While Nadia is reviewing, a straggler arrives: a validation from 29 September that took a while to be counted. The draft she is looking at still says 3.50 — **a draft deliberately shows what was stored, so a figure doesn't shift under a reviewer's eyes.** To pick up the new usage she presses *refresh* (recalculate), and the draft becomes 3.80. Every refresh is audited with the total before and after.
 
 ```sql
 INSERT INTO usage_events (usage_event_id, tenant_id, meter_code, billable, detail, source_type, source_id, source_event_id, client_reference, occurred_at)
@@ -576,6 +708,8 @@ Api POST /v1/admin/billing/periods/2026-09/recalculate $null $ADMIN
 Recalculate returns HTTP 200 with the rebuilt draft: validation quantity 6 (1.80), **total 3.80**. Audit: `billing.period_refresh` with `total_before: 3.50, total_after: 3.80`. A month that was never drafted returns `404`.
 
 ### 5.6 Finalize (approve), including the safety check
+
+> **🧭 Scenario.** Nadia reviewed 3.80 and is ready to sign. But in the meantime another straggler arrived, so the truth is now 4.10. If the platform simply approved "the month", it would approve something Nadia never looked at. Instead, **approval requires her name and the exact total she reviewed**. 3.80 ≠ 4.10, so the platform refuses, quietly rebuilds the draft, and asks her to look again. She reviews 4.10 and approves. **One click approves all banks' statements for September together**, and approving a second time changes nothing. This is the business reason for the "three totals must agree" rule: *no one approves a number they have not seen.*
 
 Insert one more late validation (repeat the INSERT from 5.5 with `client_reference` `seed-late-2`) so the fresh total becomes **4.10**, then finalize with the **stale** total 3.80 that "the operator reviewed":
 
@@ -605,6 +739,8 @@ Everything happens in one transaction that holds the period row with `SELECT …
 
 ### 5.7 Prove that it is frozen
 
+> **🧭 Scenario.** In November, Alpha Bank phones: "our 12 September outage was longer than you credited." After checking the usage detail, Nadia agrees to another BDT 0.50 credit. She **cannot edit September** — it was approved, an auditor may already hold a copy. Instead she records a new adjustment; it sits as Pending and appears as **its own line on October's statement**. September stays exactly as approved. The platform enforces this twice: the application refuses, and the database itself rejects any change (even from an engineer typing SQL). That "belt and braces" is what makes the statements audit-grade. *(PRD R21, R25–R26.)*
+
 ```powershell
 Api POST /v1/admin/billing/periods/2026-09/recalculate $null $ADMIN        # 409 code PERIOD_FINALIZED
 Psql "UPDATE billing_statements SET total = 0 WHERE period='2026-09';"       # ERROR: billing period 2026-09 is FINALIZED
@@ -615,6 +751,10 @@ Api GET "/v1/admin/billing/adjustments?tenantId=$ALPHA&pending=false" $null $ADM
 A correction after approval is a **new** adjustment: record one and it stays Pending, lands as its own line on the **next** month's statement, and the approved statement never changes.
 
 ### 5.8 Exports
+
+> **🧭 Business chapter 5 — Evidence, reports and audit.**
+>
+> **Scenario.** **Karim in Finance** needs the approved numbers to invoice Alpha, so Nadia sends him the **statements CSV** (one row per statement line). When Alpha later disputes a charge, Nadia pulls the **usage CSV** — one row per QR operation, with Alpha's own reference — and the *charged* rows must add up exactly to the statement's quantities. That match is the evidence. The files contain **no personal data** (no names, account numbers or phone numbers). The platform produces *statements*, not tax invoices; VAT and payment collection remain with Finance.
 
 ```powershell
 curl.exe -s -H "Authorization: Bearer $ADMIN" http://localhost:5001/v1/admin/billing/periods/2026-09/statements.csv
@@ -631,10 +771,14 @@ The statements CSV is long format: one row per statement line, with the statemen
 
 ### 5.9 Reports and the auto-closer
 
+> **🧭 Scenario.** Management wants to know two things nobody should have to hunt for: *which credits are still waiting for a statement?* (the **pending-adjustments** report) and *did any usage arrive after a month was already approved?* (the **late-usage** report — that one is currently broken, see F1). And because forgetting to open a month would delay invoicing, an optional **auto-closer** wakes up hourly and opens last month by itself once it is allowed to. Approval, however, always stays a human decision.
+
 - `GET /v1/admin/billing/reports/late-usage?month=2026-09` is meant to list usage recorded **after** a month was finalized. **Known defect F1:** it always returns `[]` (see section 8).
 - `PeriodCloserService` drafts the previous Dhaka month automatically. It is **off by default**: enable it with `Billing__Scheduler__Enabled=true`. It ticks every hour, with the first tick one hour after startup, and only targets "last month", so it cannot be exercised quickly through the API. To debug it, run the unit tests (`PeriodCloserTests`) or put a breakpoint in `PeriodCloser.RunOnceAsync`. Log event ids 9401–9411.
 
 ### 5.10 Audit trail
+
+> **🧭 Scenario.** A year later an auditor asks: "who set Alpha's September price, who approved the month, and what was the total before and after the refresh?" Every price entry, adjustment, refresh and approval writes an audit row with **who, when, what and the totals** (PRD R31). This is the answer.
 
 ```powershell
 Psql "SELECT event_type, resource_type, resource_id, created_by FROM audit_logs WHERE event_type LIKE 'billing.%' OR event_type LIKE 'outbox.%' ORDER BY sequence;"
