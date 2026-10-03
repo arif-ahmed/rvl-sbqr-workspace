@@ -1,5 +1,9 @@
 # Manual Dev-Testing — `POST /v1/oauth/token`
 
+> **SUPERSEDED (2026-10-03).** FR-AUTH-002 is deprecated — `package_id` and the
+> `tenant_applications` allow-list no longer exist. Retained as historical
+> record; only the plain client-credentials cases remain applicable.
+
 Companion to **FR-AUTH-002**. Cases are form-urlencoded; JSON works the
 same way because the DTO uses `[JsonPropertyName]`. Labels: `[TODAY]`
 passes on current code; `[§5]` is the target behaviour once §7 lands.

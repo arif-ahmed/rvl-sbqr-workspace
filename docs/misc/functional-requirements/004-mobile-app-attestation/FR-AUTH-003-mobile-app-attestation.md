@@ -1,10 +1,16 @@
 ﻿# FR-AUTH-003 — Mobile App Attestation: Only Authorized Apps, No Ad-hoc Clients
 
+> **SUPERSEDED (2026-10-03).** Built on the FR-AUTH-002 `tenant_applications`
+> allow-list, which was deprecated when the token flow moved to server-to-server
+> (see `docs/misc/extra/0001-fi-direct-oauth-to-bff-model.md`, task T5, and the
+> FR-AUTH-002 banner). The table was dropped and no attestation column ever
+> shipped. This document is retained as historical design record only.
+
 | Field   | Value                                                       |
 |---------|-------------------------------------------------------------|
 | Area    | Identity & Access                                            |
-| Status  | Draft — design proposed; implementation not started           |
-| Updated | 2026-09-13                                                   |
+| Status  | Superseded — see banner above                                |
+| Updated | 2026-10-03                                                   |
 
 ## 1. Summary
 

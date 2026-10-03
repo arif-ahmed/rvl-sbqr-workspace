@@ -1,6 +1,10 @@
 # FR-AUTH-003 — Appendix: Payload-by-Payload Walkthrough
 
 > **Part of the [FR-AUTH-003 dev guide](./FR-AUTH-003-dev-guide.md) series.**
+>
+> **SUPERSEDED (2026-10-03):** FR-AUTH-003 was built on the FR-AUTH-002
+> `tenant_applications` allow-list, which was removed (server-to-server token
+> model — see the banner on `FR-AUTH-003-mobile-app-attestation.md`).
 > - [← Back to main guide](./FR-AUTH-003-dev-guide.md)
 > - [Security Architecture & VAPT](./FR-AUTH-003-security-architecture.md)
 > - [QA Testing Guide](./FR-AUTH-003-qa-testing.md)

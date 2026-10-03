@@ -1,5 +1,9 @@
 # FR-AUTH-003 — A Plain Guide for .NET Backend Developers
 
+> **SUPERSEDED (2026-10-03):** FR-AUTH-003 was built on the FR-AUTH-002
+> `tenant_applications` allow-list, which was removed when the token flow moved
+> to server-to-server (see the banner on `FR-AUTH-003-mobile-app-attestation.md`).
+
 > This is for .NET backend developers who want to know: **what do I actually build, and how
 > does it work in production?** No fintech jargon. Just the code and the real-world flow.
 >

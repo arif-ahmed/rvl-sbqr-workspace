@@ -90,11 +90,9 @@
 > (Step 4) blocks Step 7 (the tenant token endpoint returns 401 without a
 > credential row). Skipping the crypto-create (Step 5) blocks Step 9
 > (`qr/validate` cannot resolve the tenant's signature because the public
-> key is not in the trust directory). Skipping app registration (Step 6)
-> blocks any client whose token carries a `package_id` claim — the OAuth
-> token endpoint rejects the request with `invalid_client /
-> package_mismatch` for any mobile-app identifier that is not on the
-> tenant's allow-list. See [§8](#8-step-6--register-the-tenants-mobile-apps).
+> key is not in the trust directory). Step 6 (app registration) was removed
+> with the FR-AUTH-002 allow-list — the token flow is server-to-server
+> (FI backend gateway over mTLS + client-credentials); see [§8](#8-step-6--register-the-tenants-mobile-apps--removed).
 
 ---
 
@@ -440,128 +438,16 @@ cases. After the manual upsert, Step 9 (validate) works normally.
 
 ---
 
-## 8. Step 6 — Register the Tenant's Mobile App(s)
+## 8. Step 6 — Register the Tenant's Mobile App(s) — REMOVED
 
-Register the mobile-app identifier(s) the tenant will ship — one row per
-`(platform, package_id)`. This is the per-tenant allow-list the OAuth token
-endpoint consults at mint time: a token request that carries a
-`package_id` not on this list is rejected with `invalid_client /
-package_mismatch`, and a row that is later `SUSPENDED` rejects every
-device pinning it (the per-app kill switch — covered in the broader
-manual test guide `docs/dev-testing-guide-oauth-tenants-keys.md`).
-
-```bash
-# Register the Android build first. Substitute the tenant's real
-# applicationId from the Play Console / build.gradle.
-APP_ANDROID=$(curl -s -X POST "$BASE/v1/admin/tenants/$TENANT_ID/applications" \
-  -H "Authorization: Bearer $ADMIN_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-        "platform":   "ANDROID",
-        "package_id": "com.dhakabank.consumer"
-      }')
-
-echo "$APP_ANDROID" | jq
-APP_ANDROID_ID=$(echo "$APP_ANDROID" | jq -r '.tenantApplicationId')
-echo "Android application id: $APP_ANDROID_ID"
-
-# If the tenant ships an iOS build too, register the matching bundle ID.
-# The same reverse-DNS string on a second platform is legal — that's two
-# rows in tenant_applications, one per platform.
-APP_IOS=$(curl -s -X POST "$BASE/v1/admin/tenants/$TENANT_ID/applications" \
-  -H "Authorization: Bearer $ADMIN_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{
-        "platform":   "IOS",
-        "package_id": "com.dhakabank.consumer"
-      }')
-
-echo "$APP_IOS" | jq
-APP_IOS_ID=$(echo "$APP_IOS" | jq -r '.tenantApplicationId')
-echo "iOS application id:     $APP_IOS_ID"
-```
-
-**Sample payload**:
-
-```json
-{
-    "platform":   "ANDROID",
-    "package_id": "com.dhakabank.consumer"
-}
-```
-
-| Field | Rules |
-|-------|-------|
-| `platform` | `ANDROID` or `IOS` (validated against `TenantApplicationPlatform`). |
-| `package_id` | Reverse-DNS identifier (`^[A-Za-z][A-Za-z0-9_]*(\.[A-Za-z0-9_]+)+$`), ≤ 200 chars. Android `applicationId` or iOS bundle ID. |
-
-**Expected response** *(HTTP 201 Created,
-`Location: /v1/admin/tenants/{tenantId}/applications`)*:
-
-```json
-{
-    "tenantApplicationId": "7c2b8e10-...",
-    "tenantId":            "b1d9e000-...",
-    "platform":            "ANDROID",
-    "packageId":           "com.dhakabank.consumer",
-    "status":              "ACTIVE",
-    "isActive":            true,
-    "createdAt":           "2026-09-06T12:00:03+00:00",
-    "modifiedAt":          null
-}
-```
-
-> **Why this step is mandatory.** The OAuth token endpoint rejects every
-> token request whose `package_id` claim is not on this allow-list. A
-> tenant whose row does not exist fails closed with `invalid_client /
-> package_mismatch` on every device — there is no implicit "any package
-> works" fallback.
-
-### 8.1 Duplicate-application rule (no duplicate app per platform)
-
-A tenant may register at most one row per `(platform, package_id)` pair
-(FR-AUTH-002 / FR-AUTH-003 operational contract). The same `package_id`
-on the other platform is **legal** — e.g. `com.dhakabank.consumer` may be
-registered once as ANDROID and once as IOS (two rows total) — but never
-twice on the same platform.
-
-The constraint is enforced by the
-`ix_tenant_applications_platform_package_id` UNIQUE index in
-`db/migrations/008_tenant_applications.sql`; the EF layer translates the
-PG `23505` unique-violation into `ErrorCode.InvariantViolation`, which the
-controller maps to `409 Conflict`:
-
-```bash
-# Second registration of the same (platform, package_id) → 409.
-curl -s -o /dev/null -w "HTTP %{http_code}\n" \
-  -X POST "$BASE/v1/admin/tenants/$TENANT_ID/applications" \
-  -H "Authorization: Bearer $ADMIN_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d '{"platform":"ANDROID","package_id":"com.dhakabank.consumer"}'
-# Expect: HTTP 409, body { "title": "Tenant application invariant violated",
-#         "detail": "application (platform='Android', package_id='com.dhakabank.consumer') is already registered." }
-```
-
-### 8.2 Inspect the registered apps
-
-```bash
-curl -s -X GET "$BASE/v1/admin/tenants/$TENANT_ID/applications" \
-  -H "Authorization: Bearer $ADMIN_TOKEN" | jq
-```
-
-Returns the array of registered apps ordered by `(platform, package_id)`,
-including the `SUSPENDED` rows from any per-app kill switch (covered in
-the broader manual test guide).
-
-### 8.3 Re-registering after a soft-delete or SUSPENDED row
-
-The UNIQUE index ignores `is_active` and `status` — soft-deleted and
-suspended rows still hold their `(platform, package_id)` slot. Re-registering
-the same `package_id` on the same platform is rejected with `409`. The
-intended recovery flow is the per-app `suspend` ↔ `reinstate` pair, not a
-delete-and-recreate. Soft-delete (`is_active = false`) is reserved for
-off-boarding an institute; rotation of the package identifier requires a
-new package_id from Play Console / App Store Connect.
+> **Removed (2026-10-03).** The FR-AUTH-002 mobile-app allow-list
+> (`tenant_applications`) was deprecated when the token flow moved to
+> server-to-server: the FI backend gateway mints tokens with its
+> client-credentials over mTLS, and mobile apps never call
+> `/v1/oauth/token` directly. The `POST /v1/admin/tenants/{id}/applications`
+> endpoints no longer exist and the table was dropped
+> (`013_drop_tenant_applications.sql` in rvl-secure-bqr-manager). Skip
+> straight to Step 7.
 
 ---
 
@@ -832,17 +718,14 @@ The "happy path" uses five calls in sequence (tenant → configuration →
 crypto-keys → register app(s) → mint tenant token), each with `POST`
 semantics. The **crypto-create step auto-publishes** the public key into
 the trust directory in the same operation — there is no separate
-institutions call to make. The **app registration** call(s) populate the
-per-tenant mobile-app allow-list that the OAuth token endpoint consults at
-mint time.
+institutions call to make.
 
 | Scenario | Calls | Result |
 |----------|-------|--------|
-| **Greenfield happy path** | `POST /v1/admin/tenants` → `…/activate` → `…/tenant-configuration` → `POST /v1/crypto-keys` → `POST /v1/admin/tenants/{id}/applications` (×N, one per platform) → `POST /v1/oauth/token` | Tenant ready to sign, be verified by `qr/validate`, and authenticate as a registered mobile app. ✅ |
+| **Greenfield happy path** | `POST /v1/admin/tenants` → `…/activate` → `…/tenant-configuration` → `POST /v1/crypto-keys` → `POST /v1/oauth/token` | Tenant ready to sign, be verified by `qr/validate`, and authenticate over client-credentials. ✅ |
 | **Auto-publish failed at Step 5** | Above + `POST /v1/admin/institutions` with the failed public key | Same end state; one extra manual call. The audit log distinguishes `system:crypto-create` vs admin-actor publishes. |
 | **Manual override of trust key** (no new keypair, just replace the public key) | `POST /v1/admin/institutions` with the new PEM | Existing active key in `crypto_keys` is untouched; trust store gets the override. Use case: re-keying trust material without rotating the server-side signing key. |
 | **Re-provision credential** (lost secret) | `POST …/suspend` → `…/reactivate` semantics don't apply; instead see rotation flow in the broader guide. | New credential row generated, old revoked. |
-| **Re-register an existing app** (already registered `(platform, package_id)`) | Re-running Step 6 with the same inputs returns `409 InvariantViolation`. | Use the per-app `suspend` ↔ `reinstate` pair (broader manual guide) — soft-delete and SUSPENDED rows hold their index slot. |
 
 The auto-publish is **best-effort, not 2PC** — see the audit row taxonomy
 and the trade-off discussion in the broader manual guide §7.7a.
@@ -972,31 +855,8 @@ curl -sf -X POST "$BASE/v1/crypto-keys" \
   -H "Content-Type: application/json" \
   -d "{\"tenantId\":\"$TENANT_ID\",\"mode\":\"Generate\"}" | jq -c '{cryptoKeyId, status, keyVersion}'
 
-echo "=== Step 6 — Register mobile app(s) (ANDROID + iOS allow-list) ==="
-# Override either of these by exporting PACKAGE_ID / IOS_PACKAGE_ID before
-# running. Default: register the same package_id on both platforms — that's
-# two rows in public.tenant_applications, legal under the FR-AUTH-002 rule.
-PACKAGE_ID="${PACKAGE_ID:-com.dhakabank.consumer}"
-IOS_PACKAGE_ID="${IOS_PACKAGE_ID:-$PACKAGE_ID}"
-
-ANDROID_APP=$(curl -sf -X POST "$BASE/v1/admin/tenants/$TENANT_ID/applications" \
-  -H "Authorization: Bearer $ADMIN_TOKEN" \
-  -H "Content-Type: application/json" \
-  -d "{\"platform\":\"ANDROID\",\"package_id\":\"$PACKAGE_ID\"}" \
-  | jq -c '{tenantApplicationId, platform, packageId, status}')
-echo "  android: $ANDROID_APP"
-
-# Skip iOS registration if IOS_PACKAGE_ID is empty. Same package_id on a
-# second platform is legal — that's two rows; same string twice on one
-# platform would 409.
-if [ -n "$IOS_PACKAGE_ID" ]; then
-  IOS_APP=$(curl -sf -X POST "$BASE/v1/admin/tenants/$TENANT_ID/applications" \
-    -H "Authorization: Bearer $ADMIN_TOKEN" \
-    -H "Content-Type: application/json" \
-    -d "{\"platform\":\"IOS\",\"package_id\":\"$IOS_PACKAGE_ID\"}" \
-    | jq -c '{tenantApplicationId, platform, packageId, status}')
-  echo "  ios:     $IOS_APP"
-fi
+# Step 6 (app registration) was removed with the FR-AUTH-002 allow-list —
+# the token flow is server-to-server; no mobile-app rows to register.
 
 echo "=== Step 7 — Mint tenant token ==="
 TENANT_TOKEN=$(curl -sf -X POST "$BASE/v1/oauth/token" \
@@ -1090,12 +950,9 @@ emitted by the handler named in the right column.
 > distinguish auto-publish from manual `POST /v1/admin/institutions`
 > publishes (which carry the admin's JWT subject).
 >
-> Row 7 — `tenant.application.registered` — is emitted once per platform
-> (ANDROID, IOS) the tenant registers during Step 6. The `metadata` carries
-> `(platform, package_id)`; the FR-AUTH-002 invariant that no two rows
-> share the same `(platform, package_id)` is enforced by the DB unique
-> index `ix_tenant_applications_platform_package_id` and surfaces as a
-> 409 in the API rather than as an audit row.
+> (A former row 7 — `tenant.application.registered`, emitted per platform
+> during the removed Step 6 — no longer exists; the FR-AUTH-002 allow-list
+> and its audit rows were removed with the server-to-server token model.)
 
 ---
 

@@ -1,10 +1,18 @@
 # FR-AUTH-002 — OAuth Token Endpoint: Base64 Credentials & Tenant App Package Allow-Listing
 
+> **SUPERSEDED (2026-10-03).** The token flow moved to server-to-server (FI
+> backend gateway -> platform over mTLS + client-credentials; mobile apps never
+> call the token endpoint directly). The `tenant_applications` allow-list table
+> was dropped (`013_drop_tenant_applications.sql`), and the `package_id` form
+> field / JWT claim / `package_mismatch` audit reason were removed. See
+> `docs/misc/extra/0001-fi-direct-oauth-to-bff-model.md` (task T5). This
+> document is retained as historical design record only.
+
 | Field   | Value                                                                              |
 |---------|------------------------------------------------------------------------------------|
 | Area    | Identity & Access                                                                   |
-| Status  | Draft — analysis and design agreed; implementation deferred pending HoE confirmations |
-| Updated | 2026-09-13                                                                          |
+| Status  | Superseded — see banner above                                                       |
+| Updated | 2026-10-03                                                                          |
 
 ## 1. Summary
 
