@@ -22,11 +22,11 @@ Guarded commit gate for the RVL SBQR workspace. You review uncommitted changes i
 ## Phase 0 — Resolve inputs
 
 1. **Read the plan doc fully.** Extract:
-   - Target submodule (a directory name from the workspace: `rvl-sbqr-api`, `rvl-sbqr-admin-portal`, `rvl-sbqr-fi-gateway`, `rvl-secure-bqr-manager`, `rvl-bb-trust-store`, `rvl-sbqr-app-emulator`, `rvl-sbqr-mocks`). If not named, infer from file paths the plan mentions; if still ambiguous, ask.
+   - Target submodule (a directory name from the workspace: `rvl-sbqr-admin-portal`, `rvl-sbqr-fi-gateway`, `rvl-secure-bqr-manager`, `rvl-bb-trust-store`, `rvl-sbqr-app-emulator`, `rvl-sbqr-mocks`). If not named, infer from file paths the plan mentions; if still ambiguous, ask.
    - Every step / task / requirement: numbered steps (A1–A8, B1–B4 style), checklists, "Files you touch" tables, and each step's Check/acceptance criterion.
    - Expected outcomes the plan says must hold (acceptance criteria, sign-off conditions).
    - Any reference to an audit / sign-off report.
-2. **Detect the dirty submodule.** Run `git -C <dir> status --porcelain` across all seven submodules.
+2. **Detect the dirty submodule.** Run `git -C <dir> status --porcelain` across all six submodules.
    - Exactly one dirty → that's the target (must be consistent with the plan's module; if not, ask).
    - Multiple dirty → list them and ask the user to pick.
    - None dirty → stop: nothing to commit.

@@ -6,10 +6,6 @@
 	path = rvl-sbqr-admin-portal
 	url = https://github.com/arif-ahmed/rvl-sbqr-admin-portal.git
 	branch = main
-[submodule "rvl-sbqr-api"]
-	path = rvl-sbqr-api
-	url = https://github.com/arif-ahmed/rvl-sbqr-api.git
-	branch = main
 [submodule "rvl-sbqr-app-emulator"]
 	path = rvl-sbqr-app-emulator
 	url = https://github.com/arif-ahmed/rvl-sbqr-app-emulator.git

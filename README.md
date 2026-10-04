@@ -6,7 +6,6 @@ Central **orchestrator repo** for the RVL SBQR system. All application code live
 
 | Submodule / dir | What it is | Tracked branch |
 |---|---|---|
-| `rvl-sbqr-api/` | .NET backend API (Verification, KeyCustody, Tenancy, InstitutionTrust) | `main` |
 | `rvl-sbqr-admin-portal/` | Admin portal UI | `main` |
 | `rvl-sbqr-portal/` | Web portal for RVL staff (Admin, Finance) and financial institutions | `main` |
 | `rvl-sbqr-fi-gateway/` | Financial-institution gateway service | `main` |
