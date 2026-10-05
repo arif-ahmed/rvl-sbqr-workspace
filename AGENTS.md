@@ -6,7 +6,6 @@ This repo is the **orchestrator** for the RVL SBQR system. All application code 
 
 | Directory | What it is |
 |---|---|
-| `rvl-sbqr-admin-portal/` | Admin portal UI |
 | `rvl-sbqr-portal/` | Unified web portal: RVL staff (Admin, Finance) and financial-institution users |
 | `rvl-sbqr-fi-gateway/` | Financial-institution gateway service |
 | `rvl-secure-bqr-manager/` | Secure BQR manager (tracked branch: `feature/mtls-server`) |
@@ -14,12 +13,21 @@ This repo is the **orchestrator** for the RVL SBQR system. All application code 
 | `rvl-sbqr-app-emulator/` | Mobile app emulator |
 | `rvl-sbqr-mocks/` | Mock services |
 | `docs/` | Workspace docs; `docs/misc/` = consolidated legacy docs (requirements, design, security) |
+| `docs/plans/` | Plan index (`README.md`) + frozen plan contracts; `_template/` for new plans |
+| `docs/adr/` | Workspace-level architecture decisions |
+| `repos.yaml` | Machine-readable submodule manifest (pins, branches, purposes) — keep in sync with `.gitmodules` |
 
 ## Git rules
 
 - Code changes belong **inside the relevant submodule** — commit there, in that submodule's repo. The root repo never holds application code.
 - The root repo only records **pinned SHAs**. Sibling activity never touches root history unless you deliberately commit a pointer bump (`git add <submodule>` in root after advancing the submodule).
 - All other submodules track `main`; `rvl-secure-bqr-manager` tracks `feature/mtls-server`.
+- `repos.yaml` is the machine-readable twin of the table above — update `pinned_sha` (and `note:` on drift) in the same commit as any pointer bump.
+
+## Plan lifecycle
+
+- New work starts as `docs/plans/<feature>/plan.md` (template: `docs/plans/_template/`) and gets a row in `docs/plans/README.md` (plan → submodules → branches → Jira → status).
+- `docs/features/<name>/` keeps long-form design material; the plan dir holds the frozen review contract. `.zcode/plans/` is scratch — promote, don't review from it.
 
 ## Search rules
 

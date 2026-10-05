@@ -1,0 +1,24 @@
+# Link check for orchestrator docs — the plans index is only useful if
+# every pointer resolves. Checks local file links (offline) on PRs and
+# weekly (full, including external URLs).
+
+name: docs-links
+
+on:
+  pull_request:
+    paths:
+      - "**.md"
+      - "repos.yaml"
+  schedule:
+    - cron: "0 8 * * 1" # Mondays 08:00 UTC
+  workflow_dispatch:
+
+jobs:
+  lychee:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: lycheeverse/lychee-action@v2
+        with:
+          args: --offline README.md AGENTS.md repos.yaml docs/plans/README.md "docs/**/*.md"
+          fail: true

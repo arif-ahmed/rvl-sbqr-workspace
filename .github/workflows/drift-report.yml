@@ -1,0 +1,91 @@
+# Drift report — the automated "watch" function (see ADR-0001/0002).
+# Compares repos.yaml intent vs .gitmodules mechanics vs recorded gitlinks,
+# and surfaces worktrees checked out off their tracked branch.
+# Pin mismatches FAIL the job; branch drift only warns (often intentional,
+# but never silent).
+
+name: drift-report
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # Mondays 06:00 UTC
+  workflow_dispatch:
+
+jobs:
+  drift:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build drift report
+        run: |
+          python3 - <<'EOF'
+          import configparser, subprocess, sys, yaml
+
+          manifest = yaml.safe_load(open("repos.yaml"))["repos"]
+          by_path = {r["path"]: r for r in manifest}
+
+          cfg = configparser.ConfigParser()
+          cfg.read(".gitmodules")
+          modules = {}
+          for section in cfg.sections():
+              name = section.split('"')[1]
+              modules[cfg[section]["path"]] = {
+                  "name": name,
+                  "url": cfg[section]["url"],
+                  "branch": cfg[section].get("branch", ""),
+              }
+
+          pins = {}
+          out = subprocess.run(
+              ["git", "ls-tree", "HEAD"] + list(by_path),
+              capture_output=True, text=True).stdout
+          for line in out.splitlines():
+              # "160000 commit <sha>\t<path>"
+              parts = line.split()
+              pins[parts[3]] = parts[2]
+
+          errors, warnings, rows = [], [], []
+          for path, want in sorted(by_path.items()):
+              got = modules.get(path)
+              if got is None:
+                  errors.append(f"`{path}` in repos.yaml but missing from .gitmodules")
+                  continue
+              checks = []
+              if got["url"] != want["url"]:
+                  errors.append(f"`{path}` url mismatch: manifest `{want['url']}` vs .gitmodules `{got['url']}`")
+                  checks.append("url MISMATCH")
+              if (got["branch"] or "") != want["tracked_branch"]:
+                  errors.append(f"`{path}` branch mismatch: manifest `{want['tracked_branch']}` vs .gitmodules `{got['branch']}`")
+                  checks.append("branch MISMATCH")
+              if pins.get(path) != want["pinned_sha"]:
+                  errors.append(f"`{path}` pin mismatch: manifest `{want['pinned_sha'][:7]}` vs gitlink `{pins.get(path, 'MISSING')[:7]}`")
+                  checks.append("pin MISMATCH")
+              branch = subprocess.run(
+                  ["git", "-C", path, "branch", "--show-current"],
+                  capture_output=True, text=True).stdout.strip()
+              if branch and branch != want["tracked_branch"]:
+                  warnings.append(f"`{path}` on `{branch}` (tracks `{want['tracked_branch']}`)")
+                  checks.append(f"worktree on `{branch}`")
+              rows.append(f"| `{path}` | `{want['pinned_sha'][:7]}` | {', '.join(checks) or 'ok'} |")
+
+          extra = set(modules) - set(by_path)
+          for path in sorted(extra):
+              warnings.append(f"`{path}` in .gitmodules but not in repos.yaml")
+
+          with open("drift.md", "w") as f:
+              f.write("## Submodule drift report\n\n")
+              f.write("| path | pinned | state |\n|---|---|---|\n")
+              f.write("\n".join(rows) + "\n")
+              if warnings:
+                  f.write("\n### Warnings\n\n- " + "\n- ".join(warnings) + "\n")
+              if errors:
+                  f.write("\n### Errors\n\n- " + "\n- ".join(errors) + "\n")
+
+          print(open("drift.md").read())
+          sys.exit(1 if errors else 0)
+          EOF
+
+      - name: Publish summary
+        if: always()
+        run: cat drift.md >> "$GITHUB_STEP_SUMMARY"

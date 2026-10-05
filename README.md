@@ -6,7 +6,6 @@ Central **orchestrator repo** for the RVL SBQR system. All application code live
 
 | Submodule / dir | What it is | Tracked branch |
 |---|---|---|
-| `rvl-sbqr-admin-portal/` | Admin portal UI | `main` |
 | `rvl-sbqr-portal/` | Web portal for RVL staff (Admin, Finance) and financial institutions | `main` |
 | `rvl-sbqr-fi-gateway/` | Financial-institution gateway service | `main` |
 | `rvl-secure-bqr-manager/` | Secure BQR manager | `feature/mtls-server` |
@@ -14,7 +13,11 @@ Central **orchestrator repo** for the RVL SBQR system. All application code live
 | `rvl-sbqr-app-emulator/` | Mobile app emulator | `main` |
 | `rvl-sbqr-mocks/` | Mock services | `main` |
 | `docs/` | Workspace docs (tracked in this repo) | — |
+| `docs/plans/` | Plan index + frozen plan contracts (`_template/` for new plans) | — |
+| `docs/adr/` | Workspace-level architecture decisions | — |
 | `docs/misc/` | Consolidated legacy docs: requirements, design, security, docker | — |
+
+Machine-readable twin of this table: `repos.yaml` (pins, tracked branches, purposes) — validated against `.gitmodules` by the drift-report workflow.
 
 Local-only (git-ignored, never commit):
 

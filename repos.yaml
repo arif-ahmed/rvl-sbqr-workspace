@@ -1,0 +1,51 @@
+# repos.yaml — workspace manifest (machine-readable source of truth).
+# Human-readable twin: README.md layout table. CI (drift-report.yml)
+# validates that .gitmodules, gitlink pins, and this file agree.
+# Update pinned_sha whenever a pointer bump is committed in root.
+
+version: 1
+
+repos:
+  - name: rvl-sbqr-portal
+    path: rvl-sbqr-portal
+    url: https://github.com/arif-ahmed/rvl-sbqr-portal.git
+    tracked_branch: main
+    pinned_sha: 1c0463b33067d4ed6bb0e10823ae8cc82ca8c5fe
+    purpose: Web portal for RVL staff (Admin, Finance) and financial institutions
+    note: Worktree currently on feature/institution-onboarding-api (drift vs tracked branch — see drift report).
+
+  - name: rvl-sbqr-fi-gateway
+    path: rvl-sbqr-fi-gateway
+    url: https://github.com/arif-ahmed/rvl-sbqr-fi-gateway.git
+    tracked_branch: main
+    pinned_sha: 0dd645699bd1c4e80879392b3ea2b6e3d67d0575
+    purpose: Financial-institution gateway service
+
+  - name: rvl-secure-bqr-manager
+    path: rvl-secure-bqr-manager
+    url: https://github.com/Relief-Validation/rvl-secure-bqr-manager.git
+    tracked_branch: feature/mtls-server
+    pinned_sha: 3f9511b0da0162f24c972eb2ba16e596f24aba95
+    purpose: Secure BQR manager — QR issue/verify API backend (SBQR.Api); hosts the postgres-mcp dev tool used by workspace MCP configs
+    note: Worktree currently on feature/institution-onboarding (drift vs tracked branch — see drift report).
+
+  - name: rvl-bb-trust-store
+    path: rvl-bb-trust-store
+    url: https://github.com/arif-ahmed/rvl-bb-trust-store.git
+    tracked_branch: main
+    pinned_sha: 5630e77db3cd91e23013d3ce9da63aa58e5238e5
+    purpose: Bangladesh Bank trust store service
+
+  - name: rvl-sbqr-app-emulator
+    path: rvl-sbqr-app-emulator
+    url: https://github.com/arif-ahmed/rvl-sbqr-app-emulator.git
+    tracked_branch: main
+    pinned_sha: df11b1b60e19c6aa316adea643373d94bfd89d57
+    purpose: Mobile app emulator
+
+  - name: rvl-sbqr-mocks
+    path: rvl-sbqr-mocks
+    url: https://github.com/arif-ahmed/rvl-sbqr-mocks.git
+    tracked_branch: main
+    pinned_sha: 0f2d2e9a8f263fc54594752c9d4617cb4941d75a
+    purpose: Mock services

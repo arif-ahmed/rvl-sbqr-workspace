@@ -23,9 +23,9 @@ Convention-safe branch creator for the RVL SBQR workspace. You ask three short q
 
 Candidates (one of):
 
-- `rvl-sbqr-admin-portal`, `rvl-sbqr-fi-gateway`, `rvl-secure-bqr-manager`, `rvl-bb-trust-store`, `rvl-sbqr-app-emulator`, `rvl-sbqr-mocks`
+- `rvl-sbqr-fi-gateway`, `rvl-secure-bqr-manager`, `rvl-bb-trust-store`, `rvl-sbqr-app-emulator`, `rvl-sbqr-mocks`
 
-Resolution order: explicit argument → current working directory inside a submodule → the submodule the conversation is about → **ask** (list all six).
+Resolution order: explicit argument → current working directory inside a submodule → the submodule the conversation is about → **ask** (list all five).
 
 Then read the repo's convention context:
 

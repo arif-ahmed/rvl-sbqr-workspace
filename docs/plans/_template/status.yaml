@@ -1,0 +1,9 @@
+# status.yaml — machine-readable plan status.
+# Values: proposed | active | implementing | in-review | done
+plan: <feature-name>
+status: proposed
+jira: <JIRA-REF or "-">
+submodules:
+  - repo: <repo-dir>
+    branch: <branch>
+updated: <YYYY-MM-DD>
