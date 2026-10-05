@@ -3,7 +3,7 @@
   "mcp": {
     "sbqr-postgres": {
       "type": "local",
-      "command": ["dotnet", "rvl-sbqr-backend/tools/postgres-mcp/bin/Release/net10.0/SBQR.PostgresMcp.dll"],
+      "command": ["dotnet", "rvl-secure-bqr-manager/tools/postgres-mcp/bin/Release/net10.0/SBQR.PostgresMcp.dll"],
       "cwd": ".",
       "timeout": 30000,
       "enabled": true

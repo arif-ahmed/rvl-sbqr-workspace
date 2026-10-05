@@ -2,8 +2,8 @@
   "mcpServers": {
     "sbqr-postgres": {
       "command": "dotnet",
-      "args": ["run", "-c", "Release", "--project", "rvl-sbqr-backend/tools/postgres-mcp", "--no-build"],
-      "description": "Local-only PostgreSQL inspector for sbqr_app (dev only, read-only by default). Reads the workspace-root .env. Build first: dotnet build rvl-sbqr-backend/tools/postgres-mcp -c Release."
+      "args": ["run", "-c", "Release", "--project", "rvl-secure-bqr-manager/tools/postgres-mcp", "--no-build"],
+      "description": "Local-only PostgreSQL inspector for sbqr_app (dev only, read-only by default). Reads the workspace-root .env. Build first: dotnet build rvl-secure-bqr-manager/tools/postgres-mcp -c Release."
     }
   }
 }
