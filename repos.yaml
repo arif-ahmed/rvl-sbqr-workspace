@@ -25,7 +25,7 @@ repos:
     path: rvl-secure-bqr-manager
     url: https://github.com/Relief-Validation/rvl-secure-bqr-manager.git
     tracked_branch: feature/mtls-server
-    pinned_sha: 6b70e23
+    pinned_sha: 6b70e23e06a5c93995f99e83917f98cf340662c4
     purpose: Secure BQR manager — QR issue/verify API backend (SBQR.Api); hosts the postgres-mcp dev tool used by workspace MCP configs
     note: >-
       Pinned to feature/institution-onboarding (not the tracked_branch feature/mtls-server).
