@@ -25,13 +25,13 @@ repos:
     path: rvl-secure-bqr-manager
     url: https://github.com/Relief-Validation/rvl-secure-bqr-manager.git
     tracked_branch: feature/mtls-server
-    pinned_sha: 6b70e23e06a5c93995f99e83917f98cf340662c4
+    pinned_sha: 77260773d7a2098e24643469942d5c304d480aba
     purpose: Secure BQR manager — QR issue/verify API backend (SBQR.Api); hosts the postgres-mcp dev tool used by workspace MCP configs
     note: >-
       Pinned to feature/institution-onboarding (not the tracked_branch feature/mtls-server).
-      6b70e23 closes the migration numbering gaps (contiguous 001–011), tightens the
-      onboarding wizard CHECKs to 5 steps / 4 statuses, and deletes the retired
-      009_tenant_client_certificates.sql.
+      Contiguous 001–011 migration chain, onboarding wizard CHECKs tightened to
+      5 steps / 4 statuses, the retired 009_tenant_client_certificates.sql deleted,
+      and db/truncate-all.sql added for resetting a dev database.
 
   - name: rvl-bb-trust-store
     path: rvl-bb-trust-store
