@@ -10,7 +10,7 @@ repos:
     path: rvl-sbqr-portal
     url: https://github.com/arif-ahmed/rvl-sbqr-portal.git
     tracked_branch: main
-    pinned_sha: 1c0463b33067d4ed6bb0e10823ae8cc82ca8c5fe
+    pinned_sha: 907ea279265baee0106b3e1063dbce3408c872c0
     purpose: Web portal for RVL staff (Admin, Finance) and financial institutions
     note: Worktree currently on feature/institution-onboarding-api (drift vs tracked branch — see drift report).
 
@@ -25,13 +25,16 @@ repos:
     path: rvl-secure-bqr-manager
     url: https://github.com/Relief-Validation/rvl-secure-bqr-manager.git
     tracked_branch: feature/mtls-server
-    pinned_sha: 77260773d7a2098e24643469942d5c304d480aba
+    pinned_sha: 4a842a04cb9a1be009333674510c5b24d6c39ffe
     purpose: Secure BQR manager — QR issue/verify API backend (SBQR.Api); hosts the postgres-mcp dev tool used by workspace MCP configs
     note: >-
       Pinned to feature/institution-onboarding (not the tracked_branch feature/mtls-server).
       Contiguous 001–011 migration chain, onboarding wizard CHECKs tightened to
       5 steps / 4 statuses, the retired 009_tenant_client_certificates.sql deleted,
       and db/truncate-all.sql added for resetting a dev database.
+      CreateTenantCommandHandler now stamps the PROFILE onboarding step row
+      and emits a tenant.registered audit entry on migration, so wizard step 1
+      leaves the same trace as every later step.
 
   - name: rvl-bb-trust-store
     path: rvl-bb-trust-store
