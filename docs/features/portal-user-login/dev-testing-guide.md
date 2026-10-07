@@ -99,7 +99,7 @@ curl -i -b jar.txt -c jar.txt -X POST $B/v1/auth/logout -H 'Content-Type: applic
 | No cookie / revoked / expired / replayed cookie | refresh | `401 {"error":"invalid_refresh_token"}` and the cookie is cleared |
 | Wrong current password | change-password | `401 {"error":"invalid_credentials"}` (not an expired token) |
 | Over rate limit | any `/v1/auth/*` | `429` |
-| Human token on `/v1/crypto-keys` | GET | `403` (known gap, section 9) |
+| Human token on `/v1/crypto-keys` | GET | `200` (master admin passes `KeyAdminOrMasterAdmin`) |
 
 **VS Endpoints Explorer / `.http` files do not keep cookies.** To test refresh from them, set `dotnet user-secrets set "Auth:User:ReturnRefreshTokenInBody" "true" --project src/Host/SBQR.Api`, restart, and send `{"refreshToken":"<value>"}`. Remove the secret afterwards (`dotnet user-secrets remove "Auth:User:ReturnRefreshTokenInBody" --project src/Host/SBQR.Api`). Never leave it on for the portal.
 
@@ -146,7 +146,7 @@ Open DevTools: Application tab (Cookies, Local storage) and Network tab.
 | 16 | Stop the API, reload | `/login`, hint kept; start API, reload: signed in again |
 | 17 | Sign in with a wrong password | "Invalid username or password." |
 | 18 | 11 logins in a minute | "Too many sign-in attempts." (429) |
-| 19 | Onboarding > signing key step | `403` from `/v1/crypto-keys` (known gap) |
+| 19 | Onboarding > signing key step | Key is created (`POST /v1/crypto-keys` 2xx); Review step then activates the tenant |
 
 ## 8. DB checks
 
@@ -182,7 +182,6 @@ Audit events to expect: `auth.login.succeeded`, `auth.token.refreshed`, `auth.to
 
 | Symptom | Cause |
 |---|---|
-| `403` on `/v1/crypto-keys` | The `KeyAdmin` policy only accepts scopes `admin` / `key-admin`. A user token has scope `user`. Backend follow-up: admit `MasterAdmin` |
 | Institution (tenant) users cannot sign in | Only platform users log in; token has no tenant id. The `fi` portal surface is built but unreachable |
 | No users list/create/disable UI | The API has no users CRUD. Accounts come from `--seed-admin` |
 | `/v1/auth/me` always says `mustChangePassword: false` | Claim is never issued. The portal reads `mustChangePassword` from the login/refresh `user` object |
