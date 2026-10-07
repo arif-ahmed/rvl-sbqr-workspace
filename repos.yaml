@@ -10,7 +10,7 @@ repos:
     path: rvl-sbqr-portal
     url: https://github.com/arif-ahmed/rvl-sbqr-portal.git
     tracked_branch: main
-    pinned_sha: 750e3d62ab5b6673e6822b21d69b7494c4a5f996
+    pinned_sha: 8aa5f5ca3a2667a22a1d7af6870739cad7c6715b
     purpose: Web portal for RVL staff (Admin, Finance) and financial institutions
     note: Worktree currently on feature/institution-onboarding-api (drift vs tracked branch — see drift report).
 
@@ -25,7 +25,7 @@ repos:
     path: rvl-secure-bqr-manager
     url: https://github.com/Relief-Validation/rvl-secure-bqr-manager.git
     tracked_branch: feature/mtls-server
-    pinned_sha: 30df4cccce9dc27718fe0eb4be57a52f988c5d57
+    pinned_sha: 4472a6be77680380dadd739c07dc094c6bfd9ef0
     purpose: Secure BQR manager — QR issue/verify API backend (SBQR.Api); hosts the postgres-mcp dev tool used by workspace MCP configs
     note: >-
       Pinned to feature/institution-onboarding (not the tracked_branch feature/mtls-server).
