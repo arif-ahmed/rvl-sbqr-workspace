@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>External Bank Mock (Option A) — Sign-off Report</title>
+<style>
+  :root { color-scheme: light; }
+  body { font: 15px/1.55 -apple-system, "Segoe UI", Roboto, sans-serif; color: #1c2733; background: #f4f6f9; margin: 0; }
+  main { max-width: 960px; margin: 0 auto; padding: 32px 24px 64px; }
+  h1 { font-size: 22px; margin: 0 0 4px; }
+  h2 { font-size: 16px; margin: 32px 0 8px; border-bottom: 2px solid #dde4ea; padding-bottom: 4px; }
+  .meta { color: #5b6b7b; font-size: 13px; margin-bottom: 20px; }
+  .badges { display: flex; gap: 10px; flex-wrap: wrap; margin: 16px 0; }
+  .badge { padding: 6px 14px; border-radius: 999px; font-size: 13px; font-weight: 600; border: 1px solid; }
+  .pass { background: #e7f6ee; border-color: #b7e2cb; color: #0b7a4b; }
+  .defer { background: #fef3c7; border-color: #f3ddab; color: #92600a; }
+  table { border-collapse: collapse; width: 100%; margin: 8px 0 16px; font-size: 14px; background: #fff; }
+  th, td { border: 1px solid #dde4ea; padding: 7px 10px; text-align: left; vertical-align: top; }
+  th { background: #eef1f6; font-size: 13px; }
+  code, .mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 12.5px; }
+  .ok { color: #0b7a4b; font-weight: 600; }
+  .warn { color: #92600a; font-weight: 600; }
+  ul { margin: 6px 0; padding-left: 22px; }
+  .note { background: #fff8e6; border: 1px solid #f3ddab; border-radius: 8px; padding: 10px 14px; font-size: 13.5px; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>External Bank Mock (Option A: Zero Migration) — Sign-off Report</h1>
+<p class="meta">
+  Plan: <code>docs/external-bank-mock-option-a.md</code> ·
+  Module: <code>rvl-sbqr-mocks</code> (<code>services/external-bank-mock/</code>) ·
+  Date: 2026-10-12 ·
+  Environments: local <code>docker compose</code> (service <code>ext-bank-mock</code> :5205, volume <code>ext-bank-keys</code>)
+  and Fly.io <code>extbank-mock.fly.dev</code> (region <code>sin</code>, volume <code>extbank_keys</code>)
+</p>
+
+<div class="badges">
+  <span class="badge pass">MOCK IMPLEMENTATION — PASS</span>
+  <span class="badge pass">DEMO SAFETY — PASS</span>
+  <span class="badge pass">CODEC CONFORMANCE — PASS</span>
+  <span class="badge pass">FLY DEPLOY — VERIFIED</span>
+  <span class="badge defer">PLATFORM-SIDE DEMO (plan §6) — DEFERRED per plan §7a</span>
+</div>
+
+<h2>1. Plan compliance matrix (§4 build scope)</h2>
+<table>
+  <tr><th>Plan item</th><th>Status</th><th>Evidence</th></tr>
+  <tr><td>4.1 layout — <code>server.js</code> (node:crypto + qrcode, no framework), <code>ui/index.html</code>, Dockerfile, README, fly config</td><td class="ok">PASS</td><td><code>src/server.js</code> (<code>node:http</code>, single dep <code>qrcode</code>), <code>src/ui/index.html</code>, <code>Dockerfile</code>, <code>README.md</code>, <code>fly.extbank.toml</code></td></tr>
+  <tr><td>4.2 env config — PORT, BANK_ID, BANK_NAME, BANK_TAGLINE, BANK_PRODUCT, INSTITUTION_ID, PRIVATE_KEY_PEM_PATH, CUSTOMERS_FILE</td><td class="ok">PASS</td><td>Dockerfile <code>ENV</code> defaults, <code>fly.extbank.toml [env]</code>, compose <code>environment</code>; all read in <code>server.js</code></td></tr>
+  <tr><td>4.2 branding safety — fictional identity, <code>X-Demo-Service</code> + <code>X-Robots-Tag: noindex</code> on every response, persistent simulation banner</td><td class="ok">PASS</td><td><code>server.js</code> <code>DEMO_HEADERS</code> on all responses (incl. 404/HEAD — verified live on Fly); UI demo bar + <code>meta robots</code>; fictional "Shapla Commercial Bank PLC" verified non-colliding with any real Bangladeshi bank</td></tr>
+  <tr><td>4.3 <code>POST /api/keys/generate</code> — Ed25519 keypair, private PEM persisted to volume (0600), public PEM + SHA-256 fingerprint returned</td><td class="ok">PASS</td><td><code>server.js</code>; persistence verified across <code>docker compose --force-recreate</code> and a Fly machine restart</td></tr>
+  <tr><td>4.3 <code>GET /api/keys/public</code> — onboarding payload for copy-paste</td><td class="ok">PASS</td><td>Returns <code>institutionId / institutionCode / instituteType / institutionName / publicKeyPem</code> + fingerprint (verified on Fly)</td></tr>
+  <tr><td>4.3 <code>POST /api/qr/generate</code> — EMVCo build, sign <code>name‖pan</code>, Base64 → tags 80/81, CRC</td><td class="ok">PASS</td><td>Returns <code>emvcoString, qrPngDataUrl, signatureBase64, institutionId</code> + transaction <code>reference</code> (verified on Fly 2026-10-12: dynamic QR Tag 01=12, 88-char signature split 44/44, CRC <code>B855</code>)</td></tr>
+  <tr><td>4.3 <code>GET /healthz</code></td><td class="ok">PASS</td><td>Branding + <code>keyLoaded</code> + fingerprint; used as Docker + Fly health check</td></tr>
+  <tr><td>4.4 UI — name/pan/amount fields, EMVCo string copy, QR PNG download, no verification, roster picker, receipt output with reference, dark/light mode</td><td class="ok">PASS</td><td><code>src/ui/index.html</code>; pre-paint theme resolution (no FOUC), persisted toggle; customer picker from <code>/api/customers</code></td></tr>
+  <tr><td>4.5 compose service on :5205</td><td class="ok">PASS</td><td><code>docker-compose.yml</code> service <code>ext-bank-mock</code> + named volume <code>ext-bank-keys</code></td></tr>
+  <tr><td>§7 out-of-scope respected — no payer-side verification in the mock</td><td class="ok">PASS</td><td>No verify endpoints exist (removed by decision 2026-10-12: an external bank cannot fetch the trust store's FI public keys); <code>/api/qr/verify</code> returns 404</td></tr>
+</table>
+
+<h2>2. Verification evidence</h2>
+<table>
+  <tr><th>Check</th><th>Result</th><th>Detail</th></tr>
+  <tr><td>Codec conformance vs platform parser (<code>QrPayloadParser</code> rules)</td><td class="ok">PASS</td><td>Standalone mirror script asserted: TLV tokenize, CRC-16/CCITT-FALSE over payload + "6304", mandatory tags (00,01,26,52,53,58,59,60,63), Tag 26 sub-shape (GUID <code>bd.org.bb.npsb</code>, type ≤05, 4-digit id, PAN ≤19B), per-field byte caps</td></tr>
+  <tr><td>Ed25519 signature round-trip (SPKI PEM)</td><td class="ok">PASS</td><td>Mock signature verifies against its SPKI public key using the same verify input the platform reconstructs (<code>name‖pan</code>, whitespace-stripped name)</td></tr>
+  <tr><td>Fingerprint algorithm parity</td><td class="ok">PASS</td><td>Mock's SHA-256-over-ASCII-trimmed-PEM (lowercase hex) matches <code>institution_keys.public_key_sha256</code> computation</td></tr>
+  <tr><td>Tamper: name/pan modification (with TLV re-length)</td><td class="ok">PASS</td><td>Signature verification fails — maps to platform <code>INVALID_SIGNATURE</code></td></tr>
+  <tr><td>Key rotation</td><td class="ok">PASS</td><td>Pre-rotation QR fails against rotated (active) key — platform historical-key fallback is the §6 deferred demo</td></tr>
+  <tr><td>Static vs dynamic differentiation</td><td class="ok">PASS</td><td>Amount absent → Tag 01=<code>11</code> (static); amount present → <code>12</code> + Tag 54 (dynamic)</td></tr>
+  <tr><td>Private-key persistence</td><td class="ok">PASS</td><td>Local: survives <code>--force-recreate</code>. Fly: machine restart 2026-10-12 → <code>keyLoaded: true</code>, fingerprint unchanged (<code>660f6dc6…f29f9d2</code>)</td></tr>
+  <tr><td>Fly deploy (<code>extbank-mock.fly.dev</code>)</td><td class="ok">PASS</td><td>Health 200; QR generation end-to-end; demo headers on every response; branded UI with simulation banner served</td></tr>
+  <tr><td>Private key confinement</td><td class="ok">PASS</td><td>Key lives only in the mounted volume (mode 0600); no key material in the repo tree (secrets scan clean)</td></tr>
+</table>
+
+<h2>3. Deferred — platform-side demo (plan §6)</h2>
+<p>The following §6 checks require a running <code>rvl-secure-bqr-manager</code> + Postgres + a MasterAdmin JWT, and are <b>deferred by the plan's own §7a</b>, not omitted:</p>
+<ul>
+  <li>Upsert external key → <code>ListInstitutions</code> shows it.</li>
+  <li>Mock QR → <code>ValidateQr</code> as tenant payer → <code>VALID, TrustSource=TRUST_DIRECTORY</code>.</li>
+  <li>Tampered QR → <code>INVALID_SIGNATURE</code>; unknown institution → <code>KEY_NOT_FOUND</code>.</li>
+  <li>Rotation → old QR <code>VALID</code> via historical fallback (<code>VERIFIED_HISTORICAL_KEY</code>).</li>
+</ul>
+<p>Runbook: plan §5. Note for the deployed instance: seed the Fly key (fingerprint <code>660f6dc6c999d4c94e6d23dfad8575d6b289eca69b431ab49b532b8f7f29f9d2</code>, PEM at <code>https://extbank-mock.fly.dev/api/keys/public</code>) — it differs from the local docker volume key.</p>
+
+<h2>4. Demo-safety sign-off</h2>
+<ul>
+  <li>Fictional identity: "Shapla Commercial Bank PLC / Shapla Pay" — checked against real Bangladeshi banks; no collision.</li>
+  <li>Machine-visible markers: <code>X-Demo-Service: external-bank-mock</code> + <code>X-Robots-Tag: noindex, nofollow</code> on every response, including errors.</li>
+  <li>Human-visible marker: persistent "SIMULATION — DEMO SERVICE" banner across themes.</li>
+  <li>Institution code <code>039999</code> (type <code>03</code> + reserved <code>99xx</code>) — cannot collide with BB REGISTRY-seeded codes; <code>DailyTrustSyncService</code> never touches LOCAL rows.</li>
+  <li>Guardrail documented in README: the mock's public key must never be seeded into a production trust directory.</li>
+</ul>
+
+<div class="note"><b>Verdict:</b> mock-side scope of <code>docs/external-bank-mock-option-a.md</code> is implemented and verified (local + Fly). Platform-side §6 demo deferred per §7a and tracked in <code>docs/plans/README.md</code>.</div>
+
+</main>
+</body>
+</html>

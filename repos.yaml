@@ -54,5 +54,5 @@ repos:
     path: rvl-sbqr-mocks
     url: https://github.com/arif-ahmed/rvl-sbqr-mocks.git
     tracked_branch: main
-    pinned_sha: 0f2d2e9a8f263fc54594752c9d4617cb4941d75a
+    pinned_sha: b6c4dd0ce4afdda8fc4398f10f6fc1eb1e55c77c
     purpose: Mock services

@@ -11,6 +11,7 @@ Status values: `proposed` → `active` → `implementing` → `in-review` → `d
 | Institution onboarding | `docs/features/institution-onboarding/implementation-guide.md` + `.zcode/plans/plan-sess_14917fdb-*.md` (wizard split) | `rvl-sbqr-portal` · `feature/institution-onboarding-api`, `rvl-secure-bqr-manager` · `feature/institution-onboarding` | — | implementing |
 | Metering & billing | `docs/features/metering-billing/prd.md`, signoff reports (`*-plan-signoff-report.html`) | `rvl-secure-bqr-manager` (metering/billing modules) | see `docs/JIRA-FACTS.md` + `docs/features/metering-billing/traceability.md` | in-review |
 | Logging plan | `docs/logging-plan.md` | cross-cutting | — | done (evidence: `reports/logging-plan-e2e/`) |
+| External bank mock (Option A) | `docs/external-bank-mock-option-a.md` | `rvl-sbqr-mocks` · `main` | — | done (mock-side; evidence: `docs/external-bank-mock-option-a-signoff-report.html`; platform-side §6 demo pending — needs running manager) |
 
 ## Convention for new plans
 
