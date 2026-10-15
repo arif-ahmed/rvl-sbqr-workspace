@@ -12,6 +12,7 @@ Status values: `proposed` → `active` → `implementing` → `in-review` → `d
 | Metering & billing | `docs/features/metering-billing/prd.md`, signoff reports (`*-plan-signoff-report.html`) | `rvl-secure-bqr-manager` (metering/billing modules) | see `docs/JIRA-FACTS.md` + `docs/features/metering-billing/traceability.md` | in-review |
 | Logging plan | `docs/logging-plan.md` | cross-cutting | — | done (evidence: `reports/logging-plan-e2e/`) |
 | External bank mock (Option A) | `docs/external-bank-mock-option-a.md` | `rvl-sbqr-mocks` · `main` | — | done (mock-side; evidence: `docs/external-bank-mock-option-a-signoff-report.html`; platform-side §6 demo pending — needs running manager) |
+| Postman + Newman API testing | `docs/plans/postman-newman-api-testing/plan.md` | `rvl-sbqr-workspace` · `main` (tooling); `rvl-secure-bqr-manager` · `rvl-sbqr-portal` · `rvl-sbqr-fi-gateway` · `rvl-bb-trust-store` · `feature/postman-smoke` (smoke collection) | TBD | proposed |
 
 ## Convention for new plans
 

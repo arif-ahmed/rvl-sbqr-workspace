@@ -1,0 +1,17 @@
+# status.yaml — machine-readable plan status.
+# Values: proposed | active | implementing | in-review | done
+plan: postman-newman-api-testing
+status: proposed
+jira: TBD
+submodules:
+  - repo: rvl-sbqr-workspace
+    branch: main
+  - repo: rvl-secure-bqr-manager
+    branch: feature/postman-smoke
+  - repo: rvl-sbqr-portal
+    branch: feature/postman-smoke
+  - repo: rvl-sbqr-fi-gateway
+    branch: feature/postman-smoke
+  - repo: rvl-bb-trust-store
+    branch: feature/postman-smoke
+updated: 2026-10-14
