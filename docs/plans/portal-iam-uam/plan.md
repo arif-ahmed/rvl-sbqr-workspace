@@ -6,6 +6,8 @@
 > (evidence: `rvl-secure-bqr-manager/docs/evidence/2026-10-17-iam-uam-phase-d.md`).
 > Reviewable mock: `docs/mocks/iam-portal/index.html` (static, open in a browser; use the
 > Address switch, "Proposal notes" and the Route map page).
+> How and in what order: [`implementation-plan.md`](implementation-plan.md) (phases, files, gates,
+> environments and edge). Local setup: [`docs/features/portal-host-tenancy/local-dev-guide.md`](../../features/portal-host-tenancy/local-dev-guide.md).
 
 ## Problem
 
