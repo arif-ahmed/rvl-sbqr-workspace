@@ -13,6 +13,7 @@ Status values: `proposed` → `active` → `implementing` → `in-review` → `d
 | Logging plan | `docs/logging-plan.md` | cross-cutting | — | done (evidence: `reports/logging-plan-e2e/`) |
 | External bank mock (Option A) | `docs/external-bank-mock-option-a.md` | `rvl-sbqr-mocks` · `main` | — | done (mock-side; evidence: `docs/external-bank-mock-option-a-signoff-report.html`; platform-side §6 demo pending — needs running manager) |
 | Postman + Newman API testing | `docs/plans/postman-newman-api-testing/plan.md` | `rvl-sbqr-workspace` · `main` (tooling); `rvl-secure-bqr-manager` · `rvl-sbqr-portal` · `rvl-sbqr-fi-gateway` · `rvl-bb-trust-store` · `feature/postman-smoke` (smoke collection) | TBD | proposed |
+| Portal IAM / UAM | `docs/plans/portal-iam-uam/plan.md` (mock: `docs/mocks/iam-portal/index.html`) | `rvl-sbqr-portal` · `feature/iam-uam-portal` (backend: `rvl-secure-bqr-manager` · `feature/iam-uam-users-subdomain`) | - | proposed |
 
 ## Convention for new plans
 

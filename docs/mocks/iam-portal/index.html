@@ -1,0 +1,849 @@
+<!doctype html>
+<html lang="en" data-surface="staff">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Portal IAM · Proposed Mock</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Montserrat:wght@500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* Tokens copied from rvl-sbqr-portal/src/index.css so the mock matches the real portal. */
+:root{
+  --font:'Inter',system-ui,-apple-system,'Segoe UI',sans-serif;
+  --head:'Montserrat','Inter',system-ui,sans-serif;
+  --mono:'JetBrains Mono',ui-monospace,Consolas,monospace;
+  --accent:#14935a; --accent-2:#0e7547; --accent-soft:#e3f4eb; --on-accent:#fff;
+  --side:#052b52; --side-2:#0a3d70; --side-text:#a9c3de; --side-head:#7897bb;
+  --bg:#f4f6f5; --surface:#fff; --surface-2:#f9faf9; --line:#e3e8e5; --line-2:#cdd5d1;
+  --text:#101714; --text-2:#46524c; --text-3:#76827c;
+  --ok:#14935a; --ok-bg:#e3f4eb; --warn:#9a5b00; --warn-bg:#fff2d9; --bad:#c4302b; --bad-bg:#fdeceb; --info:#1d5fb8; --info-bg:#e8f0fc;
+  --new:#7a3fd1; --new-bg:#f1e9fc;
+  --shadow:0 1px 2px rgba(16,23,20,.04),0 4px 16px rgba(16,23,20,.04);
+  --mb:44px;
+}
+html[data-surface="fi"]{--accent:#1c56c9;--accent-2:#1444a3;--accent-soft:#e6eefc;--side:#0a2f66;--side-2:#12428a;--side-text:#b3c8ec;--side-head:#84a0d2}
+@media (prefers-color-scheme:dark){
+  html:not([data-theme="light"]){
+    --bg:#0c0f0e;--surface:#141917;--surface-2:#181e1b;--line:#252d29;--line-2:#37413c;--text:#edf2ef;--text-2:#a8b4ae;--text-3:#78857e;--shadow:none;
+    --accent:#2fc27f;--accent-2:#52d99a;--accent-soft:#12372a;--on-accent:#05130c;--side:#04162b;--side-2:#082440;
+    --ok:#3ccf8a;--ok-bg:#12372a;--warn:#f0b24d;--warn-bg:#3a2b0f;--bad:#ff7d78;--bad-bg:#3d1c1b;--info:#7db2ff;--info-bg:#172a46;--new:#b794f4;--new-bg:#2a1f45}
+  html[data-surface="fi"]:not([data-theme="light"]){--accent:#6a9bff;--accent-2:#8fb4ff;--accent-soft:#16294f;--on-accent:#06122b}
+}
+html[data-theme="dark"]{
+  --bg:#0c0f0e;--surface:#141917;--surface-2:#181e1b;--line:#252d29;--line-2:#37413c;--text:#edf2ef;--text-2:#a8b4ae;--text-3:#78857e;--shadow:none;
+  --accent:#2fc27f;--accent-2:#52d99a;--accent-soft:#12372a;--on-accent:#05130c;--side:#04162b;--side-2:#082440;
+  --ok:#3ccf8a;--ok-bg:#12372a;--warn:#f0b24d;--warn-bg:#3a2b0f;--bad:#ff7d78;--bad-bg:#3d1c1b;--info:#7db2ff;--info-bg:#172a46;--new:#b794f4;--new-bg:#2a1f45}
+html[data-theme="dark"][data-surface="fi"]{--accent:#6a9bff;--accent-2:#8fb4ff;--accent-soft:#16294f;--on-accent:#06122b}
+
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font:14px/20px var(--font);color:var(--text);background:var(--bg);-webkit-font-smoothing:antialiased}
+h1,h2,h3{margin:0}
+button{font:inherit;color:inherit;cursor:pointer}
+a{color:var(--accent-2);text-decoration:none}
+.mono{font-family:var(--mono);font-size:12.5px}
+.num{font-variant-numeric:tabular-nums}
+.muted{color:var(--text-2)} .faint{color:var(--text-3)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+/* ---------- mock control bar (not part of the proposal) ---------- */
+#mockbar{position:sticky;top:0;z-index:100;height:var(--mb);background:#1b1530;color:#d9d0f3;display:flex;align-items:center;gap:14px;padding:0 16px;font-size:12.5px;overflow-x:auto;white-space:nowrap}
+#mockbar b{color:#fff;font-family:var(--head)}
+#mockbar select,#mockbar button{background:#2b2250;color:#fff;border:1px solid #4a3d82;border-radius:8px;padding:5px 9px;font-size:12.5px}
+#mockbar button.on{background:var(--new);border-color:var(--new)}
+#mockbar .sp{flex:1}
+#mockbar label{display:flex;align-items:center;gap:6px}
+
+/* ---------- app shell ---------- */
+.app{display:grid;grid-template-columns:244px 1fr;min-height:calc(100svh - var(--mb))}
+.side{background:var(--side);color:var(--side-text);padding:18px 14px;position:sticky;top:var(--mb);height:calc(100svh - var(--mb));overflow:auto}
+.brand{display:flex;align-items:center;gap:10px;color:#fff;font:700 14px var(--head);padding:4px 8px 18px}
+.logo{width:34px;height:34px;border-radius:10px;background:#fff;color:var(--accent-2);display:grid;place-items:center}
+.brand small{display:block;font:500 11px var(--font);color:var(--side-head)}
+.nav-h{font:600 11px var(--font);letter-spacing:.06em;text-transform:uppercase;color:var(--side-head);padding:16px 10px 6px}
+.nav a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:999px;color:var(--side-text);font-weight:500;margin-bottom:2px}
+.nav a:hover{background:rgba(255,255,255,.07)}
+.nav a.on{background:var(--accent);color:var(--on-accent)}
+.nav a .tag{margin-left:auto}
+.tag{font:700 9.5px var(--font);letter-spacing:.05em;text-transform:uppercase;background:var(--new);color:#fff;border-radius:999px;padding:2px 7px}
+.main{min-width:0}
+.top{height:64px;background:var(--surface);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:0 28px;position:sticky;top:var(--mb);z-index:20}
+.top h1{font:700 18px var(--head)}
+.top .sp{flex:1}
+.acct{display:flex;align-items:center;gap:10px;border:1px solid transparent;border-radius:999px;padding:3px 12px 3px 3px;background:none;position:relative}
+.acct:hover{border-color:var(--line);background:var(--surface-2)}
+.av{width:32px;height:32px;border-radius:50%;background:var(--accent-soft);color:var(--accent-2);display:grid;place-items:center;font-weight:700;font-size:12px}
+.acct .who{text-align:left;line-height:16px}.acct .who b{display:block;font-size:13px}.acct .who span{font-size:11.5px;color:var(--text-3)}
+.menu{position:absolute;right:0;top:46px;min-width:230px;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.14);overflow:hidden;z-index:40;text-align:left}
+.menu .h{padding:11px 14px;border-bottom:1px solid var(--line)}
+.menu button{display:flex;gap:10px;width:100%;padding:10px 14px;border:0;background:none;text-align:left}
+.menu button:hover{background:var(--surface-2)}
+.content{max-width:1360px;padding:28px}
+.page-h{display:flex;align-items:flex-end;gap:16px;margin-bottom:18px;flex-wrap:wrap}
+.page-h h2{font:700 24px/30px var(--head);letter-spacing:-.01em}
+.page-h p{margin:4px 0 0;color:var(--text-2)}
+.page-h .sp{flex:1}
+
+/* ---------- components ---------- */
+.btn{height:38px;padding:0 15px;border-radius:9px;border:1px solid var(--line-2);background:var(--surface);font-weight:600;display:inline-flex;align-items:center;gap:8px;white-space:nowrap}
+.btn:hover:not(:disabled){background:var(--surface-2)}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--on-accent)}
+.btn.primary:hover:not(:disabled){background:var(--accent-2)}
+.btn.danger{color:var(--bad);border-color:var(--bad)}
+.btn.danger.solid{background:var(--bad);color:#fff}
+.btn.sm{height:30px;padding:0 11px;font-size:13px}
+.btn.ghost{border-color:transparent;background:none}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:2px 10px 2px 8px;font-size:12px;font-weight:600;line-height:18px;white-space:nowrap}
+.chip:before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor}
+.chip.ok{color:var(--ok);background:var(--ok-bg)}.chip.warn{color:var(--warn);background:var(--warn-bg)}.chip.bad{color:var(--bad);background:var(--bad-bg)}.chip.info{color:var(--info);background:var(--info-bg)}
+.chip.plain{color:var(--text-2);background:var(--surface-2);border:1px solid var(--line)}.chip.plain:before{display:none}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:var(--shadow);margin-bottom:18px}
+.card-h{display:flex;align-items:center;gap:12px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.card-h h3{font:600 15px var(--font)}.card-h .sp{flex:1}
+.card-b{padding:18px}
+.kpis{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-bottom:18px}
+.kpi{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+.kpi span{color:var(--text-3);font-size:12.5px}.kpi b{display:block;font:600 26px/34px var(--font)}
+table{width:100%;border-collapse:collapse}
+th{background:var(--surface-2);text-align:left;font-size:12px;font-weight:600;color:var(--text-2);padding:9px 16px;border-bottom:1px solid var(--line);white-space:nowrap}
+td{padding:11px 16px;border-bottom:1px solid var(--line);vertical-align:middle}
+tr.click{cursor:pointer}tr.click:hover td{background:var(--surface-2)}
+tr:last-child td{border-bottom:0}
+.tscroll{overflow-x:auto}
+.u-name b{display:block}.u-name span{color:var(--text-3)}
+.empty{padding:36px;text-align:center;color:var(--text-3)}
+.filters{display:flex;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.field{margin-bottom:14px}
+.field label{display:block;font-weight:600;font-size:13px;margin-bottom:5px}
+.field .hint{color:var(--text-3);font-size:12.5px;margin-top:4px}
+.field .err{color:var(--bad);font-size:12.5px;margin-top:4px}
+input,select,textarea{font:inherit;color:var(--text);background:var(--surface);border:1px solid var(--line-2);border-radius:9px;height:38px;padding:0 12px;width:100%}
+.filters input,.filters select{width:auto;min-width:150px}
+.filters input.search{min-width:240px}
+input[readonly]{background:var(--surface-2);color:var(--text-2)}
+.banner{display:flex;gap:12px;border-radius:10px;padding:12px 14px;margin-bottom:14px;border:1px solid transparent}
+.banner b{display:block}.banner p{margin:2px 0 0}
+.banner.warn{background:var(--warn-bg);color:var(--warn)}.banner.bad{background:var(--bad-bg);color:var(--bad)}.banner.info{background:var(--info-bg);color:var(--info)}.banner.ok{background:var(--ok-bg);color:var(--ok)}
+.banner .act{margin-left:auto;align-self:center}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);margin-bottom:18px}
+.tabs a{padding:10px 14px;color:var(--text-2);font-weight:600;border-bottom:2px solid transparent;margin-bottom:-1px;display:flex;gap:8px;align-items:center}
+.tabs a.on{color:var(--accent-2);border-color:var(--accent)}
+.scrim{position:fixed;inset:0;background:rgba(10,16,14,.45);z-index:60}
+.drawer{position:fixed;top:0;right:0;bottom:0;width:480px;max-width:100%;background:var(--surface);z-index:61;display:flex;flex-direction:column;box-shadow:-8px 0 30px rgba(0,0,0,.18)}
+.drawer-h{padding:18px 20px;border-bottom:1px solid var(--line);display:flex;gap:12px;align-items:flex-start}
+.drawer-h h3{font:700 18px var(--head)}.drawer-h .sp{flex:1}
+.drawer-b{padding:20px;overflow:auto;flex:1}
+.drawer-f{padding:14px 20px;border-top:1px solid var(--line);display:flex;gap:10px;justify-content:flex-end}
+.dialog{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);width:480px;max-width:calc(100% - 32px);background:var(--surface);border-radius:14px;z-index:71;box-shadow:0 20px 60px rgba(0,0,0,.3);padding:22px}
+.dialog h3{font:700 18px var(--head);margin-bottom:6px}
+.dialog .f{display:flex;gap:10px;justify-content:flex-end;margin-top:18px}
+.scrim.d{z-index:70}
+.dl{display:grid;grid-template-columns:130px 1fr;gap:9px 14px;margin:0 0 20px}
+.dl dt{color:var(--text-3)}.dl dd{margin:0}
+.sec-h{font:600 12px var(--font);letter-spacing:.05em;text-transform:uppercase;color:var(--text-3);margin:22px 0 10px}
+.actions{display:grid;gap:8px}
+.actions .btn{justify-content:flex-start;width:100%}
+.secret{font-family:var(--mono);font-size:16px;letter-spacing:.04em;background:var(--surface-2);border:1px dashed var(--line-2);border-radius:10px;padding:14px;display:flex;justify-content:space-between;align-items:center;gap:10px;word-break:break-all}
+.toast{position:fixed;top:calc(var(--mb) + 14px);left:50%;transform:translateX(-50%);background:var(--ok);color:#fff;padding:10px 18px;border-radius:999px;font-weight:600;z-index:200;box-shadow:0 6px 20px rgba(0,0,0,.2)}
+.toast.bad{background:var(--bad)}
+.stepper{display:flex;gap:0;margin-bottom:22px;counter-reset:s;flex-wrap:wrap}
+.stepper button{flex:1;min-width:130px;display:flex;align-items:center;gap:10px;padding:10px 12px;border:0;border-bottom:3px solid var(--line);background:none;text-align:left;color:var(--text-3);font-weight:600;cursor:pointer}
+.stepper button i{font-style:normal;width:24px;height:24px;border-radius:50%;border:1.5px solid currentColor;display:grid;place-items:center;font-size:12px}
+.stepper button.done{color:var(--ok);border-color:var(--ok)}.stepper button.done i{background:var(--ok);color:#fff;border-color:var(--ok)}
+.stepper button.on{color:var(--accent-2);border-color:var(--accent)}
+.row-s{display:flex;gap:12px;align-items:center;padding:12px 0;border-bottom:1px solid var(--line)}
+.row-s:last-child{border:0}.row-s .sp{flex:1}
+.dot{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-size:12px;color:#fff;background:var(--ok)}.dot.todo{background:var(--warn)}
+.me{font-size:12px;color:var(--text-3);margin-left:6px}
+.stub{border:1px dashed var(--line-2);border-radius:12px;padding:40px;text-align:center;color:var(--text-3);background:var(--surface)}
+
+/* ---------- proposal annotations ---------- */
+.note{display:none;border:1.5px dashed var(--new);background:var(--new-bg);color:var(--text);border-radius:12px;padding:12px 16px;margin-bottom:18px;font-size:13px}
+body.notes .note{display:block}
+.note h4{margin:0 0 6px;font:700 12px var(--font);letter-spacing:.05em;text-transform:uppercase;color:var(--new)}
+.note ul{margin:0;padding-left:18px}.note li{margin:2px 0}
+.note code,td code{font-family:var(--mono);font-size:12px;background:rgba(122,63,209,.1);padding:1px 5px;border-radius:5px}
+
+/* ---------- login ---------- */
+.login{display:grid;grid-template-columns:1.05fr 1fr;min-height:calc(100svh - var(--mb))}
+.login .hero{background:linear-gradient(135deg,var(--side),var(--side-2));color:#fff;padding:44px;display:flex;flex-direction:column;justify-content:space-between}
+.login .hero h2{font:700 32px/40px var(--head);max-width:16ch;margin:0 0 14px}
+.login .form{display:grid;place-items:center;padding:32px}
+.login .form>div{width:100%;max-width:420px}
+.login h1{font:700 26px/32px var(--head);margin-bottom:6px}
+.qa{display:flex;gap:6px;flex-wrap:wrap;margin-top:22px;padding-top:16px;border-top:1px dashed var(--new)}
+.qa small{width:100%;color:var(--new);font-weight:700;letter-spacing:.05em;text-transform:uppercase;font-size:11px}
+.center{min-height:calc(100svh - var(--mb));display:grid;place-items:center;padding:24px;background:var(--surface-2)}
+.center .card{max-width:440px;width:100%}
+
+@media (max-width:900px){
+  .app{grid-template-columns:1fr}.side{display:none}
+  .kpis{grid-template-columns:repeat(2,1fr)}
+  .login{grid-template-columns:1fr}.login .hero{display:none}
+  .content{padding:18px 16px}.top{padding:0 16px}
+  .dl{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body class="notes">
+
+<div id="mockbar">
+  <b>IAM portal mock</b>
+  <label>Viewing as
+    <select id="persona">
+      <option value="admin">Platform Master Admin · MASTER_ADMIN</option>
+      <option value="ops">Platform Ops · OPS</option>
+      <option value="fiadmin">Sonali Bank · FSP_MASTER_ADMIN</option>
+      <option value="fiuser">Sonali Bank teller · FSP_USER</option>
+      <option value="anon">Signed out</option>
+    </select>
+  </label>
+  <button id="btnNotes" class="on">Proposal notes</button>
+  <button id="btnRoutes">Route map</button>
+  <button id="btnReset">Reset data</button>
+  <button id="btnTheme">Light / dark</button>
+  <span class="sp"></span>
+  <span>Static mock · no network · changes live only in this tab</span>
+</div>
+<div id="root"></div>
+<div id="layer"></div>
+<div id="toast"></div>
+
+<script>
+/* =====================================================================
+   Fake data. Lives only in this mock, never in the portal's src/.
+   ===================================================================== */
+const NOW = '2026-10-17';
+const ROLE = {
+  MASTER_ADMIN:{label:'Master Admin',scope:'platform'}, OPS:{label:'Operations',scope:'platform'},
+  AUDITOR:{label:'Auditor',scope:'platform'}, SUPPORT:{label:'Support',scope:'platform'}, FINANCE:{label:'Finance',scope:'platform'},
+  FSP_MASTER_ADMIN:{label:'FI Master Admin',scope:'fi'}, FSP_USER:{label:'FI User',scope:'fi'}
+};
+const PLATFORM_ROLES = ['MASTER_ADMIN','OPS','AUDITOR','SUPPORT','FINANCE'];
+const FI_ROLES = ['FSP_MASTER_ADMIN','FSP_USER'];
+const STATUS_TONE = {ACTIVE:'ok',PENDING:'info',SUSPENDED:'warn',LOCKED:'warn',DISABLED:'bad'};
+
+function seed(){
+  return {
+    tenants:[
+      {id:'t1',name:'Sonali Bank PLC',code:'999991',status:'Active'},
+      {id:'t2',name:'Dhaka Mobile Wallet',code:'999992',status:'Active'},
+      {id:'t3',name:'Padma Finance Ltd',code:'999993',status:'Pending'},
+    ],
+    users:[
+      {id:'u1',tenantId:null,username:'admin',displayName:'Nusrat Jahan',email:'admin@rvl.com.bd',role:'MASTER_ADMIN',status:'ACTIVE',mustChange:false,last:'2026-10-17 09:12'},
+      {id:'u2',tenantId:null,username:'ops.rahim',displayName:'Rahim Uddin',email:'rahim@rvl.com.bd',role:'OPS',status:'ACTIVE',mustChange:false,last:'2026-10-16 17:40'},
+      {id:'u3',tenantId:null,username:'auditor.nila',displayName:'Nila Sultana',email:'nila@rvl.com.bd',role:'AUDITOR',status:'ACTIVE',mustChange:true,last:'—'},
+      {id:'u4',tenantId:'t1',username:'999991-admin',displayName:'Sonali IT Admin',email:'it.admin@sonalibank.example',role:'FSP_MASTER_ADMIN',status:'ACTIVE',mustChange:false,last:'2026-10-17 08:55'},
+      {id:'u5',tenantId:'t1',username:'teller.karim',displayName:'Karim Hossain',email:'karim@sonalibank.example',role:'FSP_USER',status:'ACTIVE',mustChange:false,last:'2026-10-17 08:20'},
+      {id:'u6',tenantId:'t1',username:'teller.joya',displayName:'Joya Akter',email:'joya@sonalibank.example',role:'FSP_USER',status:'LOCKED',mustChange:false,last:'2026-10-15 11:02'},
+      {id:'u7',tenantId:'t2',username:'999992-admin',displayName:'DMW Admin One',email:'admin1@dmw.example',role:'FSP_MASTER_ADMIN',status:'ACTIVE',mustChange:false,last:'2026-10-16 15:30'},
+      {id:'u8',tenantId:'t2',username:'dmw.admin2',displayName:'DMW Admin Two',email:'admin2@dmw.example',role:'FSP_MASTER_ADMIN',status:'ACTIVE',mustChange:true,last:'—'},
+      {id:'u9',tenantId:'t2',username:'dmw.agent',displayName:'Sabbir Ahmed',email:'sabbir@dmw.example',role:'FSP_USER',status:'SUSPENDED',mustChange:false,last:'2026-10-10 10:15'},
+      {id:'u10',tenantId:'t2',username:'dmw.old',displayName:'Former Employee',email:'old@dmw.example',role:'FSP_USER',status:'DISABLED',mustChange:false,last:'2026-08-02 12:00'},
+    ],
+  };
+}
+const PERSONAS = {
+  admin:{userId:'u1',surface:'staff',role:'MASTER_ADMIN',name:'Nusrat Jahan',username:'admin',title:'Platform Admin'},
+  ops:{userId:'u2',surface:'staff',role:'OPS',name:'Rahim Uddin',username:'ops.rahim',title:'Operations'},
+  fiadmin:{userId:'u4',surface:'fi',role:'FSP_MASTER_ADMIN',name:'Sonali IT Admin',username:'999991-admin',title:'FI Master Admin',tenantId:'t1'},
+  fiuser:{userId:'u5',surface:'fi',role:'FSP_USER',name:'Karim Hossain',username:'teller.karim',title:'FI User',tenantId:'t1'},
+};
+
+const S = {
+  persona:'admin', data:seed(), notes:true,
+  f:{q:'',scope:'',tenant:'',role:'',status:''},
+  drawer:null,      // {kind:'user'|'create'|'edit', id, ...}
+  dialog:null,      // confirm / secret
+  draft:{}, err:{}, menu:false, onbStep:5, onbCreated:false, banner:null, pwErr:'',
+};
+const $ = (s)=>document.querySelector(s);
+const esc = (s)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const me = ()=> PERSONAS[S.persona] || null;
+const tenant = (id)=> S.data.tenants.find(t=>t.id===id);
+const user = (id)=> S.data.users.find(u=>u.id===id);
+const initials = (n)=> n.split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
+
+/* ---- tiny icon set (lucide-style paths) ---- */
+const P = {
+  home:'<path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/>',
+  bldg:'<rect x="4" y="3" width="16" height="18" rx="1"/><path d="M9 7h2M13 7h2M9 11h2M13 11h2M9 15h2M13 15h2"/>',
+  users:'<path d="M16 20v-1.5a3.5 3.5 0 0 0-3.5-3.5h-5A3.5 3.5 0 0 0 4 18.5V20"/><circle cx="10" cy="8" r="3.5"/><path d="M20 20v-1.5a3.5 3.5 0 0 0-2.5-3.35M15.5 4.7a3.5 3.5 0 0 1 0 6.6"/>',
+  shield:'<path d="M12 3 4 6v6c0 4.5 3.2 8 8 9 4.8-1 8-4.5 8-9V6z"/>',
+  card:'<rect x="2" y="5" width="20" height="14" rx="2"/><path d="M2 10h20"/>',
+  file:'<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
+  bar:'<path d="M4 20V10M10 20V4M16 20v-8M22 20H2"/>',
+  key:'<circle cx="8" cy="15" r="4"/><path d="m11 12 9-9M16 7l3 3"/>',
+  qr:'<rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><path d="M14 14h3v3h-3zM20 14v3M14 20h3M20 20h1"/>',
+  plus:'<path d="M12 5v14M5 12h14"/>',
+  x:'<path d="M18 6 6 18M6 6l12 12"/>',
+  lock:'<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>',
+  copy:'<rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h8"/>',
+  out:'<path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9"/>',
+  alert:'<path d="M12 3 2 20h20z"/><path d="M12 10v5M12 18h.01"/>',
+  info:'<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>',
+  ok:'<path d="m5 12 5 5 9-10"/>',
+  eye:'<path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>',
+};
+const ic = (n,sz=18)=>`<svg width="${sz}" height="${sz}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
+
+const chip = (tone,label)=>`<span class="chip ${tone}">${esc(label)}</span>`;
+const statusChip = (s)=>chip(STATUS_TONE[s]||'plain', s[0]+s.slice(1).toLowerCase());
+const note = (title,items)=>`<aside class="note"><h4>${esc(title)}</h4><ul>${items.map(i=>`<li>${i}</li>`).join('')}</ul></aside>`;
+const banner = (tone,title,body='',action='')=>`<div class="banner ${tone}" role="${tone==='bad'?'alert':'status'}">${ic(tone==='ok'?'ok':tone==='info'?'info':'alert',20)}<div><b>${title}</b>${body?`<p>${body}</p>`:''}</div>${action?`<div class="act">${action}</div>`:''}</div>`;
+const field = (label,id,input,{hint,err}={})=>`<div class="field"><label for="${id}">${label}</label>${input}${hint?`<div class="hint">${hint}</div>`:''}${err?`<div class="err">${err}</div>`:''}</div>`;
+const val = (k,d='')=> esc(S.draft[k] ?? d);
+const inp = (k,id,{type='text',ph='',ro=false}={})=>`<input id="${id}" type="${type}" data-draft="${k}" value="${val(k)}" placeholder="${ph}" ${ro?'readonly':''} autocomplete="off" spellcheck="false">`;
+
+/* =====================================================================
+   Nav
+   ===================================================================== */
+function navFor(p){
+  if(p.surface==='staff'){
+    const n=[
+      {to:'/staff/overview',label:'Overview',icon:'home',stub:1},
+      {to:'/staff/institutions',label:'Institutions',icon:'bldg'},
+      {to:'/staff/trust-store',label:'Trust store',icon:'shield',stub:1},
+      {h:'Billing'},
+      {to:'/staff/rates',label:'Rate cards',icon:'card',stub:1},
+      {to:'/staff/periods',label:'Billing periods',icon:'file',stub:1},
+      {h:'Platform'},
+      {to:'/staff/keys',label:'Crypto keys',icon:'key',stub:1},
+      {to:'/staff/inspector',label:'QR inspector',icon:'qr',stub:1},
+    ];
+    if(p.role==='MASTER_ADMIN'){ n.push({h:'Access'},{to:'/staff/users',label:'Users',icon:'users',tag:'New'}); }
+    return n;
+  }
+  const n=[
+    {to:'/fi/overview',label:'Overview',icon:'home',stub:1},
+    {to:'/fi/usage',label:'Usage',icon:'bar',stub:1},
+    {to:'/fi/statements',label:'Statements',icon:'file',stub:1},
+  ];
+  if(p.role==='FSP_MASTER_ADMIN'){ n.push({h:'Access'},{to:'/fi/users',label:'Users',icon:'users',tag:'New'}); }
+  return n;
+}
+
+function shell(title, body){
+  const p=me(); const path=route().path;
+  const nav=navFor(p).map(i=> i.h ? `<div class="nav-h">${i.h}</div>` :
+    `<a href="#${i.to}" class="${path===i.to||path.startsWith(i.to+'/')?'on':''}">${ic(i.icon)} ${i.label}${i.tag?`<span class="tag">${i.tag}</span>`:''}</a>`).join('');
+  const t = p.tenantId ? tenant(p.tenantId).name : 'Relief Validation Ltd';
+  return `<div class="app">
+    <aside class="side">
+      <div class="brand"><span class="logo">${ic('qr',20)}</span><div>Secure Bangla QR<small>${p.surface==='staff'?'Staff console':'Institution portal'}</small></div></div>
+      <nav class="nav">${nav}</nav>
+    </aside>
+    <div class="main">
+      <header class="top">
+        <h1>${esc(title)}</h1><span class="sp"></span>
+        ${p.surface==='fi'?`<span class="chip plain">${esc(t)}</span>`:''}
+        <button class="acct" data-act="menu" aria-label="Account menu"><span class="av">${initials(p.name)}</span><span class="who"><b>${esc(p.name)}</b><span>${esc(p.title)}</span></span>
+          ${S.menu?`<div class="menu" onclick="event.stopPropagation()"><div class="h"><b>${esc(p.name)}</b><div class="faint">${esc(p.username)} · <span class="mono">${p.role}</span></div></div>
+            <button data-act="goto" data-to="/change-password">${ic('lock')} Change password</button>
+            <button data-act="signout">${ic('out')} Sign out</button></div>`:''}</button>
+      </header>
+      <main class="content">${body}</main>
+    </div></div>`;
+}
+
+/* =====================================================================
+   Router
+   ===================================================================== */
+function route(){
+  const h=(location.hash||'').replace(/^#/,'')||'/';
+  const [path,qs]=h.split('?'); return {path:path.replace(/\/$/,'')||'/',qs};
+}
+function go(to){
+  S.drawer=null; S.dialog=null; S.menu=false; S.draft={}; S.err={};
+  const same = location.hash==='#'+to;
+  location.hash=to;
+  if(same) render();   // no hashchange fires when the route is unchanged (e.g. switching persona)
+}
+function home(){ const p=me(); return p?`/${p.surface}/overview`:'/login'; }
+
+function render(){
+  const p=me(); const {path}=route();
+  document.documentElement.dataset.surface = p?p.surface:'staff';
+  let html='';
+  if(path==='/routes') html = p?shell('Route map',routesPage()):routesPage();
+  else if(path==='/login' || (!p && path!=='/change-password')) html=loginPage();
+  else if(path==='/change-password') html=changePwPage();
+  else if(!p) html=loginPage();
+  else {
+    // Surface guard, same idea as the real <Guard surface=...>.
+    const wantSurface = path.startsWith('/staff')?'staff':path.startsWith('/fi')?'fi':null;
+    if(wantSurface && wantSurface!==p.surface){ location.hash=home(); return; }
+    html = shell(...pageFor(path,p));
+  }
+  $('#root').innerHTML=html;
+  $('#layer').innerHTML = drawerHtml()+dialogHtml();
+}
+
+function pageFor(path,p){
+  const staff=p.surface==='staff';
+  if(path==='/staff/users'){ return p.role==='MASTER_ADMIN'?['Users',usersPage(false)]:['Users',noAccess('staff')]; }
+  if(path==='/staff/institutions') return ['Institutions',institutionsPage()];
+  if(path==='/staff/institutions/new') return ['New institution',onboardingPage()];
+  let m=path.match(/^\/staff\/institutions\/(t\d)(?:\/(users|usage|billing))?$/);
+  if(m) return ['Institution',institutionDetail(m[1],m[2]||'overview')];
+  if(path==='/fi/users'){ return p.role==='FSP_MASTER_ADMIN'?['Users',usersPage(true)]:['Users',notFound()]; }
+  const nm=navFor(p).find(i=>i.to===path);
+  return [nm?nm.label:'Overview', stubPage(nm?nm.label:'Overview')];
+}
+const stubPage = (l)=>`<div class="stub"><b>${esc(l)}</b><p>Unchanged by this proposal. Shown only so the navigation reads like the real portal.</p></div>`;
+const noAccess = (s)=>`<div class="stub"><b>You don’t have access to this page</b><p>The API answers <code>403</code> for ${me().role}. The nav hides the link, but the API scope is the real boundary.</p></div>`;
+const notFound = ()=>`<div class="stub"><b>Page not found</b><p>An FI User has no Users screen. A direct visit shows this page; the API would return <code>403</code> on <code>/v1/fsp/users</code>.</p></div>`;
+
+/* =====================================================================
+   Login + change password
+   ===================================================================== */
+function loginPage(){
+  return `<div class="login">
+    <section class="hero"><div class="brand"><span class="logo">${ic('qr',20)}</span><div>Secure Bangla QR</div></div>
+      <div><h2>One sign-in for staff and institutions.</h2><p style="max-width:44ch;color:var(--side-text);font-size:15px;line-height:23px">Your role decides which console opens. Institution users only see their own institution.</p></div>
+      <small style="color:var(--side-head)">© 2026 Relief Validation Limited · Bangladesh Bank BQR</small></section>
+    <section class="form"><div>
+      <h1>Sign in</h1><p class="muted" style="margin:0 0 22px">Use your username or your email address.</p>
+      ${S.banner||''}
+      ${note('Proposed change',[
+        'Field is now <b>Username or email</b>. Client sends <code>{ username }</code> or <code>{ email }</code> depending on whether the value contains “@”.',
+        'Every refusal (wrong password, locked, disabled, <b>institution suspended</b>) returns the same <code>invalid_credentials</code>. The screen must never hint which one.',
+        '<code>sessionFromUser()</code> stops rejecting FI roles: <code>FSP_MASTER_ADMIN</code> / <code>FSP_USER</code> now open <code>/fi/*</code> using <code>tenantId</code> from the token.'])}
+      <div class="field"><label for="lu">Username or email</label><input id="lu" data-draft="lu" value="${val('lu')}" autocomplete="username" spellcheck="false"></div>
+      <div class="field"><label for="lp">Password</label><input id="lp" type="password" data-draft="lp" value="${val('lp')}" autocomplete="current-password"></div>
+      <button class="btn primary" style="width:100%;height:44px;justify-content:center" data-act="login">Sign in</button>
+      <div class="qa"><small>Mock shortcuts</small>
+        <button class="btn sm" data-act="quick" data-p="admin">Platform admin</button>
+        <button class="btn sm" data-act="quick" data-p="fiadmin">FI master admin</button>
+        <button class="btn sm" data-act="quick" data-p="fiuser">FI user</button>
+        <button class="btn sm" data-act="quick" data-p="newfi">FI admin, first sign-in (OTP)</button>
+        <button class="btn sm" data-act="quick" data-p="suspended">Suspended institution</button></div>
+    </div></section></div>`;
+}
+function changePwPage(){
+  const p=me(); const forced = S.forced;
+  return `<div class="center"><div class="card"><div class="card-b">
+    <h1 style="font:700 22px/28px var(--head);margin-bottom:6px">Change password</h1>
+    <p class="muted" style="margin:0 0 16px">${forced?'Your one-time password must be replaced before you can use the portal.':'Choose a new password. You will sign in again afterwards.'}</p>
+    ${forced?banner('warn','Your account needs a new password.'):''}
+    ${S.pwErr?banner('bad',S.pwErr):''}
+    ${note('Proposed change',[
+      'Now enforced by the API (<b>Phase 0</b>). Until the password is changed, every other endpoint returns <code>403 { "error": "password_change_required" }</code>.',
+      'The api client treats that 403 as “go to /change-password”, so a deep link or an old tab cannot dodge the screen.',
+      'On success the API revokes the refresh cookie (<code>204</code>) → the portal signs out and shows “Password changed. Sign in again.”'])}
+    ${field('Current password','cp1',inp('cp1','cp1',{type:'password'}),{hint:forced?'This is the one-time password you were given.':''})}
+    ${field('New password','cp2',inp('cp2','cp2',{type:'password'}),{hint:'At least 8 characters.'})}
+    ${field('Repeat new password','cp3',inp('cp3','cp3',{type:'password'}))}
+    <button class="btn primary" style="width:100%;height:44px;justify-content:center" data-act="changepw">Change password</button>
+    ${p?`<p style="text-align:center;margin:14px 0 0"><a href="#${home()}" ${forced?'hidden':''}>Cancel</a></p>`:''}
+  </div></div></div>`;
+}
+
+/* =====================================================================
+   Users page (staff + FI share it; the FI variant has fewer controls)
+   ===================================================================== */
+function visibleUsers(fi){
+  const p=me(); const f=S.f; const q=f.q.trim().toLowerCase();
+  return S.data.users.filter(u=>{
+    if(fi && u.tenantId!==p.tenantId) return false;           // containment: FI only ever lists its own
+    if(!fi){
+      if(f.scope==='platform' && u.tenantId) return false;
+      if(f.scope==='fi' && !u.tenantId) return false;
+      if(f.tenant && u.tenantId!==f.tenant) return false;
+    }
+    if(f.role && u.role!==f.role) return false;
+    if(f.status && u.status!==f.status) return false;
+    if(q && !(u.username+u.displayName+u.email).toLowerCase().includes(q)) return false;
+    return true;
+  });
+}
+function usersTable(fi){
+  const rows=visibleUsers(fi); const p=me();
+  const head=`<tr><th>User</th><th>Email</th><th>Role</th>${fi?'':'<th>Institution</th>'}<th>Status</th><th>Last sign-in</th></tr>`;
+  const body=rows.length? rows.map(u=>`<tr class="click" data-act="open" data-id="${u.id}">
+    <td class="u-name"><b>${esc(u.displayName)}${u.id===p.userId?'<span class="me">You</span>':''}</b><span class="mono">${esc(u.username)}</span></td>
+    <td>${esc(u.email)}</td>
+    <td>${ROLE[u.role].label}</td>
+    ${fi?'':`<td>${u.tenantId?esc(tenant(u.tenantId).name):'<span class="faint">Platform</span>'}</td>`}
+    <td>${statusChip(u.status)}${u.mustChange?` ${chip('info','Must change password')}`:''}</td>
+    <td class="num">${u.last}</td></tr>`).join('')
+    : `<tr><td colspan="${fi?5:6}" class="empty">No users match these filters.</td></tr>`;
+  return `<div class="tscroll"><table>${head}${body}</table></div>
+    <div style="padding:12px 18px;border-top:1px solid var(--line);color:var(--text-3);display:flex;justify-content:space-between"><span>${rows.length} of ${rows.length} users</span><span>Page 1 · 25 per page</span></div>`;
+}
+function usersPage(fi){
+  const f=S.f; const opt=(v,l,c)=>`<option value="${v}" ${c===v?'selected':''}>${l}</option>`;
+  const adminNote = fi ? note('New screen · /fi/users · FSP_MASTER_ADMIN only',[
+      'Calls <code>GET /v1/fsp/users</code>; the API scopes the list to the caller’s own FI from the token. The portal never sends a tenant id.',
+      'Create form has <b>no role field</b> (the API request type has none). FI admins create FI Users only and cannot promote anyone.',
+      'Actions: edit, suspend, reactivate, unlock, reset password, disable. <b>No</b> role change and <b>no</b> revoke-sessions (those exist only on the admin endpoint).',
+      'FI Users never see this nav item.']) :
+    note('New screen · /staff/users · MASTER_ADMIN only',[
+      'Calls <code>GET /v1/admin/users?tenantId&amp;role&amp;status&amp;scope&amp;search&amp;page&amp;pageSize</code> (page size capped at 100). Filters live in the URL query so a list can be shared.',
+      'Row opens the detail drawer (DESIGN.md pattern). Deep link: <code>#/staff/users?user=&lt;id&gt;</code>.',
+      'OPS / AUDITOR / SUPPORT / FINANCE have no “Access” section: provisionable today, they gate nothing yet.']);
+  const filters = fi ? `
+      <input class="search" data-filter="q" placeholder="Search name, username, email" value="${esc(f.q)}">
+      <select data-filter="role">${opt('','All roles',f.role)}${FI_ROLES.map(r=>opt(r,ROLE[r].label,f.role)).join('')}</select>
+      <select data-filter="status">${opt('','All statuses',f.status)}${['ACTIVE','PENDING','SUSPENDED','LOCKED','DISABLED'].map(s=>opt(s,s[0]+s.slice(1).toLowerCase(),f.status)).join('')}</select>`
+    : `
+      <input class="search" data-filter="q" placeholder="Search name, username, email" value="${esc(f.q)}">
+      <select data-filter="scope">${opt('','All users',f.scope)}${opt('platform','Platform staff',f.scope)}${opt('fi','Institution users',f.scope)}</select>
+      <select data-filter="tenant">${opt('','All institutions',f.tenant)}${S.data.tenants.map(t=>opt(t.id,t.name,f.tenant)).join('')}</select>
+      <select data-filter="role">${opt('','All roles',f.role)}${Object.keys(ROLE).map(r=>opt(r,ROLE[r].label,f.role)).join('')}</select>
+      <select data-filter="status">${opt('','All statuses',f.status)}${['ACTIVE','PENDING','SUSPENDED','LOCKED','DISABLED'].map(s=>opt(s,s[0]+s.slice(1).toLowerCase(),f.status)).join('')}</select>`;
+  const t = fi ? tenant(me().tenantId) : null;
+  return `${adminNote}
+    <div class="page-h"><div><h2>Users</h2><p>${fi?`People at ${esc(t.name)} who can sign in to this portal.`:'Everyone who can sign in: RVL staff and institution users.'}</p></div><span class="sp"></span>
+      <button class="btn primary" data-act="create">${ic('plus')} ${fi?'Add user':'New user'}</button></div>
+    <div class="card"><div class="filters">${filters}</div><div id="utable">${usersTable(fi)}</div></div>`;
+}
+
+/* ---------- drawer: user detail / create / edit ---------- */
+function activeAdmins(tid){ return S.data.users.filter(u=>u.tenantId===tid && u.role==='FSP_MASTER_ADMIN' && u.status==='ACTIVE').length; }
+function drawerHtml(){
+  const d=S.drawer; if(!d) return '';
+  const fi = me().surface==='fi';
+  let inner='';
+  if(d.kind==='create') inner=createDrawer(fi,d);
+  else if(d.kind==='edit') inner=editDrawer(fi,d);
+  else inner=detailDrawer(fi,d);
+  return `<div class="scrim" data-act="closeDrawer"></div><aside class="drawer" role="dialog" aria-modal="true">${inner}</aside>`;
+}
+function detailDrawer(fi,d){
+  const u=user(d.id); if(!u) return '';
+  const p=me(); const self=u.id===p.userId; const t=u.tenantId?tenant(u.tenantId):null;
+  const dis=u.status==='DISABLED';
+  const A=(act,label,cls='',icon='')=>`<button class="btn ${cls}" data-act="${act}" data-id="${u.id}" ${self?'disabled':''}>${icon?ic(icon):''} ${label}</button>`;
+  let acts='';
+  if(dis){ acts = banner('info','Disabled is final.','This account cannot be reactivated. Create a new user if the person needs access again.'); }
+  else {
+    acts = '<div class="actions">'+
+      A('edit','Edit profile'+(fi?'':' and role'),'','users')+
+      (u.status==='SUSPENDED'?A('reactivate','Reactivate','primary','ok'):'')+
+      (u.status==='LOCKED'?A('unlock','Unlock account','primary','lock'):'')+
+      (u.status!=='SUSPENDED'?A('suspend','Suspend…','','alert'):'')+
+      A('reset','Reset password…','','key')+
+      (!fi?A('revoke','Sign out everywhere…','','out'):'')+
+      A('disable','Disable permanently…','danger','x')+'</div>'+
+      (self?`<p class="faint" style="margin-top:10px">You can’t suspend, disable or reset your own account. Another admin has to.</p>`:'');
+  }
+  return `<div class="drawer-h"><div><h3>${esc(u.displayName)}</h3><div class="mono faint">${esc(u.username)}</div></div><span class="sp"></span>
+      <button class="btn ghost sm" data-act="closeDrawer" aria-label="Close">${ic('x')}</button></div>
+    <div class="drawer-b">
+      ${d.err?banner('bad',d.err.title,d.err.body,d.err.action||''):''}
+      ${!fi?note('Proposed',['Detail comes from <code>GET /v1/admin/users/{id}</code>. Buttons map 1:1 to the lifecycle endpoints; state decides which show (Reactivate only when Suspended, Unlock only when Locked).','Rule violations come back as <code>409</code> and are shown here as a red banner with the next step, not a toast.']):''}
+      <dl class="dl">
+        <dt>Status</dt><dd>${statusChip(u.status)} ${u.mustChange?chip('info','Must change password'):''}</dd>
+        <dt>Role</dt><dd>${ROLE[u.role].label} <span class="mono faint">${u.role}</span></dd>
+        <dt>Email</dt><dd>${esc(u.email)}</dd>
+        <dt>Institution</dt><dd>${t?esc(t.name):'<span class="faint">Platform (RVL)</span>'}</dd>
+        <dt>Last sign-in</dt><dd class="num">${u.last}</dd>
+      </dl>
+      <div class="sec-h">Actions</div>${acts}
+    </div>`;
+}
+function editDrawer(fi,d){
+  const u=user(d.id); const canRole=!fi;
+  const roles = u.tenantId?FI_ROLES:PLATFORM_ROLES;
+  return `<div class="drawer-h"><div><h3>Edit ${esc(u.displayName)}</h3></div><span class="sp"></span><button class="btn ghost sm" data-act="back" data-id="${u.id}">${ic('x')}</button></div>
+    <div class="drawer-b">
+      ${d.err?banner('bad',d.err.title,d.err.body,d.err.action||''):''}
+      ${note('Proposed',[fi?'<code>PATCH /v1/fsp/users/{id}</code> accepts <code>displayName</code> and <code>email</code> only. The role control is absent, not disabled.':'<code>PATCH /v1/admin/users/{id}</code> accepts <code>displayName?, email?, role?</code>. A role change signs the person out (refresh tokens revoked). A role from the other scope is not offered.'])}
+      ${field('Display name','e1',inp('e_name','e1'))}
+      ${field('Email','e2',inp('e_email','e2'))}
+      ${canRole?field('Role','e3',`<select id="e3" data-draft="e_role">${roles.map(r=>`<option value="${r}" ${(S.draft.e_role??u.role)===r?'selected':''}>${ROLE[r].label}</option>`).join('')}</select>`,{hint:'Changing role signs this person out of every device.'}):''}
+    </div>
+    <div class="drawer-f"><button class="btn" data-act="back" data-id="${u.id}">Cancel</button><button class="btn primary" data-act="saveEdit" data-id="${u.id}">Save changes</button></div>`;
+}
+function createDrawer(fi,d){
+  const scope = fi?'fi':(S.draft.c_scope||'platform');
+  const roles = scope==='fi'?FI_ROLES:PLATFORM_ROLES;
+  const e=S.err;
+  return `<div class="drawer-h"><div><h3>${fi?'Add user':'New user'}</h3><div class="faint">${fi?'They get a one-time password to change at first sign-in.':'A one-time password is generated. You see it once.'}</div></div><span class="sp"></span><button class="btn ghost sm" data-act="closeDrawer">${ic('x')}</button></div>
+    <div class="drawer-b">
+      ${note('Proposed',[fi?'<code>POST /v1/fsp/users { username, email, displayName }</code>. Role is fixed server-side to FSP_USER.':'<code>POST /v1/admin/users { tenantId?, username, email, displayName, role }</code>. Scope decides the roles on offer; the API rejects a mismatch (platform role + tenant, or the reverse).','<code>201</code> returns <code>oneTimePassword</code> exactly once → secret dialog. Duplicate username/email is <code>409</code> shown inline.'])}
+      ${!fi?field('Who is this for?','c0',`<select id="c0" data-draft="c_scope" data-rerender="1"><option value="platform" ${scope==='platform'?'selected':''}>RVL staff (platform)</option><option value="fi" ${scope==='fi'?'selected':''}>Institution user</option></select>`):''}
+      ${(!fi&&scope==='fi')?field('Institution','c1',`<select id="c1" data-draft="c_tenant" data-rerender="1"><option value="">Choose an institution…</option>${S.data.tenants.map(t=>`<option value="${t.id}" ${S.draft.c_tenant===t.id?'selected':''}>${esc(t.name)}</option>`).join('')}</select>`,{err:e.tenant}):''}
+      ${fi?field('Role','c2',`<input id="c2" value="FI User" readonly>`,{hint:'FI Master Admin accounts are created by RVL staff.'}):
+        field('Role','c2',`<select id="c2" data-draft="c_role">${roles.map(r=>`<option value="${r}" ${S.draft.c_role===r?'selected':''}>${ROLE[r].label}</option>`).join('')}</select>`)}
+      ${field('Display name','c3',inp('c_name','c3'),{err:e.name})}
+      ${field('Username','c4',inp('c_user','c4',{ph:'e.g. teller.rina'}),{err:e.user,hint:'Unique within the institution.'})}
+      ${field('Email','c5',inp('c_email','c5',{type:'email'}),{err:e.email,hint:'Also works as a sign-in name. Unique across the platform.'})}
+    </div>
+    <div class="drawer-f"><button class="btn" data-act="closeDrawer">Cancel</button><button class="btn primary" data-act="doCreate">Create user</button></div>`;
+}
+
+/* ---------- dialogs ---------- */
+function dialogHtml(){
+  const g=S.dialog; if(!g) return '';
+  let h='';
+  if(g.kind==='secret'){
+    h=`<h3>${g.title}</h3><p class="muted" style="margin:0 0 14px">${g.text}</p>
+      <dl class="dl" style="margin-bottom:12px"><dt>Username</dt><dd class="mono">${esc(g.username)}</dd></dl>
+      <div class="secret"><span id="otp">${esc(g.otp)}</span><button class="btn sm" data-act="copyOtp">${ic('copy',15)} Copy</button></div>
+      ${banner('warn','Shown once.','It is not stored and cannot be shown again. The user must replace it at first sign-in.').replace('class="banner','style="margin-top:14px" class="banner')}
+      <label style="display:flex;gap:8px;align-items:center;margin-top:6px"><input type="checkbox" id="ack" style="width:auto;height:auto" data-ack> I have passed this to the user securely.</label>
+      <div class="f"><button class="btn primary" id="done" data-act="closeSecret" disabled>Done</button></div>
+      ${me().surface==='staff'?note('Proposed',['Reuses the portal’s existing one-shot secret dialog (<code>secret-dialog.tsx</code>). The value lives in component state only: never in storage, logs or query cache.']):''}`;
+  } else {
+    h=`<h3>${g.title}</h3><div class="muted">${g.text}</div>
+      <div class="f"><button class="btn" data-act="closeDialog">Cancel</button><button class="btn ${g.danger?'danger solid':'primary'}" data-act="${g.confirm}" data-id="${g.id||''}">${g.cta}</button></div>`;
+  }
+  return `<div class="scrim d" ${g.kind==='secret'?'':'data-act="closeDialog"'}></div><div class="dialog" role="alertdialog" aria-modal="true">${h}</div>`;
+}
+
+/* ---------- actions on a user ---------- */
+function lastAdminBlock(u,what){
+  return {title:`Can’t ${what}: this is the last active FI Master Admin`,
+    body:`${esc(tenant(u.tenantId).name)} would have nobody who can manage its users. Add another FI Master Admin first, then try again.`,
+    action: me().surface==='staff'?`<button class="btn sm" data-act="create-admin" data-t="${u.tenantId}">Add FI Master Admin</button>`:''};
+}
+function randOtp(){ const a='ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789#@%-_'; return Array.from({length:16},()=>a[Math.floor(Math.random()*a.length)]).join(''); }
+function toast(msg,bad){ const t=$('#toast'); t.innerHTML=`<div class="toast ${bad?'bad':''}">${esc(msg)}</div>`; clearTimeout(toast.t); toast.t=setTimeout(()=>t.innerHTML='',3000); }
+function mutate(id,fn,msg){ const u=user(id); fn(u); S.dialog=null; S.drawer={kind:'user',id}; render(); toast(msg); }
+
+/* =====================================================================
+   Institutions (staff)
+   ===================================================================== */
+function institutionsPage(){
+  const rows=S.data.tenants.map(t=>{
+    const n=activeAdmins(t.id);
+    return `<tr class="click" data-act="goto" data-to="/staff/institutions/${t.id}"><td><b>${esc(t.name)}</b><div class="mono faint">${t.code}</div></td>
+      <td>${chip(t.status==='Active'?'ok':t.status==='Pending'?'info':'warn',t.status)}</td>
+      <td>${n?`<span class="num">${n}</span> active`:chip('warn','No FI admin')}</td></tr>`;}).join('');
+  return `${note('Changed · Institutions list',['One new column, <b>FI admins</b>: an institution with nobody able to sign in is flagged here instead of being discovered by the bank.'])}
+    <div class="page-h"><div><h2>Institutions</h2><p>Banks and mobile financial services on the Secure Bangla QR rail.</p></div><span class="sp"></span>
+      <button class="btn primary" data-act="goto" data-to="/staff/institutions/new">${ic('plus')} Onboard institution</button></div>
+    <div class="card"><table><tr><th>Institution</th><th>Status</th><th>FI admins <span class="tag">New</span></th></tr>${rows}</table></div>`;
+}
+function institutionDetail(id,tab){
+  const t=tenant(id); const n=activeAdmins(id);
+  const tabs=['overview','usage','billing','users'].map(k=>`<a href="#/staff/institutions/${id}${k==='overview'?'':'/'+k}" class="${tab===k?'on':''}">${k[0].toUpperCase()+k.slice(1)}${k==='users'?' <span class="tag">New</span>':''}</a>`).join('');
+  let body='';
+  if(tab==='users'){
+    const rows=S.data.users.filter(u=>u.tenantId===id);
+    body = `${note('New tab · /staff/institutions/:id/users',['Same table as Users, pre-filtered with <code>GET /v1/admin/users?tenantId=…</code>. Lets support fix one bank’s access without leaving the institution.','Health banner reads the same “does this FI have an active FI Master Admin” fact as the activation gate.'])}
+      ${n===0? banner('warn','No FI Master Admin','Nobody at this institution can sign in to the portal or manage its own users.',`<button class="btn sm primary" data-act="create-admin" data-t="${id}">Create FI Master Admin</button>`):''}
+      <div class="card"><div class="card-h"><h3>Institution users</h3><span class="sp"></span><button class="btn sm primary" data-act="create-admin" data-t="${id}">${ic('plus',15)} Add user</button></div>
+      <div class="tscroll"><table><tr><th>User</th><th>Email</th><th>Role</th><th>Status</th><th>Last sign-in</th></tr>
+      ${rows.length?rows.map(u=>`<tr class="click" data-act="open" data-id="${u.id}"><td class="u-name"><b>${esc(u.displayName)}</b><span class="mono">${esc(u.username)}</span></td><td>${esc(u.email)}</td><td>${ROLE[u.role].label}</td><td>${statusChip(u.status)}</td><td class="num">${u.last}</td></tr>`).join(''):`<tr><td colspan="5" class="empty">No users yet.</td></tr>`}
+      </table></div></div>`;
+  } else if(tab==='overview'){
+    const cnt=S.data.users.filter(u=>u.tenantId===id && !['DISABLED','SUSPENDED'].includes(u.status)).length;
+    body = `${note('Changed · lifecycle dialogs',['Suspend / Reactivate / Terminate now cascade to the institution’s users (<b>fixes B3</b>: a suspended bank’s staff used to keep working). The confirm dialog says so and shows the head-count.','Suspend: users → Suspended, sessions revoked. Reactivate: Suspended users return. Terminate: users → Disabled (final). A Disabled user is never revived by Reactivate.'])}
+      <div class="card"><div class="card-h"><h3>${esc(t.name)}</h3>${chip(t.status==='Active'?'ok':t.status==='Pending'?'info':'warn',t.status)}<span class="sp"></span>
+        ${t.status==='Active'?`<button class="btn sm" data-act="tSuspend" data-t="${id}">Suspend</button><button class="btn sm danger" data-act="tTerminate" data-t="${id}">Terminate</button>`:''}
+        ${t.status==='Suspended'?`<button class="btn sm primary" data-act="tReactivate" data-t="${id}">Reactivate</button>`:''}</div>
+      <div class="card-b"><dl class="dl" style="margin:0"><dt>Institution code</dt><dd class="mono">${t.code}</dd><dt>Portal users</dt><dd class="num">${cnt} can sign in</dd><dt>FI Master Admins</dt><dd>${n?`${n} active`:chip('warn','None')}</dd></dl></div></div>`;
+  } else body=stubPage(tab[0].toUpperCase()+tab.slice(1)+' tab');
+  return `<div class="page-h"><div><h2>${esc(t.name)}</h2><p><a href="#/staff/institutions">← Institutions</a></p></div></div><div class="tabs">${tabs}</div>${body}`;
+}
+
+/* =====================================================================
+   Onboarding wizard: the new "FI admin" step
+   ===================================================================== */
+function onboardingPage(){
+  const t3=tenant('t3'); const has = activeAdmins('t3')>0;
+  const steps=['Institution','Configuration','Credentials','Signing key','FI admin','Review'];
+  const done = (i)=> i<4 || (i===4&&has);
+  const stepper=steps.map((s,i)=>`<button type="button" data-act="step" data-i="${i}" class="${S.onbStep===i?'on':done(i)?'done':''}"><i>${done(i)&&S.onbStep!==i?'✓':i+1}</i>${s}${i===4?' <span class="tag">New</span>':''}</button>`).join('');
+  let body='';
+  if(S.onbStep===4){
+    body = `${note('New wizard step · FI_END_MASTER_ADMIN',[
+      'Sits between <b>Signing key</b> and <b>Review</b>, matching the backend step order.',
+      'Creates the bank’s first FI Master Admin: <code>POST /v1/admin/tenants/{id}/master-admin { email, displayName }</code>. <code>201</code> + one-time password the first time; <b>idempotent</b>: repeat calls give <code>200 { alreadyExisted: true }</code> and no password, so a double-click or retry cannot mint a second admin.',
+      'Step state comes from the onboarding view the portal already polls (<code>NOT_STARTED</code> → <code>COMPLETED</code>); a plain FI User does not satisfy it.'])}
+      <div class="card"><div class="card-h"><h3>FI Master Admin</h3><span class="sp"></span>${has?chip('ok','Created'):chip('info','Not started')}</div><div class="card-b">
+      <p class="muted" style="margin-top:0">The person at ${esc(t3.name)} who will sign in to the Institution Portal and manage their own staff accounts. Without one, the institution can’t be activated.</p>
+      ${has? banner('ok','FI Master Admin ready',`Username <span class="mono">999993-admin</span>. They sign in with the one-time password you handed over and set their own.`)+`<button class="btn" data-act="idem">Create again (shows idempotent response)</button>`:
+      `${field('Contact name','o1',inp('o_name','o1'))}${field('Email','o2',inp('o_email','o2',{type:'email'}),{hint:'The one-time password is shown here, not emailed.'})}
+       <button class="btn primary" data-act="mkAdmin">${ic('key',16)} Create FI Master Admin</button>`}
+      </div></div>`;
+  } else if(S.onbStep===5){
+    const rows=[['Capabilities','QR generation, QR validation',true],['API credentials','Client ID issued',true],['Signing key','Active (Ed25519)',true],['Trust store entry','Registered',true],['FI Master Admin',has?'999993-admin':'None yet',has]];
+    const ready=rows.every(r=>r[2]);
+    body = `${note('Changed · Review and activate',['New row and new blocker code <code>FI_END_MASTER_ADMIN_MISSING</code>. A 409 from activate lists every unmet blocker, so the banner links to the exact step.'])}
+      ${!ready?banner('warn','Not ready to activate yet','Fix the items below. Activating with nobody able to sign in would look healthy and be unusable.',`<button class="btn sm" data-act="step" data-i="4">Go to FI admin</button>`):''}
+      <div class="card"><div class="card-h"><h3>Review and activate</h3></div><div class="card-b">${rows.map(r=>`<div class="row-s"><span class="dot ${r[2]?'':'todo'}">${r[2]?'✓':'!'}</span><div><b>${r[0]}</b><div class="faint">${r[1]}</div></div><span class="sp"></span>${r[2]?'':`<button type="button" class="btn sm" data-act="step" data-i="4">Fix</button>`}</div>`).join('')}
+      <div style="margin-top:16px;display:flex;gap:10px"><button class="btn primary" ${ready?'':'disabled'} data-act="activate">Activate institution</button></div></div></div>`;
+  } else body = `<div class="stub"><b>${steps[S.onbStep]}</b><p>Unchanged by this proposal.</p></div>`;
+  return `<div class="page-h"><div><h2>Onboard ${esc(t3.name)}</h2><p><a href="#/staff/institutions">← Institutions</a></p></div></div><div class="stepper">${stepper}</div>${body}`;
+}
+
+/* =====================================================================
+   Route map
+   ===================================================================== */
+function routesPage(){
+  const R=(s,r,access,status,api)=>`<tr><td><span class="chip ${s==='New'?'info':s==='Changed'?'warn':'plain'}">${s}</span></td><td class="mono">${r}</td><td>${access}</td><td>${api}</td></tr>`;
+  return `<div class="${me()?'':'content'}" style="${me()?'':'max-width:1200px;margin:0 auto'}">
+    <div class="page-h"><div><h2>Proposed route map</h2><p>Every route and API call this change touches. Anything not listed stays as it is.</p></div></div>
+    <div class="card"><div class="card-h"><h3>Routes</h3></div><div class="tscroll"><table>
+      <tr><th>Change</th><th>Route</th><th>Who</th><th>API</th></tr>
+      ${R('Changed','/login','Anyone','<code>POST /v1/auth/login { username | email }</code>; all refusals look identical')}
+      ${R('Changed','/change-password','Any signed-in user','<code>POST /v1/auth/change-password</code>; any other call while flagged → <code>403 password_change_required</code>')}
+      ${R('Changed','session / Guard','—','<code>GET /v1/auth/me</code> now carries <code>tenantId</code>; roles <code>FSP_MASTER_ADMIN</code>, <code>FSP_USER</code> map to the <code>fi</code> surface; drop <code>FSP_OPERATOR</code>/<code>FSP_VIEWER</code>')}
+      ${R('New','/staff/users','MASTER_ADMIN','<code>GET/POST /v1/admin/users</code>, <code>GET/PATCH /v1/admin/users/{id}</code>, <code>POST …/{id}/suspend|reactivate|disable|unlock|reset-password|revoke-sessions</code>')}
+      ${R('New','/staff/institutions/:id/users','MASTER_ADMIN','<code>GET /v1/admin/users?tenantId=</code>')}
+      ${R('Changed','/staff/institutions','Staff','FI admins column (derived from the onboarding view)')}
+      ${R('Changed','/staff/institutions/new','MASTER_ADMIN','New step <code>FI_END_MASTER_ADMIN</code> → <code>POST /v1/admin/tenants/{id}/master-admin</code>; new blocker <code>FI_END_MASTER_ADMIN_MISSING</code>')}
+      ${R('Changed','/staff/institutions/:id','MASTER_ADMIN','Suspend / Reactivate / Terminate dialogs describe the user cascade (no new endpoint)')}
+      ${R('New','/fi/users','FSP_MASTER_ADMIN','<code>GET/POST /v1/fsp/users</code>, <code>GET/PATCH /v1/fsp/users/{id}</code>, <code>POST …/suspend|reactivate|disable|unlock|reset-password</code>')}
+    </table></div></div>
+    <div class="card"><div class="card-h"><h3>Rules the UI mirrors (the API enforces them)</h3></div><div class="card-b"><ul style="margin:0;padding-left:20px;display:grid;gap:6px">
+      <li><b>Last FI Master Admin</b> can’t be suspended, disabled or demoted → <code>409</code>, shown as a banner with “Add FI Master Admin”.</li>
+      <li><b>Self-action</b> (disable / suspend / reset own account) → <code>409</code>; the buttons are disabled for your own row.</li>
+      <li><b>Cross-tenant</b> access is <code>404</code>, never 403. The portal never sends a tenant id from an FI session.</li>
+      <li><b>One-time passwords</b> appear once, in the secret dialog, and are never stored.</li>
+      <li><b>Duplicate</b> username/email → <code>409</code>, shown inline on the field.</li>
+      <li><b>Disabled</b> is final; <b>Suspended</b> and <b>Locked</b> are reversible.</li>
+      <li>Hiding a button is a convenience. The API scopes are the boundary (AGENTS.md).</li></ul></div></div>
+    <div class="card"><div class="card-h"><h3>Frontend footprint (when we build it)</h3></div><div class="card-b"><ul style="margin:0;padding-left:20px;display:grid;gap:6px">
+      <li><code>src/shared/api/client.ts</code>: login body, <code>password_change_required</code> handling, <code>AuthUser.tenantId</code>.</li>
+      <li><code>src/shared/auth/session.ts</code>: new roles, FI sessions, <code>tenantId</code>.</li>
+      <li><code>src/shared/users/</code> (new): one users table, drawer, forms and API hooks used by both surfaces, parameterised by base path <code>/v1/admin/users</code> | <code>/v1/fsp/users</code>.</li>
+      <li><code>src/surfaces/staff/users/</code>, <code>src/surfaces/fi/users/</code> (new), plus nav entries; both stay lazy.</li>
+      <li>Onboarding: <code>steps.tsx</code> gains the FI admin step; <code>institution-detail.tsx</code> gains the Users tab.</li>
+      <li>Tests: extend <code>src/test/fake-backend.ts</code> with the users endpoints. No mock data in <code>src</code>.</li></ul></div></div>
+    ${me()?'':`<p><a href="#/login">← Back to mock</a></p>`}
+  </div>`;
+}
+
+/* =====================================================================
+   Events
+   ===================================================================== */
+document.addEventListener('click',(ev)=>{
+  const el=ev.target.closest('[data-act]');
+  if(!el){ if(S.menu){ S.menu=false; render(); } return; }
+  const a=el.dataset.act, id=el.dataset.id, p=me();
+  if(a==='menu'){ S.menu=!S.menu; render(); ev.stopPropagation(); return; }
+  if(a==='goto'){ ev.preventDefault(); go(el.dataset.to); return; }
+  if(a==='signout'){ S.persona='anon'; S.forced=false; $('#persona').value='anon'; S.banner=banner('info','Signed out.'); go('/login'); return; }
+  if(a==='quick'){ quickLogin(el.dataset.p); return; }
+  if(a==='login'){ doLogin(); return; }
+  if(a==='changepw'){ doChangePw(); return; }
+  if(a==='open'){ S.drawer={kind:'user',id}; S.draft={}; render(); return; }
+  if(a==='closeDrawer'){ S.drawer=null; S.draft={}; S.err={}; render(); return; }
+  if(a==='back'){ S.drawer={kind:'user',id}; S.draft={}; render(); return; }
+  if(a==='create'){ S.drawer={kind:'create'}; S.draft={}; S.err={}; render(); return; }
+  if(a==='create-admin'){ S.drawer={kind:'create'}; S.draft = p.surface==='fi'?{}:{c_scope:'fi',c_tenant:el.dataset.t,c_role:'FSP_MASTER_ADMIN'}; S.err={}; render(); return; }
+  if(a==='edit'){ const u=user(id); S.drawer={kind:'edit',id}; S.draft={e_name:u.displayName,e_email:u.email,e_role:u.role}; render(); return; }
+  if(a==='saveEdit'){ return saveEdit(id); }
+  if(a==='doCreate'){ return doCreate(); }
+  if(a==='suspend'){ const u=user(id); S.dialog={kind:'confirm',title:`Suspend ${esc(u.displayName)}?`,text:'They are signed out everywhere and can’t sign in until someone reactivates them.',cta:'Suspend',confirm:'doSuspend',id}; render(); return; }
+  if(a==='disable'){ const u=user(id); S.dialog={kind:'confirm',danger:true,title:`Disable ${esc(u.displayName)} permanently?`,text:'This can’t be undone. Their sessions end now. If they need access later you will create a new account.',cta:'Disable permanently',confirm:'doDisable',id}; render(); return; }
+  if(a==='reset'){ const u=user(id); S.dialog={kind:'confirm',title:`Reset password for ${esc(u.displayName)}?`,text:'A new one-time password is generated and shown to you once. They are signed out and must choose a new password at next sign-in. Any lockout is cleared.',cta:'Reset password',confirm:'doReset',id}; render(); return; }
+  if(a==='revoke'){ const u=user(id); S.dialog={kind:'confirm',title:`Sign ${esc(u.displayName)} out everywhere?`,text:'Every device must sign in again. Their account stays active.',cta:'Sign out everywhere',confirm:'doRevoke',id}; render(); return; }
+  if(a==='reactivate'){ mutate(id,u=>u.status='ACTIVE','User reactivated'); return; }
+  if(a==='unlock'){ mutate(id,u=>u.status='ACTIVE','Account unlocked'); return; }
+  if(a==='closeDialog'){ S.dialog=null; render(); return; }
+  if(a==='doSuspend'||a==='doDisable'){
+    const u=user(id); const word=a==='doSuspend'?'suspend':'disable';
+    if(u.role==='FSP_MASTER_ADMIN' && activeAdmins(u.tenantId)<=1){ S.dialog=null; S.drawer={kind:'user',id,err:lastAdminBlock(u,word)}; render(); return; }
+    mutate(id,x=>x.status=a==='doSuspend'?'SUSPENDED':'DISABLED',a==='doSuspend'?'User suspended':'User disabled'); return; }
+  if(a==='doReset'){ const u=user(id); u.mustChange=true; if(u.status==='LOCKED') u.status='ACTIVE'; S.dialog={kind:'secret',title:'New one-time password',text:`For ${esc(u.displayName)}. Give it to them directly.`,username:u.username,otp:randOtp()}; render(); return; }
+  if(a==='doRevoke'){ mutate(id,()=>{},'All sessions revoked'); return; }
+  if(a==='copyOtp'){ try{navigator.clipboard.writeText($('#otp').textContent)}catch(e){} toast('Copied'); return; }
+  if(a==='closeSecret'){ S.dialog=null; render(); return; }
+  if(a==='step'){ S.onbStep=+el.dataset.i; render(); return; }
+  if(a==='mkAdmin'){
+    if(!S.draft.o_email){ toast('Enter an email first',true); return; }
+    S.data.users.push({id:'u'+(S.data.users.length+1),tenantId:'t3',username:'999993-admin',displayName:S.draft.o_name||'FI Admin',email:S.draft.o_email,role:'FSP_MASTER_ADMIN',status:'ACTIVE',mustChange:true,last:'—'});
+    S.dialog={kind:'secret',title:'FI Master Admin created',text:'Hand this one-time password to the institution’s contact.',username:'999993-admin',otp:randOtp()}; render(); return; }
+  if(a==='idem'){ toast('200 · alreadyExisted: true · no new password'); return; }
+  if(a==='activate'){ tenant('t3').status='Active'; toast('Institution activated'); go('/staff/institutions'); return; }
+  if(a==='tSuspend'||a==='tTerminate'||a==='tReactivate'){
+    const t=tenant(el.dataset.t); const us=S.data.users.filter(u=>u.tenantId===t.id);
+    const n=us.filter(u=>!['DISABLED','SUSPENDED'].includes(u.status)).length;
+    const cfg = a==='tSuspend'?{title:`Suspend ${esc(t.name)}?`,text:`<b>${n} user${n===1?'':'s'}</b> at this institution will be suspended and signed out immediately, along with its API credentials. Reactivating the institution restores them.`,cta:'Suspend institution',danger:false}
+      : a==='tTerminate'?{title:`Terminate ${esc(t.name)}?`,text:`All <b>${us.filter(u=>u.status!=='DISABLED').length} users</b> are <b>disabled permanently</b>. This cannot be undone.`,cta:'Terminate',danger:true}
+      : {title:`Reactivate ${esc(t.name)}?`,text:`Suspended users return to Active. Users who were disabled stay disabled.`,cta:'Reactivate',danger:false};
+    S.dialog={kind:'confirm',...cfg,confirm:'tDo',id:a+':'+t.id}; render(); return; }
+  if(a==='tDo'){
+    const [k,tid]=id.split(':'); const t=tenant(tid); const us=S.data.users.filter(u=>u.tenantId===tid);
+    if(k==='tSuspend'){ t.status='Suspended'; us.forEach(u=>{ if(!['DISABLED'].includes(u.status)) u.status='SUSPENDED'; }); }
+    if(k==='tTerminate'){ t.status='Terminated'; us.forEach(u=>u.status='DISABLED'); }
+    if(k==='tReactivate'){ t.status='Active'; us.forEach(u=>{ if(u.status==='SUSPENDED') u.status='ACTIVE'; }); }
+    S.dialog=null; render(); toast('Done · users updated'); return; }
+});
+document.addEventListener('input',(ev)=>{
+  const t=ev.target;
+  if(t.dataset.draft){ S.draft[t.dataset.draft]=t.value; if(t.dataset.rerender){ render(); } }
+  if(t.dataset.filter){ S.f[t.dataset.filter]=t.value; const fi=me().surface==='fi'; $('#utable').innerHTML=usersTable(fi); }
+  if(t.dataset.ack!==undefined){ $('#done').disabled=!t.checked; }
+});
+document.addEventListener('change',(ev)=>{
+  const t=ev.target;
+  if(t.dataset.draft && t.tagName==='SELECT'){ S.draft[t.dataset.draft]=t.value; if(t.dataset.rerender) render(); }
+  if(t.dataset.filter){ S.f[t.dataset.filter]=t.value; const fi=me().surface==='fi'; $('#utable').innerHTML=usersTable(fi); }
+});
+
+function quickLogin(k){
+  S.draft={}; S.banner=null;
+  if(k==='suspended'){ S.draft={lu:'dmw.agent',lp:'••••••••'}; doLogin(); return; }
+  if(k==='newfi'){ S.persona='fiadmin'; S.forced=true; $('#persona').value='fiadmin'; go('/change-password'); return; }
+  S.persona=k; S.forced=false; $('#persona').value=k; go(home());
+}
+function doLogin(){
+  const id=(S.draft.lu||'').trim(), pw=S.draft.lp||'';
+  if(!id||!pw){ S.banner=banner('bad','Enter your username or email and your password.'); render(); return; }
+  const u=S.data.users.find(x=>x.username===id||x.email===id);
+  const t=u&&u.tenantId?tenant(u.tenantId):null;
+  const blocked=!u || ['DISABLED','LOCKED','SUSPENDED'].includes(u.status) || (t&&['Suspended','Terminated'].includes(t.status));
+  if(blocked){ S.banner=banner('bad','Invalid credentials.','Check your username or email and password, or contact your administrator.'); render(); return; }
+  const key=Object.keys(PERSONAS).find(k=>PERSONAS[k].userId===u.id);
+  if(!key){ S.banner=banner('info','Mock only knows the four demo accounts.','Use a shortcut below.'); render(); return; }
+  S.banner=null; S.persona=key; $('#persona').value=key; S.forced=u.mustChange; go(u.mustChange?'/change-password':home());
+}
+function doChangePw(){
+  const a=S.draft.cp1, b=S.draft.cp2, c=S.draft.cp3;
+  S.pwErr='';
+  if(!a||!b||!c) S.pwErr='Fill in all three fields.';
+  else if(b.length<8) S.pwErr='Use at least 8 characters.';
+  else if(b!==c) S.pwErr='The new passwords don’t match.';
+  if(S.pwErr){ render(); return; }
+  S.persona='anon'; S.forced=false; $('#persona').value='anon';
+  S.banner=banner('ok','Password changed.','Sign in again with your new password.'); S.draft={}; go('/login');
+}
+function saveEdit(id){
+  const u=user(id); const d=S.draft; const fi=me().surface==='fi';
+  if(!d.e_name||!d.e_email){ toast('Name and email are required',true); return; }
+  if(!fi && u.role==='FSP_MASTER_ADMIN' && d.e_role!=='FSP_MASTER_ADMIN' && activeAdmins(u.tenantId)<=1){
+    S.drawer={kind:'edit',id,err:lastAdminBlock(u,'demote')}; render(); return; }
+  u.displayName=d.e_name; u.email=d.e_email; if(!fi) u.role=d.e_role;
+  S.drawer={kind:'user',id}; S.draft={}; render(); toast('Saved');
+}
+function doCreate(){
+  const d=S.draft; const p=me(); const fi=p.surface==='fi'; S.err={};
+  const scope=fi?'fi':(d.c_scope||'platform');
+  if(scope==='fi'&&!fi&&!d.c_tenant) S.err.tenant='Choose an institution.';
+  if(!d.c_name) S.err.name='Enter a display name.';
+  if(!d.c_user) S.err.user='Enter a username.';
+  if(!d.c_email||!/.+@.+/.test(d.c_email)) S.err.email='Enter a valid email.';
+  if(!S.err.user && S.data.users.some(u=>u.username===d.c_user && u.tenantId===(scope==='fi'?(fi?p.tenantId:d.c_tenant):null))) S.err.user='email or username already exists.';
+  if(!S.err.email && S.data.users.some(u=>u.email===d.c_email)) S.err.email='email or username already exists.';
+  if(Object.keys(S.err).length){ render(); return; }
+  const role = fi?'FSP_USER':(d.c_role|| (scope==='fi'?'FSP_USER':'OPS'));
+  const tid = scope==='fi'?(fi?p.tenantId:d.c_tenant):null;
+  const nu={id:'u'+(S.data.users.length+1),tenantId:tid,username:d.c_user,displayName:d.c_name,email:d.c_email,role,status:'ACTIVE',mustChange:true,last:'—'};
+  S.data.users.push(nu); S.drawer=null; S.draft={};
+  S.dialog={kind:'secret',title:'User created',text:`${esc(nu.displayName)} must change this password at first sign-in.`,username:nu.username,otp:randOtp()}; render();
+}
+
+/* ---- mock bar ---- */
+$('#persona').addEventListener('change',(e)=>{ S.persona=e.target.value; S.forced=false; S.drawer=null; S.dialog=null; S.f={q:'',scope:'',tenant:'',role:'',status:''}; S.banner=null; go(S.persona==='anon'?'/login':home()); });
+$('#btnNotes').addEventListener('click',(e)=>{ document.body.classList.toggle('notes'); e.target.classList.toggle('on'); });
+$('#btnRoutes').addEventListener('click',()=>{ go('/routes'); });
+$('#btnReset').addEventListener('click',()=>{ S.data=seed(); S.drawer=null; S.dialog=null; S.onbStep=5; render(); toast('Mock data reset'); });
+$('#btnTheme').addEventListener('click',()=>{ const h=document.documentElement; const dark=h.dataset.theme==='dark'||(!h.dataset.theme&&matchMedia('(prefers-color-scheme:dark)').matches); h.dataset.theme=dark?'light':'dark'; });
+window.addEventListener('hashchange',render);
+document.addEventListener('keydown',(e)=>{ if(e.key==='Escape'){ if(S.dialog&&S.dialog.kind!=='secret') S.dialog=null; else if(S.drawer) S.drawer=null; else return; render(); } });
+
+if(!location.hash) location.hash = '/staff/users';
+render();
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+# status.yaml — machine-readable plan status.
+# Values: proposed | active | implementing | in-review | done
+plan: portal-iam-uam
+status: proposed
+jira: "-"
+submodules:
+  - repo: rvl-sbqr-portal
+    branch: feature/iam-uam-portal
+updated: 2026-10-17
