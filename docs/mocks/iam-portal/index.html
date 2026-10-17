@@ -20,7 +20,7 @@
   --ok:#14935a; --ok-bg:#e3f4eb; --warn:#9a5b00; --warn-bg:#fff2d9; --bad:#c4302b; --bad-bg:#fdeceb; --info:#1d5fb8; --info-bg:#e8f0fc;
   --new:#7a3fd1; --new-bg:#f1e9fc;
   --shadow:0 1px 2px rgba(16,23,20,.04),0 4px 16px rgba(16,23,20,.04);
-  --mb:44px;
+  --mb:78px;
 }
 html[data-surface="fi"]{--accent:#1c56c9;--accent-2:#1444a3;--accent-soft:#e6eefc;--side:#0a2f66;--side-2:#12428a;--side-text:#b3c8ec;--side-head:#84a0d2}
 @media (prefers-color-scheme:dark){
@@ -48,7 +48,11 @@ a{color:var(--accent-2);text-decoration:none}
 :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 /* ---------- mock control bar (not part of the proposal) ---------- */
-#mockbar{position:sticky;top:0;z-index:100;height:var(--mb);background:#1b1530;color:#d9d0f3;display:flex;align-items:center;gap:14px;padding:0 16px;font-size:12.5px;overflow-x:auto;white-space:nowrap}
+#chrome{position:sticky;top:0;z-index:100}
+#addr{height:34px;display:flex;align-items:center;gap:8px;padding:0 16px;background:var(--surface-2);border-bottom:1px solid var(--line);font:12.5px var(--mono);color:var(--text-2);white-space:nowrap;overflow:hidden}
+#addr b{color:var(--text);font-weight:500}
+#addr .pill{background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px 12px;display:flex;gap:8px;align-items:center}
+#mockbar{height:44px;background:#1b1530;color:#d9d0f3;display:flex;align-items:center;gap:14px;padding:0 16px;font-size:12.5px;overflow-x:auto;white-space:nowrap}
 #mockbar b{color:#fff;font-family:var(--head)}
 #mockbar select,#mockbar button{background:#2b2250;color:#fff;border:1px solid #4a3d82;border-radius:8px;padding:5px 9px;font-size:12.5px}
 #mockbar button.on{background:var(--new);border-color:var(--new)}
@@ -189,14 +193,25 @@ body.notes .note{display:block}
 </head>
 <body class="notes">
 
+<div id="chrome">
 <div id="mockbar">
   <b>IAM portal mock</b>
+  <label>Address
+    <select id="host">
+      <option value="admin">admin.bqr.example (Admin portal)</option>
+      <option value="sonali">sonali.bqr.example (Sonali Bank FI portal)</option>
+      <option value="dhaka-mobile">dhaka-mobile.bqr.example (Dhaka Mobile Wallet)</option>
+      <option value="padma">padma.bqr.example (Padma Finance, pending)</option>
+      <option value="acme">acme.bqr.example (unknown)</option>
+    </select>
+  </label>
   <label>Viewing as
     <select id="persona">
       <option value="admin">Platform Master Admin · MASTER_ADMIN</option>
       <option value="ops">Platform Ops · OPS</option>
       <option value="fiadmin">Sonali Bank · FSP_MASTER_ADMIN</option>
       <option value="fiuser">Sonali Bank teller · FSP_USER</option>
+      <option value="dkarim">Dhaka Mobile teller · FSP_USER (same username)</option>
       <option value="anon">Signed out</option>
     </select>
   </label>
@@ -206,6 +221,8 @@ body.notes .note{display:block}
   <button id="btnTheme">Light / dark</button>
   <span class="sp"></span>
   <span>Static mock · no network · changes live only in this tab</span>
+</div>
+<div id="addr"></div>
 </div>
 <div id="root"></div>
 <div id="layer"></div>
@@ -228,9 +245,9 @@ const STATUS_TONE = {ACTIVE:'ok',PENDING:'info',SUSPENDED:'warn',LOCKED:'warn',D
 function seed(){
   return {
     tenants:[
-      {id:'t1',name:'Sonali Bank PLC',code:'999991',status:'Active'},
-      {id:'t2',name:'Dhaka Mobile Wallet',code:'999992',status:'Active'},
-      {id:'t3',name:'Padma Finance Ltd',code:'999993',status:'Pending'},
+      {id:'t1',name:'Sonali Bank PLC',code:'999991',slug:'sonali',status:'Active'},
+      {id:'t2',name:'Dhaka Mobile Wallet',code:'999992',slug:'dhaka-mobile',status:'Active'},
+      {id:'t3',name:'Padma Finance Ltd',code:'999993',slug:'padma',status:'Pending'},
     ],
     users:[
       {id:'u1',tenantId:null,username:'admin',displayName:'Nusrat Jahan',email:'admin@rvl.com.bd',role:'MASTER_ADMIN',status:'ACTIVE',mustChange:false,last:'2026-10-17 09:12'},
@@ -242,19 +259,17 @@ function seed(){
       {id:'u7',tenantId:'t2',username:'999992-admin',displayName:'DMW Admin One',email:'admin1@dmw.example',role:'FSP_MASTER_ADMIN',status:'ACTIVE',mustChange:false,last:'2026-10-16 15:30'},
       {id:'u8',tenantId:'t2',username:'dmw.admin2',displayName:'DMW Admin Two',email:'admin2@dmw.example',role:'FSP_MASTER_ADMIN',status:'ACTIVE',mustChange:true,last:'—'},
       {id:'u9',tenantId:'t2',username:'dmw.agent',displayName:'Sabbir Ahmed',email:'sabbir@dmw.example',role:'FSP_USER',status:'SUSPENDED',mustChange:false,last:'2026-10-10 10:15'},
+      {id:'u11',tenantId:'t2',username:'teller.karim',displayName:'Karim Rahman',email:'karim@dmw.example',role:'FSP_USER',status:'ACTIVE',mustChange:false,last:'2026-10-17 07:45'},
       {id:'u10',tenantId:'t2',username:'dmw.old',displayName:'Former Employee',email:'old@dmw.example',role:'FSP_USER',status:'DISABLED',mustChange:false,last:'2026-08-02 12:00'},
     ],
   };
 }
-const PERSONAS = {
-  admin:{userId:'u1',surface:'staff',role:'MASTER_ADMIN',name:'Nusrat Jahan',username:'admin',title:'Platform Admin'},
-  ops:{userId:'u2',surface:'staff',role:'OPS',name:'Rahim Uddin',username:'ops.rahim',title:'Operations'},
-  fiadmin:{userId:'u4',surface:'fi',role:'FSP_MASTER_ADMIN',name:'Sonali IT Admin',username:'999991-admin',title:'FI Master Admin',tenantId:'t1'},
-  fiuser:{userId:'u5',surface:'fi',role:'FSP_USER',name:'Karim Hossain',username:'teller.karim',title:'FI User',tenantId:'t1'},
-};
+const PERSONA_USER = {admin:'u1',ops:'u2',fiadmin:'u4',fiuser:'u5',dkarim:'u11'};
+const TITLES = {MASTER_ADMIN:'Platform Admin',OPS:'Operations',AUDITOR:'Auditor',SUPPORT:'Support',FINANCE:'Finance',FSP_MASTER_ADMIN:'FI Master Admin',FSP_USER:'FI User'};
+const DOMAIN = 'bqr.example';
 
 const S = {
-  persona:'admin', data:seed(), notes:true,
+  persona:'admin', host:'admin', data:seed(), notes:true,
   f:{q:'',scope:'',tenant:'',role:'',status:''},
   drawer:null,      // {kind:'user'|'create'|'edit', id, ...}
   dialog:null,      // confirm / secret
@@ -262,7 +277,15 @@ const S = {
 };
 const $ = (s)=>document.querySelector(s);
 const esc = (s)=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-const me = ()=> PERSONAS[S.persona] || null;
+const me = ()=>{
+  if(S.persona==='anon') return null;
+  const u = user(PERSONA_USER[S.persona] || S.persona); if(!u) return null;
+  return {userId:u.id,surface:u.tenantId?'fi':'staff',role:u.role,name:u.displayName,username:u.username,title:TITLES[u.role],tenantId:u.tenantId||undefined};
+};
+const tenantBySlug = (slug)=> S.data.tenants.find(t=>t.slug===slug);
+const hostOfUser = (u)=> u.tenantId ? tenant(u.tenantId).slug : 'admin';
+// What a browser at this address would be talking to. Terminated tenants disappear like unknown ones.
+const hostKind = ()=> S.host==='admin' ? 'admin' : (tenantBySlug(S.host) && tenantBySlug(S.host).status!=='Terminated') ? 'fi' : 'unknown';
 const tenant = (id)=> S.data.tenants.find(t=>t.id===id);
 const user = (id)=> S.data.users.find(u=>u.id===id);
 const initials = (n)=> n.split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase();
@@ -364,22 +387,38 @@ function go(to){
 }
 function home(){ const p=me(); return p?`/${p.surface}/overview`:'/login'; }
 
+function addrBar(){
+  const {path}=route(); const k=hostKind();
+  const lock='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+  const hint = k==='admin' ? 'Admin portal · RVL staff only' : k==='fi' ? `FI portal · ${esc(tenantBySlug(S.host).name)} only` : 'No such portal';
+  $('#addr').innerHTML=`<span class="pill">${lock}<span>https://<b>${esc(S.host)}</b>.${DOMAIN}${esc(path==='/'?'':path)}</span></span><span class="faint" style="font-family:var(--font)">${hint}</span>`;
+}
 function render(){
-  const p=me(); const {path}=route();
-  document.documentElement.dataset.surface = p?p.surface:'staff';
+  const p=me(); const {path}=route(); const k=hostKind();
+  document.documentElement.dataset.surface = k==='fi'?'fi':'staff';
+  addrBar();
   let html='';
   if(path==='/routes') html = p?shell('Route map',routesPage()):routesPage();
+  else if(k==='unknown') html=unknownPortal();
   else if(path==='/login' || (!p && path!=='/change-password')) html=loginPage();
   else if(path==='/change-password') html=changePwPage();
   else if(!p) html=loginPage();
   else {
-    // Surface guard, same idea as the real <Guard surface=...>.
+    // Guard: a session only ever exists on the host it was issued for (host-only cookie, token tenant = host tenant).
     const wantSurface = path.startsWith('/staff')?'staff':path.startsWith('/fi')?'fi':null;
     if(wantSurface && wantSurface!==p.surface){ location.hash=home(); return; }
     html = shell(...pageFor(path,p));
   }
   $('#root').innerHTML=html;
   $('#layer').innerHTML = drawerHtml()+dialogHtml();
+}
+function unknownPortal(){
+  return `<div class="center"><div class="card"><div class="card-b" style="text-align:center">
+    <div class="logo" style="margin:0 auto 14px;background:var(--surface-2);color:var(--text-3)">${ic('qr',20)}</div>
+    <h1 style="font:700 22px/28px var(--head);margin-bottom:6px">Portal not found</h1>
+    <p class="muted" style="margin:0 0 16px">Check the address you were given by your institution or by RVL.</p>
+    ${note('Proposed',['An unknown, reserved or terminated slug gets this one generic page. It never says whether a tenant exists.','<code>GET /v1/public/portal-context</code> answers <code>404</code> for these hosts.'])}
+  </div></div></div>`;
 }
 
 function pageFor(path,p){
@@ -401,26 +440,28 @@ const notFound = ()=>`<div class="stub"><b>Page not found</b><p>An FI User has n
    Login + change password
    ===================================================================== */
 function loginPage(){
+  const k=hostKind(); const t=k==='fi'?tenantBySlug(S.host):null;
+  const quick = k==='admin'
+    ? [['u1','Platform admin',''],['u2','Ops user',''],['u4','FI user on this host (fails)','x']]
+    : S.host==='sonali' ? [['u4','FI master admin',''],['u5','teller.karim',''],['u1','Staff admin on this host (fails)','x']]
+    : S.host==='dhaka-mobile' ? [['u7','DMW admin',''],['u11','teller.karim (same username as Sonali)',''],['u8','First sign-in with one-time password',''],['u9','Suspended agent (fails)','x']]
+    : [['u1','Staff admin on this host (fails)','x']];
   return `<div class="login">
-    <section class="hero"><div class="brand"><span class="logo">${ic('qr',20)}</span><div>Secure Bangla QR</div></div>
-      <div><h2>One sign-in for staff and institutions.</h2><p style="max-width:44ch;color:var(--side-text);font-size:15px;line-height:23px">Your role decides which console opens. Institution users only see their own institution.</p></div>
+    <section class="hero"><div class="brand"><span class="logo">${ic('qr',20)}</span><div>${t?esc(t.name):'Secure Bangla QR'}${t?'<small style="color:var(--side-head)">Institution portal · powered by Secure Bangla QR</small>':''}</div></div>
+      <div><h2>${t?'Welcome back.':'Run QR operations and billing with confidence.'}</h2><p style="max-width:44ch;color:var(--side-text);font-size:15px;line-height:23px">${t?`Manage your institution’s staff access, usage and statements.`:'Onboard institutions, manage keys, set rate cards and close each billing month with a full audit trail.'}</p></div>
       <small style="color:var(--side-head)">© 2026 Relief Validation Limited · Bangladesh Bank BQR</small></section>
     <section class="form"><div>
-      <h1>Sign in</h1><p class="muted" style="margin:0 0 22px">Use your username or your email address.</p>
+      <h1>Sign in</h1><p class="muted" style="margin:0 0 22px">${t?`${esc(t.name)} staff console. Use your username or email.`:'RVL staff console. Use your username or email.'}</p>
       ${S.banner||''}
-      ${note('Proposed change',[
-        'Field is now <b>Username or email</b>. Client sends <code>{ username }</code> or <code>{ email }</code> depending on whether the value contains “@”.',
-        'Every refusal (wrong password, locked, disabled, <b>institution suspended</b>) returns the same <code>invalid_credentials</code>. The screen must never hint which one.',
-        '<code>sessionFromUser()</code> stops rejecting FI roles: <code>FSP_MASTER_ADMIN</code> / <code>FSP_USER</code> now open <code>/fi/*</code> using <code>tenantId</code> from the token.'])}
+      ${note('Proposed change · tenant comes from the address, not the form',[
+        k==='admin'?'Admin portal: this host only ever accepts platform users. Staff usernames are unique, so “username or email” is unambiguous.':'FI portal: the host <code>'+esc(S.host)+'.'+DOMAIN+'</code> fixes the tenant. Username or email is looked up <b>inside that tenant only</b>, so two banks can each have a <code>teller.karim</code>.',
+        'The browser sends <code>{ username | email, password }</code> and no tenant. The edge forwards the original host; the API maps slug → tenant (<code>GET /v1/public/portal-context</code> gives the page its institution name).',
+        'Wrong host for the account (staff on an FI host, an FI user on the admin host or on another bank’s host), wrong password, locked, disabled or suspended institution: <b>all return the same <code>invalid_credentials</code></b>.',
+        'Try the red-labelled shortcuts below to see the cross-host refusals.'])}
       <div class="field"><label for="lu">Username or email</label><input id="lu" data-draft="lu" value="${val('lu')}" autocomplete="username" spellcheck="false"></div>
       <div class="field"><label for="lp">Password</label><input id="lp" type="password" data-draft="lp" value="${val('lp')}" autocomplete="current-password"></div>
       <button class="btn primary" style="width:100%;height:44px;justify-content:center" data-act="login">Sign in</button>
-      <div class="qa"><small>Mock shortcuts</small>
-        <button class="btn sm" data-act="quick" data-p="admin">Platform admin</button>
-        <button class="btn sm" data-act="quick" data-p="fiadmin">FI master admin</button>
-        <button class="btn sm" data-act="quick" data-p="fiuser">FI user</button>
-        <button class="btn sm" data-act="quick" data-p="newfi">FI admin, first sign-in (OTP)</button>
-        <button class="btn sm" data-act="quick" data-p="suspended">Suspended institution</button></div>
+      <div class="qa"><small>Mock shortcuts</small>${quick.map(q=>`<button class="btn sm ${q[2]?'danger':''}" data-act="quick" data-u="${q[0]}">${q[1]}</button>`).join('')}</div>
     </div></section></div>`;
 }
 function changePwPage(){
@@ -602,6 +643,14 @@ function lastAdminBlock(u,what){
     body:`${esc(tenant(u.tenantId).name)} would have nobody who can manage its users. Add another FI Master Admin first, then try again.`,
     action: me().surface==='staff'?`<button class="btn sm" data-act="create-admin" data-t="${u.tenantId}">Add FI Master Admin</button>`:''};
 }
+const RESERVED = ['admin','www','api','app','mail','portal','static','docs','status'];
+function slugError(v,tid){
+  v=(v||'').trim();
+  if(!/^[a-z0-9][a-z0-9-]{1,28}[a-z0-9]$/.test(v)) return 'Use 3–30 lowercase letters, digits or hyphens, starting and ending with a letter or digit.';
+  if(RESERVED.includes(v)) return 'That address is reserved.';
+  if(S.data.tenants.some(t=>t.slug===v && t.id!==tid)) return 'That address is already taken.';
+  return '';
+}
 function randOtp(){ const a='ABCDEFGHJKMNPQRSTUVWXYZabcdefghjkmnpqrstuvwxyz23456789#@%-_'; return Array.from({length:16},()=>a[Math.floor(Math.random()*a.length)]).join(''); }
 function toast(msg,bad){ const t=$('#toast'); t.innerHTML=`<div class="toast ${bad?'bad':''}">${esc(msg)}</div>`; clearTimeout(toast.t); toast.t=setTimeout(()=>t.innerHTML='',3000); }
 function mutate(id,fn,msg){ const u=user(id); fn(u); S.dialog=null; S.drawer={kind:'user',id}; render(); toast(msg); }
@@ -613,12 +662,12 @@ function institutionsPage(){
   const rows=S.data.tenants.map(t=>{
     const n=activeAdmins(t.id);
     return `<tr class="click" data-act="goto" data-to="/staff/institutions/${t.id}"><td><b>${esc(t.name)}</b><div class="mono faint">${t.code}</div></td>
-      <td>${chip(t.status==='Active'?'ok':t.status==='Pending'?'info':'warn',t.status)}</td>
+      <td class="mono">${t.slug}.${DOMAIN}</td><td>${chip(t.status==='Active'?'ok':t.status==='Pending'?'info':'warn',t.status)}</td>
       <td>${n?`<span class="num">${n}</span> active`:chip('warn','No FI admin')}</td></tr>`;}).join('');
-  return `${note('Changed · Institutions list',['One new column, <b>FI admins</b>: an institution with nobody able to sign in is flagged here instead of being discovered by the bank.'])}
+  return `${note('Changed · Institutions list',['Two new columns. <b>Portal address</b> is the institution’s own FI portal host (the tenant is chosen by the address). <b>FI admins</b> flags an institution with nobody able to sign in, instead of the bank discovering it.'])}
     <div class="page-h"><div><h2>Institutions</h2><p>Banks and mobile financial services on the Secure Bangla QR rail.</p></div><span class="sp"></span>
       <button class="btn primary" data-act="goto" data-to="/staff/institutions/new">${ic('plus')} Onboard institution</button></div>
-    <div class="card"><table><tr><th>Institution</th><th>Status</th><th>FI admins <span class="tag">New</span></th></tr>${rows}</table></div>`;
+    <div class="card"><table><tr><th>Institution</th><th>Portal address <span class="tag">New</span></th><th>Status</th><th>FI admins <span class="tag">New</span></th></tr>${rows}</table></div>`;
 }
 function institutionDetail(id,tab){
   const t=tenant(id); const n=activeAdmins(id);
@@ -638,7 +687,7 @@ function institutionDetail(id,tab){
       <div class="card"><div class="card-h"><h3>${esc(t.name)}</h3>${chip(t.status==='Active'?'ok':t.status==='Pending'?'info':'warn',t.status)}<span class="sp"></span>
         ${t.status==='Active'?`<button class="btn sm" data-act="tSuspend" data-t="${id}">Suspend</button><button class="btn sm danger" data-act="tTerminate" data-t="${id}">Terminate</button>`:''}
         ${t.status==='Suspended'?`<button class="btn sm primary" data-act="tReactivate" data-t="${id}">Reactivate</button>`:''}</div>
-      <div class="card-b"><dl class="dl" style="margin:0"><dt>Institution code</dt><dd class="mono">${t.code}</dd><dt>Portal users</dt><dd class="num">${cnt} can sign in</dd><dt>FI Master Admins</dt><dd>${n?`${n} active`:chip('warn','None')}</dd></dl></div></div>`;
+      <div class="card-b"><dl class="dl" style="margin:0"><dt>Institution code</dt><dd class="mono">${t.code}</dd><dt>Portal address</dt><dd><span class="mono">${t.slug}.${DOMAIN}</span> <button class="btn sm" data-act="openhost" data-slug="${t.slug}">Open FI portal ↗</button></dd><dt>Portal users</dt><dd class="num">${cnt} can sign in</dd><dt>FI Master Admins</dt><dd>${n?`${n} active`:chip('warn','None')}</dd></dl></div></div>`;
   } else body=stubPage(tab[0].toUpperCase()+tab.slice(1)+' tab');
   return `<div class="page-h"><div><h2>${esc(t.name)}</h2><p><a href="#/staff/institutions">← Institutions</a></p></div></div><div class="tabs">${tabs}</div>${body}`;
 }
@@ -664,12 +713,23 @@ function onboardingPage(){
        <button class="btn primary" data-act="mkAdmin">${ic('key',16)} Create FI Master Admin</button>`}
       </div></div>`;
   } else if(S.onbStep===5){
-    const rows=[['Capabilities','QR generation, QR validation',true],['API credentials','Client ID issued',true],['Signing key','Active (Ed25519)',true],['Trust store entry','Registered',true],['FI Master Admin',has?'999993-admin':'None yet',has]];
+    const rows=[['Portal address',t3.slug+'.'+DOMAIN,true],['Capabilities','QR generation, QR validation',true],['API credentials','Client ID issued',true],['Signing key','Active (Ed25519)',true],['Trust store entry','Registered',true],['FI Master Admin',has?'999993-admin':'None yet',has]];
     const ready=rows.every(r=>r[2]);
     body = `${note('Changed · Review and activate',['New row and new blocker code <code>FI_END_MASTER_ADMIN_MISSING</code>. A 409 from activate lists every unmet blocker, so the banner links to the exact step.'])}
       ${!ready?banner('warn','Not ready to activate yet','Fix the items below. Activating with nobody able to sign in would look healthy and be unusable.',`<button class="btn sm" data-act="step" data-i="4">Go to FI admin</button>`):''}
       <div class="card"><div class="card-h"><h3>Review and activate</h3></div><div class="card-b">${rows.map(r=>`<div class="row-s"><span class="dot ${r[2]?'':'todo'}">${r[2]?'✓':'!'}</span><div><b>${r[0]}</b><div class="faint">${r[1]}</div></div><span class="sp"></span>${r[2]?'':`<button type="button" class="btn sm" data-act="step" data-i="4">Fix</button>`}</div>`).join('')}
       <div style="margin-top:16px;display:flex;gap:10px"><button class="btn primary" ${ready?'':'disabled'} data-act="activate">Activate institution</button></div></div></div>`;
+  } else if(S.onbStep===0){
+    const cur=S.draft.o_slug ?? t3.slug; const err=S.err.slug||'';
+    body = `${note('New field · portal address (slug)',[
+      'Chooses the institution’s FI portal host: <code>{slug}.'+DOMAIN+'</code>. Sent with the tenant profile; the API enforces lowercase, 3–30 chars, <b>unique</b>, and a <b>reserved list</b> (admin, www, api, app, mail, portal, static, docs, status).',
+      'Fixed once the institution is Active: bookmarks, emails and the host → tenant mapping depend on it.',
+      'The other Institution fields are unchanged.'])}
+      <div class="card"><div class="card-h"><h3>Institution</h3><span class="sp"></span>${chip('ok','Registered')}</div><div class="card-b">
+      <dl class="dl"><dt>Name</dt><dd>${esc(t3.name)}</dd><dt>Institution code</dt><dd class="mono">${t3.code}</dd></dl>
+      ${field('Portal address','o0',`<div style="display:flex;align-items:center;gap:8px"><input id="o0" data-draft="o_slug" value="${esc(cur)}" autocomplete="off" spellcheck="false" style="max-width:220px"><span class="mono muted">.${DOMAIN}</span></div>`,{err,hint:'Staff of this institution will sign in at https://'+esc(cur||'…')+'.'+DOMAIN})}
+      <button class="btn primary" data-act="saveSlug">Save address</button>
+      </div></div>`;
   } else body = `<div class="stub"><b>${steps[S.onbStep]}</b><p>Unchanged by this proposal.</p></div>`;
   return `<div class="page-h"><div><h2>Onboard ${esc(t3.name)}</h2><p><a href="#/staff/institutions">← Institutions</a></p></div></div><div class="stepper">${stepper}</div>${body}`;
 }
@@ -678,36 +738,48 @@ function onboardingPage(){
    Route map
    ===================================================================== */
 function routesPage(){
-  const R=(s,r,access,status,api)=>`<tr><td><span class="chip ${s==='New'?'info':s==='Changed'?'warn':'plain'}">${s}</span></td><td class="mono">${r}</td><td>${access}</td><td>${api}</td></tr>`;
+  const R=(s,portal,r,access,api)=>`<tr><td><span class="chip ${s==='New'?'info':s==='Changed'?'warn':'plain'}">${s}</span></td><td>${portal}</td><td class="mono">${r}</td><td>${access}</td><td>${api}</td></tr>`;
   return `<div class="${me()?'':'content'}" style="${me()?'':'max-width:1200px;margin:0 auto'}">
-    <div class="page-h"><div><h2>Proposed route map</h2><p>Every route and API call this change touches. Anything not listed stays as it is.</p></div></div>
+    <div class="page-h"><div><h2>Proposed route map</h2><p>Every route and API call this change touches, per portal. Anything not listed stays as it is.</p></div></div>
+    <div class="card"><div class="card-h"><h3>Two portals, one backend</h3></div><div class="card-b">
+      <div class="tscroll"><table>
+        <tr><th></th><th>Admin portal</th><th>FI portal</th></tr>
+        <tr><td><b>Address</b></td><td class="mono">admin.bqr.example</td><td class="mono">{slug}.bqr.example</td></tr>
+        <tr><td><b>Who signs in</b></td><td>MASTER_ADMIN, OPS, AUDITOR, SUPPORT, FINANCE</td><td>FSP_MASTER_ADMIN, FSP_USER of that tenant only</td></tr>
+        <tr><td><b>Tenant chosen by</b></td><td>n/a (platform)</td><td>the address; the API maps slug → tenant from the forwarded host</td></tr>
+        <tr><td><b>API area</b></td><td><code>/v1/admin/**</code></td><td><code>/v1/fsp/**</code> + the institution’s own billing / usage</td></tr>
+        <tr><td><b>App</b></td><td><code>apps/admin</code></td><td><code>apps/fi</code> (both use <code>packages/shared</code>)</td></tr>
+      </table></div></div></div>
     <div class="card"><div class="card-h"><h3>Routes</h3></div><div class="tscroll"><table>
-      <tr><th>Change</th><th>Route</th><th>Who</th><th>API</th></tr>
-      ${R('Changed','/login','Anyone','<code>POST /v1/auth/login { username | email }</code>; all refusals look identical')}
-      ${R('Changed','/change-password','Any signed-in user','<code>POST /v1/auth/change-password</code>; any other call while flagged → <code>403 password_change_required</code>')}
-      ${R('Changed','session / Guard','—','<code>GET /v1/auth/me</code> now carries <code>tenantId</code>; roles <code>FSP_MASTER_ADMIN</code>, <code>FSP_USER</code> map to the <code>fi</code> surface; drop <code>FSP_OPERATOR</code>/<code>FSP_VIEWER</code>')}
-      ${R('New','/staff/users','MASTER_ADMIN','<code>GET/POST /v1/admin/users</code>, <code>GET/PATCH /v1/admin/users/{id}</code>, <code>POST …/{id}/suspend|reactivate|disable|unlock|reset-password|revoke-sessions</code>')}
-      ${R('New','/staff/institutions/:id/users','MASTER_ADMIN','<code>GET /v1/admin/users?tenantId=</code>')}
-      ${R('Changed','/staff/institutions','Staff','FI admins column (derived from the onboarding view)')}
-      ${R('Changed','/staff/institutions/new','MASTER_ADMIN','New step <code>FI_END_MASTER_ADMIN</code> → <code>POST /v1/admin/tenants/{id}/master-admin</code>; new blocker <code>FI_END_MASTER_ADMIN_MISSING</code>')}
-      ${R('Changed','/staff/institutions/:id','MASTER_ADMIN','Suspend / Reactivate / Terminate dialogs describe the user cascade (no new endpoint)')}
-      ${R('New','/fi/users','FSP_MASTER_ADMIN','<code>GET/POST /v1/fsp/users</code>, <code>GET/PATCH /v1/fsp/users/{id}</code>, <code>POST …/suspend|reactivate|disable|unlock|reset-password</code>')}
+      <tr><th>Change</th><th>Portal</th><th>Route</th><th>Who</th><th>API</th></tr>
+      ${R('Changed','Both','/login','Anyone','<code>POST /v1/auth/login { username | email }</code>. No tenant in the body; the host decides. All refusals look identical')}
+      ${R('Changed','Both','/change-password','Any signed-in user','<code>POST /v1/auth/change-password</code>; any other call while flagged → <code>403 password_change_required</code>')}
+      ${R('New','FI','/ (unknown host)','Anyone','<code>GET /v1/public/portal-context</code> → institution name, or 404 for an unknown / reserved / terminated slug')}
+      ${R('Changed','Both','session / Guard','—','Each app has its own role allow-list (admin: platform roles; FI: <code>FSP_*</code>). <code>GET /v1/auth/me</code> carries <code>tenantId</code>')}
+      ${R('New','Admin','/staff/users','MASTER_ADMIN','<code>GET/POST /v1/admin/users</code>, <code>GET/PATCH …/{id}</code>, <code>POST …/{id}/suspend|reactivate|disable|unlock|reset-password|revoke-sessions</code>')}
+      ${R('New','Admin','/staff/institutions/:id/users','MASTER_ADMIN','<code>GET /v1/admin/users?tenantId=</code>')}
+      ${R('Changed','Admin','/staff/institutions','Staff','Portal address + FI admins columns')}
+      ${R('Changed','Admin','/staff/institutions/new','MASTER_ADMIN','Portal address field; new step <code>FI_END_MASTER_ADMIN</code> → <code>POST /v1/admin/tenants/{id}/master-admin</code>; new blocker <code>FI_END_MASTER_ADMIN_MISSING</code>')}
+      ${R('Changed','Admin','/staff/institutions/:id','MASTER_ADMIN','Open-FI-portal link; Suspend / Reactivate / Terminate dialogs describe the user cascade (no new endpoint)')}
+      ${R('New','FI','/fi/users','FSP_MASTER_ADMIN','<code>GET/POST /v1/fsp/users</code>, <code>GET/PATCH …/{id}</code>, <code>POST …/{id}/suspend|reactivate|disable|unlock|reset-password</code>')}
     </table></div></div>
     <div class="card"><div class="card-h"><h3>Rules the UI mirrors (the API enforces them)</h3></div><div class="card-b"><ul style="margin:0;padding-left:20px;display:grid;gap:6px">
       <li><b>Last FI Master Admin</b> can’t be suspended, disabled or demoted → <code>409</code>, shown as a banner with “Add FI Master Admin”.</li>
       <li><b>Self-action</b> (disable / suspend / reset own account) → <code>409</code>; the buttons are disabled for your own row.</li>
-      <li><b>Cross-tenant</b> access is <code>404</code>, never 403. The portal never sends a tenant id from an FI session.</li>
+      <li><b>Cross-tenant</b> access is <code>404</code>, never 403. The portal never sends a tenant id; the tenant is the host.</li>
+      <li><b>Host binding:</b> the token’s tenant must equal the host’s tenant on every request and refresh. Sessions are host-only cookies, so they never cross subdomains.</li>
+      <li><b>No enumeration:</b> unknown, reserved or terminated slugs all show the same “Portal not found”.</li>
       <li><b>One-time passwords</b> appear once, in the secret dialog, and are never stored.</li>
       <li><b>Duplicate</b> username/email → <code>409</code>, shown inline on the field.</li>
       <li><b>Disabled</b> is final; <b>Suspended</b> and <b>Locked</b> are reversible.</li>
       <li>Hiding a button is a convenience. The API scopes are the boundary (AGENTS.md).</li></ul></div></div>
     <div class="card"><div class="card-h"><h3>Frontend footprint (when we build it)</h3></div><div class="card-b"><ul style="margin:0;padding-left:20px;display:grid;gap:6px">
-      <li><code>src/shared/api/client.ts</code>: login body, <code>password_change_required</code> handling, <code>AuthUser.tenantId</code>.</li>
-      <li><code>src/shared/auth/session.ts</code>: new roles, FI sessions, <code>tenantId</code>.</li>
-      <li><code>src/shared/users/</code> (new): one users table, drawer, forms and API hooks used by both surfaces, parameterised by base path <code>/v1/admin/users</code> | <code>/v1/fsp/users</code>.</li>
-      <li><code>src/surfaces/staff/users/</code>, <code>src/surfaces/fi/users/</code> (new), plus nav entries; both stay lazy.</li>
-      <li>Onboarding: <code>steps.tsx</code> gains the FI admin step; <code>institution-detail.tsx</code> gains the Users tab.</li>
-      <li>Tests: extend <code>src/test/fake-backend.ts</code> with the users endpoints. No mock data in <code>src</code>.</li></ul></div></div>
+      <li><b>Restructure first</b> (no behaviour change): npm workspaces with <code>packages/shared</code> (today’s <code>src/shared</code>), <code>apps/admin</code> (login + staff screens) and <code>apps/fi</code> (login + FI screens). Apps never import each other.</li>
+      <li><code>packages/shared</code>: api client (<code>password_change_required</code>, <code>AuthUser.tenantId</code>), session (per-app role allow-list), new <code>users/</code> module parameterised by base path <code>/v1/admin/users</code> | <code>/v1/fsp/users</code>.</li>
+      <li><code>apps/admin</code>: Users screen, Institutions columns and Users tab, onboarding Portal address + FI admin step, cascade dialog copy.</li>
+      <li><code>apps/fi</code>: host-aware login (portal-context), Users screen for FI Master Admin.</li>
+      <li>Dev: <code>*.localhost</code> (e.g. <code>sonali.localhost:5176</code>) with the proxy forwarding the original host. Deploy: two projects; the edge must forward <code>Host</code> (Vercel rewrites do not, so confirm the production edge).</li>
+      <li>Tests: extend <code>src/test/fake-backend.ts</code> with host-scoped login and the users endpoints. No mock data in <code>src</code>.</li></ul></div></div>
     ${me()?'':`<p><a href="#/login">← Back to mock</a></p>`}
   </div>`;
 }
@@ -722,7 +794,8 @@ document.addEventListener('click',(ev)=>{
   if(a==='menu'){ S.menu=!S.menu; render(); ev.stopPropagation(); return; }
   if(a==='goto'){ ev.preventDefault(); go(el.dataset.to); return; }
   if(a==='signout'){ S.persona='anon'; S.forced=false; $('#persona').value='anon'; S.banner=banner('info','Signed out.'); go('/login'); return; }
-  if(a==='quick'){ quickLogin(el.dataset.p); return; }
+  if(a==='quick'){ quickLogin(el.dataset.u); return; }
+  if(a==='openhost'){ ev.preventDefault(); S.persona='anon'; S.forced=false; $('#persona').value='anon'; S.host=el.dataset.slug; $('#host').value=S.host; S.banner=null; toast('Opens https://'+S.host+'.'+DOMAIN+' in a new tab (a separate session)'); go('/login'); return; }
   if(a==='login'){ doLogin(); return; }
   if(a==='changepw'){ doChangePw(); return; }
   if(a==='open'){ S.drawer={kind:'user',id}; S.draft={}; render(); return; }
@@ -753,6 +826,10 @@ document.addEventListener('click',(ev)=>{
     if(!S.draft.o_email){ toast('Enter an email first',true); return; }
     S.data.users.push({id:'u'+(S.data.users.length+1),tenantId:'t3',username:'999993-admin',displayName:S.draft.o_name||'FI Admin',email:S.draft.o_email,role:'FSP_MASTER_ADMIN',status:'ACTIVE',mustChange:true,last:'—'});
     S.dialog={kind:'secret',title:'FI Master Admin created',text:'Hand this one-time password to the institution’s contact.',username:'999993-admin',otp:randOtp()}; render(); return; }
+  if(a==='saveSlug'){
+    const e=slugError(S.draft.o_slug ?? tenant('t3').slug,'t3'); S.err={slug:e};
+    if(!e){ tenant('t3').slug=(S.draft.o_slug ?? tenant('t3').slug).trim(); S.draft={}; toast('Portal address saved'); }
+    render(); return; }
   if(a==='idem'){ toast('200 · alreadyExisted: true · no new password'); return; }
   if(a==='activate'){ tenant('t3').status='Active'; toast('Institution activated'); go('/staff/institutions'); return; }
   if(a==='tSuspend'||a==='tTerminate'||a==='tReactivate'){
@@ -781,22 +858,27 @@ document.addEventListener('change',(ev)=>{
   if(t.dataset.filter){ S.f[t.dataset.filter]=t.value; const fi=me().surface==='fi'; $('#utable').innerHTML=usersTable(fi); }
 });
 
-function quickLogin(k){
-  S.draft={}; S.banner=null;
-  if(k==='suspended'){ S.draft={lu:'dmw.agent',lp:'••••••••'}; doLogin(); return; }
-  if(k==='newfi'){ S.persona='fiadmin'; S.forced=true; $('#persona').value='fiadmin'; go('/change-password'); return; }
-  S.persona=k; S.forced=false; $('#persona').value=k; go(home());
+function quickLogin(uid){
+  const u=user(uid); S.banner=null;
+  S.draft={lu:u.username,lp:'Passw0rd!'};
+  doLogin();
+}
+function syncPersona(){
+  const sel=$('#persona'); const alias=Object.keys(PERSONA_USER).find(k=>PERSONA_USER[k]===S.persona);
+  const want = S.persona==='anon' ? 'anon' : (alias || S.persona);
+  if([...sel.options].some(o=>o.value===want)) sel.value=want;
 }
 function doLogin(){
-  const id=(S.draft.lu||'').trim(), pw=S.draft.lp||'';
+  const id=(S.draft.lu||'').trim().toLowerCase(), pw=S.draft.lp||'';
   if(!id||!pw){ S.banner=banner('bad','Enter your username or email and your password.'); render(); return; }
-  const u=S.data.users.find(x=>x.username===id||x.email===id);
-  const t=u&&u.tenantId?tenant(u.tenantId):null;
-  const blocked=!u || ['DISABLED','LOCKED','SUSPENDED'].includes(u.status) || (t&&['Suspended','Terminated'].includes(t.status));
+  // Tenant scope comes from the host. A browser at admin.* can only ever see platform users;
+  // at <slug>.* only that tenant's users.
+  const t = hostKind()==='fi' ? tenantBySlug(S.host) : null;
+  const u = S.data.users.find(x=> (t ? x.tenantId===t.id : !x.tenantId) && (x.username.toLowerCase()===id || x.email.toLowerCase()===id));
+  const ut = u&&u.tenantId?tenant(u.tenantId):null;
+  const blocked=!u || ['DISABLED','LOCKED','SUSPENDED'].includes(u.status) || (ut&&['Suspended','Terminated'].includes(ut.status));
   if(blocked){ S.banner=banner('bad','Invalid credentials.','Check your username or email and password, or contact your administrator.'); render(); return; }
-  const key=Object.keys(PERSONAS).find(k=>PERSONAS[k].userId===u.id);
-  if(!key){ S.banner=banner('info','Mock only knows the four demo accounts.','Use a shortcut below.'); render(); return; }
-  S.banner=null; S.persona=key; $('#persona').value=key; S.forced=u.mustChange; go(u.mustChange?'/change-password':home());
+  S.banner=null; S.persona=u.id; syncPersona(); S.forced=u.mustChange; go(u.mustChange?'/change-password':home());
 }
 function doChangePw(){
   const a=S.draft.cp1, b=S.draft.cp2, c=S.draft.cp3;
@@ -834,10 +916,19 @@ function doCreate(){
 }
 
 /* ---- mock bar ---- */
-$('#persona').addEventListener('change',(e)=>{ S.persona=e.target.value; S.forced=false; S.drawer=null; S.dialog=null; S.f={q:'',scope:'',tenant:'',role:'',status:''}; S.banner=null; go(S.persona==='anon'?'/login':home()); });
+$('#persona').addEventListener('change',(e)=>{
+  S.persona=e.target.value; S.forced=false; S.drawer=null; S.dialog=null; S.f={q:'',scope:'',tenant:'',role:'',status:''}; S.banner=null;
+  const u=S.persona==='anon'?null:user(PERSONA_USER[S.persona]);
+  if(u){ S.host=hostOfUser(u); $('#host').value=S.host; }   // an account only exists on its own address
+  go(S.persona==='anon'?'/login':home());
+});
+$('#host').addEventListener('change',(e)=>{
+  S.host=e.target.value; S.persona='anon'; S.forced=false; S.drawer=null; S.dialog=null; S.banner=null; syncPersona();
+  go('/login');   // a different address is a different origin: no shared session
+});
 $('#btnNotes').addEventListener('click',(e)=>{ document.body.classList.toggle('notes'); e.target.classList.toggle('on'); });
 $('#btnRoutes').addEventListener('click',()=>{ go('/routes'); });
-$('#btnReset').addEventListener('click',()=>{ S.data=seed(); S.drawer=null; S.dialog=null; S.onbStep=5; render(); toast('Mock data reset'); });
+$('#btnReset').addEventListener('click',()=>{ S.data=seed(); S.persona='admin'; S.host='admin'; $('#host').value='admin'; syncPersona(); S.drawer=null; S.dialog=null; S.onbStep=5; render(); toast('Mock data reset'); });
 $('#btnTheme').addEventListener('click',()=>{ const h=document.documentElement; const dark=h.dataset.theme==='dark'||(!h.dataset.theme&&matchMedia('(prefers-color-scheme:dark)').matches); h.dataset.theme=dark?'light':'dark'; });
 window.addEventListener('hashchange',render);
 document.addEventListener('keydown',(e)=>{ if(e.key==='Escape'){ if(S.dialog&&S.dialog.kind!=='secret') S.dialog=null; else if(S.drawer) S.drawer=null; else return; render(); } });

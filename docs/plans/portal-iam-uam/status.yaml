@@ -5,5 +5,9 @@ status: proposed
 jira: "-"
 submodules:
   - repo: rvl-sbqr-portal
+    branch: feature/portal-workspaces
+  - repo: rvl-sbqr-portal
     branch: feature/iam-uam-portal
+  - repo: rvl-secure-bqr-manager
+    branch: feature/portal-host-tenancy
 updated: 2026-10-17
